@@ -324,7 +324,9 @@
 
     destinationKm: function (s, id) {
       var d = DESTINATIONS.filter(function (x) { return x.id === id; })[0];
-      return d ? routeKm(d.route) : 0;
+      if (!d) return 0;
+      // 주유소는 부를 때마다 가까운 곳으로 길을 새로 만든다 (대략 1km)
+      return d.route ? routeKm(d.route) : 1;
     }
   };
 })(window.Dash = window.Dash || {});

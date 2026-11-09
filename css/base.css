@@ -64,6 +64,41 @@ html, body {
   transform: translate(-50%, 0);
 }
 
+/* 주행 모드를 바꿀 때 지나가는 큰 글씨와 색 빛 (js/app.js) */
+#mode-flash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: var(--controls-height);
+  z-index: 19;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 2px;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+#mode-flash.eco { --mode: 57, 211, 83; }
+#mode-flash.comfort { --mode: 79, 195, 255; }
+#mode-flash.sport { --mode: 255, 59, 48; }
+#mode-flash.show {
+  animation: mode-flash 1.4s ease-out;
+  text-shadow: 0 0 30px rgb(var(--mode)), 0 0 60px rgb(var(--mode));
+  box-shadow: inset 0 0 120px rgba(var(--mode), 0.75);
+}
+@keyframes mode-flash {
+  0% { opacity: 0; transform: scale(0.6); }
+  15% { opacity: 1; transform: scale(1.08); }
+  30% { transform: scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+
 #rotate-hint {
   display: none;
   position: fixed;

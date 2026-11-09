@@ -247,7 +247,7 @@
       photo: c.toDataURL('image/jpeg', 0.85),
       score: passedScore != null ? passedScore : (old ? old.score : 3),
       issued: today(),
-      number: old ? old.number : 'JAY-' + new Date().getFullYear() + '-' + ('000' + Math.floor(Math.random() * 10000)).slice(-4)
+      number: old ? old.number : 'KID-' + new Date().getFullYear() + '-' + ('000' + Math.floor(Math.random() * 10000)).slice(-4)
     };
     if (!save(data)) alert('면허증을 저장할 공간이 부족해요. 그래도 지금 화면에서는 볼 수 있어요.');
     passedScore = null;
@@ -383,6 +383,31 @@
     });
   }
 
+  // 👮 운전자 확인: 경찰관 놀이처럼 면허증을 크게 보여 주고 '확인' 도장을 찍는다 (운전에는 영향 없음)
+  function driverCheck() {
+    var data = load();
+    if (!data) {
+      show('<h2>👮 운전자 확인</h2>' +
+        '<div class="lic-emoji">🪪❓</div>' +
+        '<p class="lic-big">앗! 아직 운전면허증이 없어요</p>' +
+        '<p>표지판 시험을 보고 사진을 찍으면 면허증이 나와요.</p>' +
+        '<div class="lic-actions">' +
+        '  <button type="button" class="lic-btn primary" data-go="home">🪪 면허증 만들기</button>' +
+        '  <button type="button" class="lic-btn" data-go="later">다음에 할래요</button>' +
+        '</div>');
+      if (state) Dash.util.emit(state, 'speak', { text: '운전면허증이 없어요. 만들어 볼까요?' });
+      return;
+    }
+    show('<h2>👮 운전자 확인</h2>' +
+      '<div class="lic-check"><canvas class="lic-card" width="' + CARD_W + '" height="' + CARD_H + '"></canvas>' +
+      '<div class="lic-stamp">확인 ✓</div></div>' +
+      '<p class="lic-big">✅ ' + kid() + ' 운전자님, 확인됐어요!</p>' +
+      '<div class="lic-actions"><button type="button" class="lic-btn primary" data-go="later">🚗 안전 운전 할게요!</button></div>');
+    drawCard(root.querySelector('.lic-card'), data);
+    sound('good');
+    if (state) Dash.util.emit(state, 'speak', { text: '운전자 확인 완료! ' + kid() + ' 운전자님, 안전 운전 하세요' });
+  }
+
   // 공유 메뉴가 없을 때 아이패드용: 그림을 보여 주고 길게 눌러 저장하게 한다
   function showForLongPress(blob) {
     var url = URL.createObjectURL(blob);
@@ -441,7 +466,8 @@
         else if (to === 'photo') photoScreen();
         else if (to === 'make') makeLicense();
         else if (to === 'save') saveCard();
-        else if (to === 'card') homeScreen();
+        else if (to === 'card' || to === 'home') homeScreen();
+        else if (to === 'later') close();
       });
       root.addEventListener('change', function (e) {
         if (e.target.hasAttribute('data-photo')) loadPhoto(e.target.files && e.target.files[0]);
@@ -449,6 +475,9 @@
     },
 
     open: homeScreen,
+
+    // 주행 탭의 '🪪 운전자 확인' 버튼
+    driverCheck: driverCheck,
 
     // 면허증이 있으면 { photo, number, … }
     data: load

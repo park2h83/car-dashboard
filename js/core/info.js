@@ -114,7 +114,7 @@
       return title('공조 ' + (c.on ? (c.auto ? 'AUTO' : '') : '꺼짐')) +
         '<div class="clim-temps"><span>' + c.tempL.toFixed(1) + '°</span><span>' + c.tempR.toFixed(1) + '°</span></div>' +
         row('풍량 / 방향', c.fan + '단 · ' + Dash.vehicle.AIR_MODE_NAMES[c.mode]) +
-        row('A/C · 내기', (c.ac ? 'A/C 켬' : 'A/C 끔') + ' · ' + (c.recirc ? '내기' : '외기')) +
+        row('에어컨', c.ac ? '켬' : '끔') +
         row('시트 열선', heat(s.seatHeat[0]) + ' / ' + heat(s.seatHeat[1])) +
         row('시트 통풍', vent(s.seatVent[0]) + ' / ' + vent(s.seatVent[1])) +
         row('핸들 열선', s.wheelHeat ? '켬' : '끔');

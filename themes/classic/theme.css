@@ -12,6 +12,18 @@
 }
 .theme-classic .cl[data-mode="eco"] { --accent: #39d353; }
 .theme-classic .cl[data-mode="sport"] { --accent: #ff3b30; }
+/* 주행 모드마다 계기판 전체 분위기가 바뀐다: 에코는 초록, 스포츠는 빨강 */
+.theme-classic .cl[data-mode="eco"] {
+  background: radial-gradient(ellipse 60% 70% at 50% 45%, #0c2214 0%, #040805 70%), #000;
+}
+.theme-classic .cl[data-mode="sport"] {
+  background: radial-gradient(ellipse 60% 70% at 50% 45%, #2a0b09 0%, #090303 70%), #000;
+}
+.theme-classic .cl[data-mode="eco"] .accent-ring,
+.theme-classic .cl[data-mode="sport"] .accent-ring { stroke-width: 7; }
+.theme-classic .cl[data-mode="sport"] .tick-label { fill: #ffd9d4; }
+.theme-classic .cl[data-mode="sport"] .dial-digital { fill: #ffece9; font-style: italic; }
+.theme-classic .cl[data-mode="sport"] .dial-mode { font-size: 28px; letter-spacing: 8px; }
 .theme-classic .cl.ap { --accent: #3d8bff; } /* 자율주행 중엔 파란색 */
 
 .theme-classic .cl-stage {

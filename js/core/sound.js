@@ -215,7 +215,18 @@
     'mirror': function () { motor(0.9); },
     'pop': function () { noise('lowpass', 700, 0.35, 0.9, 0, 0.7); },
     'arrive': function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, 0.4, 0.2, 'triangle', i * 0.13); }); },
-    'speak': function (e) { speak(e.text); }
+    'speak': function (e) { speak(e.text); },
+    // 주행 모드 바꿀 때: 스포츠는 부릉부릉 힘차게, 에코는 부드럽게
+    'mode': function (e) {
+      if (e.mode === 'sport') {
+        [0, 0.12, 0.24].forEach(function (d, i) { tone(220 + i * 110, 0.18, 0.18, 'sawtooth', d); });
+        tone(660, 0.4, 0.16, 'square', 0.36);
+      } else if (e.mode === 'eco') {
+        [784, 988, 1175].forEach(function (f, i) { tone(f, 0.35, 0.12, 'sine', i * 0.12); });
+      } else {
+        [523, 659].forEach(function (f, i) { tone(f, 0.3, 0.15, 'triangle', i * 0.12); });
+      }
+    }
   };
 
   // 내비 음성 안내 (아이패드 Safari 는 한국어 음성을 기본으로 갖고 있다)
@@ -247,11 +258,14 @@
 
     // 엔진
     var base = Math.max(s.rpm, 1) / 30;
+    // 스포츠는 엔진 소리가 더 크고 우렁차게, 에코는 조용하게
+    var modeVol = s.driveMode === 'sport' ? 1.3 : s.driveMode === 'eco' ? 0.8 : 1;
+    var modeTone = s.driveMode === 'sport' ? 700 : s.driveMode === 'eco' ? -150 : 0;
     engine.oscs.forEach(function (o) {
       o.osc.frequency.setTargetAtTime(base * o.mult, t, 0.03);
     });
-    engine.filter.frequency.setTargetAtTime(300 + s.rpm * 0.25 + s.throttle * 1500, t, 0.05);
-    var engineVol = s.engineOn ? 0.18 + s.throttle * 0.25 + (s.rpm / Dash.vehicle.LIMIT_RPM) * 0.15 : 0;
+    engine.filter.frequency.setTargetAtTime(300 + modeTone + s.rpm * 0.25 + s.throttle * 1500, t, 0.05);
+    var engineVol = s.engineOn ? (0.18 + s.throttle * 0.25 + (s.rpm / Dash.vehicle.LIMIT_RPM) * 0.15) * modeVol : 0;
     engine.gain.gain.setTargetAtTime(engineVol, t, s.engineOn ? 0.05 : 0.25);
 
     // 경적, ABS

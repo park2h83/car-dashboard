@@ -127,6 +127,19 @@
   });
   useTheme(load(THEME_KEY));
 
+  // 주행 모드를 바꾸면 계기판 위로 모드 이름과 색 빛이 크게 지나간다
+  var modeFlash = document.getElementById('mode-flash');
+  var MODE_FLASH = { eco: '🍃 ECO 모드', comfort: '🛋️ COMFORT 모드', sport: '🔥 SPORT 모드' };
+  var lastMode = state.driveMode;
+  function renderModeFlash() {
+    if (state.driveMode === lastMode) return;
+    lastMode = state.driveMode;
+    modeFlash.textContent = MODE_FLASH[lastMode] || '';
+    modeFlash.className = '';
+    void modeFlash.offsetWidth; // 애니메이션을 처음부터 다시
+    modeFlash.className = 'show ' + lastMode;
+  }
+
   var lastMessage = '';
   function renderToast() {
     var message = current.showsMessages ? '' : state.message;
@@ -162,23 +175,26 @@
 
   var last = performance.now();
   var errors = 0;
+  function safely(fn) {
+    try { fn(); } catch (e) {
+      if (errors++ < 5) console.error(e); // 같은 오류로 콘솔이 넘치지 않게
+    }
+  }
   function frame(now) {
     // 어느 한 곳에서 오류가 나도 다음 프레임은 계속 돈다 (화면이 그대로 멈추지 않게)
     requestAnimationFrame(frame);
     // 탭 전환 후 복귀 시 튀지 않게 상한을, 첫 프레임 타임스탬프가 앞설 수 있어 하한을 둔다
     var dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
     last = now;
-    try {
-      Dash.rest.update(dt);
-      Dash.vehicle.step(state, input, dt);
-      current.update(state);
-      Dash.controls.sync(state);
-      Dash.sound.update(state);
-      renderToast();
-      if (state.engineOn !== wakeWanted) keepAwake(state.engineOn);
-    } catch (e) {
-      if (errors++ < 5) console.error(e); // 같은 오류로 콘솔이 넘치지 않게
-    }
+    // 한 곳에서 오류가 나도 나머지(화면·소리·알림)는 계속 돈다
+    safely(function () { Dash.rest.update(dt); });
+    safely(function () { Dash.vehicle.step(state, input, dt); });
+    safely(function () { current.update(state); });
+    safely(function () { Dash.controls.sync(state); });
+    safely(function () { Dash.sound.update(state); });
+    safely(renderToast);
+    safely(renderModeFlash);
+    if (state.engineOn !== wakeWanted) safely(function () { keepAwake(state.engineOn); });
     // 과속방지턱을 세게 넘으면 계기판이 흔들린다
     var shake = state.shake > 0
       ? 'translate(' + ((Math.random() - 0.5) * 14 * state.shake).toFixed(1) + 'px,' + ((Math.random() - 0.5) * 14 * state.shake).toFixed(1) + 'px)'
@@ -186,6 +202,11 @@
     if (cluster.style.transform !== shake) cluster.style.transform = shake;
   }
   requestAnimationFrame(frame);
+
+  // 이름·면허증·놀이 시간 기록을 브라우저가 공간 정리하면서 지우지 않게 부탁한다 (지원하는 곳만)
+  try {
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+  } catch (e) { /* 미지원 */ }
 
   // 인터넷 주소(https)로 열었을 때: 오프라인에서도 열리게 파일을 보관한다 (sw.js)
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {

@@ -5,7 +5,26 @@
 var CACHE = 'dash-v1';
 var SLOW_MS = 3000;
 
-self.addEventListener('install', function () { self.skipWaiting(); });
+// 설치될 때 index.html 이 부르는 파일을 모두 미리 받아 둔다.
+// (처음 연 그 순간에는 서비스 워커가 아직 일하지 않아서, 이게 없으면 두 번째로 열어야 오프라인이 된다)
+// 파일 목록은 index.html 에서 읽으니 새 파일을 추가해도 여기를 고칠 필요가 없다.
+self.addEventListener('install', function (e) {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then(function (cache) {
+    return fetch('./index.html', { cache: 'no-cache' }).then(function (res) {
+      if (!res.ok) return;
+      var copy = res.clone();
+      var copy2 = res.clone();
+      return res.text().then(function (html) {
+        var urls = ['./manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
+        html.replace(/(?:src|href)="([^"#:]+\.(?:js|css|png|webmanifest))"/g, function (_, url) { urls.push('./' + url); });
+        return Promise.all([cache.put('./index.html', copy), cache.put('./', copy2)].concat(urls.map(function (url) {
+          return fetch(url, { cache: 'no-cache' }).then(function (r) { if (r.ok) return cache.put(url, r); }).catch(function () {});
+        })));
+      });
+    }).catch(function () { /* 인터넷이 없으면 다음에 */ });
+  }));
+});
 self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
 
 function fromCache(req) {

@@ -39,6 +39,12 @@
 }
 .dg[data-mode="eco"] { --accent: #39d353; }
 .dg[data-mode="sport"] { --accent: #ff3b30; }
+/* 주행 모드마다 화면 분위기가 바뀐다 (어두운 화면만. 화이트는 글자 색만) */
+.dg[data-mode="eco"]:not(.light) { --bg1: #0c2216; }
+.dg[data-mode="sport"]:not(.light) { --bg1: #2a0d0b; }
+.dg[data-mode="eco"] .dg-speed b { color: var(--accent); }
+.dg[data-mode="sport"] .dg-speed b { font-weight: 500; font-style: italic; text-shadow: 0 0 22px rgba(255, 59, 48, 0.55); }
+.dg[data-mode="sport"] .dg-rpm-segs i.on { background: linear-gradient(#ffb020, #ff3b30); }
 .dg.ap { --accent: #3d8bff; }
 
 .dg-stage {

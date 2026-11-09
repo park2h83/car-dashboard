@@ -276,9 +276,22 @@
     repeatAlert('overspeed', s.overspeed, 1.5, dt, function () {
       emit(s, 'overspeed');
     });
-    repeatAlert('pbrake', s.parkingBrake && s.engineOn && s.pedal > 0.3 && (s.gear === 'D' || s.gear === 'R'), 3, dt, function () {
+    // 처음 타는 아이가 막히지 않게: 엑셀을 밟는데 차가 갈 수 없으면 무엇을 할지 알려 준다
+    repeatAlert('howto', s.pedal > 0.3 && !s.autopilot.on && (!s.engineOn || s.gear === 'P' || s.gear === 'N'), 4, dt, function () {
+      if (!s.engineOn) say(s, '🔑 먼저 시동! 브레이크를 밟고 ENGINE START 버튼을 눌러요');
+      else say(s, '⚙️ 브레이크를 밟고 D 를 눌러야 앞으로 가요');
+    });
+    // 전자식 주차 브레이크: 안전벨트를 매고 문을 닫은 채 D/R 에서 엑셀을 밟으면 저절로 풀린다 (요즘 차처럼)
+    var wantsToGo = s.parkingBrake && s.engineOn && s.pedal > 0.3 && (s.gear === 'D' || s.gear === 'R');
+    if (wantsToGo && s.seatbelt && !anyDoorOpen(s)) {
+      s.parkingBrake = false;
+      emit(s, 'click');
+      say(s, '🅿️ 주차 브레이크가 저절로 풀렸어요');
+    }
+    repeatAlert('pbrake', wantsToGo && s.parkingBrake, 3, dt, function () {
       emit(s, 'chime');
-      say(s, '주차 브레이크를 풀어요');
+      say(s, !s.seatbelt ? '🔔 안전벨트를 매면 주차 브레이크가 풀려요'
+        : anyDoorOpen(s) ? '🚪 문을 닫으면 주차 브레이크가 풀려요' : '주차 브레이크를 풀어요');
     });
     repeatAlert('fcw', s.fcw, 0.45, dt, function () {
       emit(s, 'fcw');
@@ -404,7 +417,7 @@
   function cycleDriveMode(s) {
     s.driveMode = MODE_ORDER[(MODE_ORDER.indexOf(s.driveMode) + 1) % MODE_ORDER.length];
     popup(s, '주행 모드', MODES[s.driveMode].name);
-    emit(s, 'click');
+    emit(s, 'mode', { mode: s.driveMode });
   }
 
   function toggleClimate(s) {

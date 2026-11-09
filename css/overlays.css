@@ -101,6 +101,28 @@
 .lic-save-img { display: block; width: 100%; max-width: 640px; margin: 0 auto; border-radius: 22px; -webkit-touch-callout: default; }
 .lic-card { width: 100%; max-width: 640px; height: auto; border-radius: 22px; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25); }
 
+/* 운전자 확인: 면허증 위에 빨간 도장이 쾅 */
+.lic-check { position: relative; width: 100%; max-width: 640px; margin: 0 auto; }
+.lic-check .lic-card { display: block; }
+.lic-stamp {
+  position: absolute;
+  right: 3%;
+  top: 24%;
+  padding: 4px 14px;
+  border: 6px solid #e0322b;
+  border-radius: 14px;
+  color: #e0322b;
+  font-size: 36px;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.7);
+  transform: rotate(-12deg);
+  animation: lic-stamp 0.45s 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes lic-stamp {
+  from { opacity: 0; transform: rotate(-12deg) scale(3); }
+  to { opacity: 1; transform: rotate(-12deg) scale(1); }
+}
+
 /* ---- 쉬는 시간 ---- */
 #rest.rest-lock { background: linear-gradient(#0d1b3a, #1d2f5a); }
 .rest-lock .rest-box { background: transparent; box-shadow: none; color: #fff; }

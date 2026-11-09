@@ -40,7 +40,7 @@
         { label: '🤖 자율주행', act: v.toggleAutopilot, on: function (s) { return s.autopilot.on; }, cls: 'ap',
           value: function (s) { return s.autopilot.on ? s.autopilot.target + 'km/h' : '끔'; } },
         { label: '차로 유지', act: v.toggleLaneAssist, on: function (s) { return s.laneAssist; } },
-        { label: 'ESC OFF', act: v.toggleEsc, on: function (s) { return s.escOff; }, cls: 'warn' }
+        { label: '🪪 운전자 확인', act: function () { Dash.license.driverCheck(); } }
       ]
     },
     {
@@ -73,8 +73,6 @@
         { stepper: true, label: '풍량', value: function (s) { return s.climate.fan + '단'; },
           minus: function (s) { v.climateFan(s, -1); }, plus: function (s) { v.climateFan(s, 1); } },
         { label: '바람 방향', act: v.climateMode, value: function (s) { return v.AIR_MODE_NAMES[s.climate.mode]; } },
-        { label: '내기 순환', act: v.toggleRecirc, on: function (s) { return s.climate.recirc; } },
-        { label: '앞유리 성에', act: v.toggleDefrostFront, on: function (s) { return s.climate.defrostFront; }, cls: 'warn' },
         { label: '뒷유리 열선', act: v.toggleDefrostRear, on: function (s) { return s.climate.defrostRear; }, cls: 'warn' }
       ]
     },
