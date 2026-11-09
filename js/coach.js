@@ -6,19 +6,18 @@
   'use strict';
 
   var U = Dash.util;
-  var KEY = 'dash.coach';
   var TURN_NOW_KM = 0.15;      // 갈림길이 이만큼 가까우면 "지금 핸들을 돌려요"
-  var DONE_SHOW = 1.6;         // 다 하면 칭찬을 보여 주는 시간 (초)
+  var DONE_SHOW = 1.6;         // 다 하면 칭찬을 보여 주는 시간 (초, 최소)
+  // 얼마나 자주·얼마나 오래는 부모님 설정 (js/prefs.js: coachEvery, coachStay)
 
-  var state, root, enabled = true;
+  var state, root;
   var card = null;             // { sit, ctx, done: [], finished, t, el }
   var cooldown = {};
   var seenSeg = {};            // 같은 구간(보호구역·갈림길 …)에서는 한 번만
   var engineOffT = 0;
   var glowing = [];
 
-  function load() { try { return localStorage.getItem(KEY) !== 'off'; } catch (e) { return true; } }
-  function save() { try { localStorage.setItem(KEY, enabled ? 'on' : 'off'); } catch (e) { /* 무시 */ } }
+  function enabled() { return Dash.prefs.get('coachOn'); }
 
   // ---------- 그림 ----------
 
@@ -317,7 +316,7 @@
 
   function close() {
     if (card) {
-      cooldown[card.sit.id] = card.sit.cooldown || 25;
+      cooldown[card.sit.id] = Math.max(card.sit.cooldown || 0, Dash.prefs.get('coachEvery'));
       if (card.ctx && card.ctx.seg) seenSeg[card.sit.id] = card.ctx.seg;
     }
     card = null;
@@ -348,7 +347,7 @@
   }
 
   function blocked(s) {
-    return !enabled || s.parking.on || s.autopilot.on || s.restDue ||
+    return !enabled() || s.parking.on || s.autopilot.on || s.restDue ||
       (Dash.rest && Dash.rest.isOpen()) || ['license', 'theme-picker', 'setup', 'scorecard'].some(function (id) {
         var el = document.getElementById(id); return el && !el.hidden;
       });
@@ -371,14 +370,12 @@
     init: function (s) {
       state = s;
       root = document.getElementById('coach');
-      enabled = load();
     },
-    isOn: function () { return enabled; },
+    isOn: function () { return enabled(); },
     toggle: function () {
-      enabled = !enabled;
-      save();
-      if (!enabled && card) close();
-      U.popup(state, '운전 코치', enabled ? '켬' : '끔');
+      Dash.prefs.set('coachOn', !enabled());
+      if (!enabled() && card) close();
+      U.popup(state, '운전 코치', enabled() ? '켬' : '끔');
     },
     isOpen: function () { return !!card; },
     // 카드에 핸들이 나와 있으면 핸들을 쓴다 (js/wheel.js)
@@ -406,14 +403,21 @@
       if (!card) return;
 
       card.t += dt;
+      card.age = (card.age || 0) + dt;
+      var stay = Dash.prefs.get('coachStay');
       if (card.finished) {
-        if (card.t > DONE_SHOW) close();
+        // 칭찬은 잠깐이라도, 카드 자체는 정한 시간만큼은 보여 준다
+        if (card.t > DONE_SHOW && card.age > stay) close();
         return;
       }
       var c = card, sitNow = c.sit;
-      if (!sitNow.still(s, c.ctx)) {
-        if (sitNow.missed && !c.done.every(Boolean)) U.say(s, sitNow.missed);
-        close();
+      if (c.over || !sitNow.still(s, c.ctx)) {
+        if (!c.over) {
+          c.over = true;
+          setGlow([]);
+          if (sitNow.missed && !c.done.every(Boolean)) U.say(s, sitNow.missed);
+        }
+        if (c.age > stay) close();
         return;
       }
       var glow = null;

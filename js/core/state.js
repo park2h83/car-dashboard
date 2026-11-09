@@ -150,6 +150,11 @@
       restSoon: false,    // 곧 쉬어야 함 (휴식 권장 경고등)
       restDue: false,     // 지금 쉬어야 함 → 차가 멈춘다
 
+      // ---- 부모님 설정에서 정하는 놀이 옵션 (js/prefs.js 가 채운다) ----
+      speedCap: 220,          // 가장 빠른 속도 (km/h)
+      scoreOn: true,          // 운전 점수
+      parkingMission: true,   // 도착하면 주차 미션
+
       // ---- 앞유리 운전 화면 (js/windshield.js) ----
       driveView: false,   // 위에 앞유리, 아래에 계기판
       steer: 0,           // 핸들 (-1 왼쪽 끝 ~ 1 오른쪽 끝). 앞유리 화면에서 돌리면 차선을 한 칸씩 옮긴다

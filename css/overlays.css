@@ -184,6 +184,22 @@
 .rest-chip.on { background: #3a8bff; border-color: #3a8bff; color: #fff; }
 .rest-used { font-size: 19px; color: #4a5260; }
 
+/* 부모님 설정 탭 */
+.rest-tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 4px 0 10px; }
+.rest-tab {
+  min-height: 58px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 2px solid #d8d2c4;
+  background: #fff;
+  color: #1d2430;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 800;
+}
+.rest-tab.on { background: #1d2430; border-color: #1d2430; color: #fff; }
+.rest-actions.left { justify-content: flex-start; margin-top: 8px; }
+
 /* 시간 직접 정하기: [−5] [−1] 20분 [+1] [+5] */
 .rest-stepper { display: flex; align-items: center; gap: 8px; }
 .rest-step {

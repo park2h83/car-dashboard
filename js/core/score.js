@@ -104,6 +104,7 @@
         else sc.active = false;
       }
       prevEngine = s.engineOn;
+      if (!s.scoreOn) { sc.active = false; sc.pop = null; return; } // 부모님 설정에서 껐으면
       if (!sc.active) return;
 
       var ai = s.autopilot.on;

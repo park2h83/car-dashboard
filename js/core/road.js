@@ -199,8 +199,12 @@
     if (s.autopilot.on) {
       Dash.autopilot.onArrive(s, name);
     } else {
-      U.announce(s, '🏁 ' + U.kidCall() + ', ' + name + '에 도착했어!', U.kidCall() + ', ' + name + '에 도착했어요. 이제 주차해 봐요');
-      Dash.parking.arrive(s); // 천천히 가면 주차 미션 (js/core/parking.js)
+      if (s.parkingMission) {
+        U.announce(s, '🏁 ' + U.kidCall() + ', ' + name + '에 도착했어!', U.kidCall() + ', ' + name + '에 도착했어요. 이제 주차해 봐요');
+        Dash.parking.arrive(s); // 천천히 가면 주차 미션 (js/core/parking.js)
+      } else {
+        U.announce(s, '🏁 ' + U.kidCall() + ', ' + name + '에 도착했어!', U.kidCall() + ', ' + name + '에 도착했어요. 안내를 종료합니다');
+      }
     }
   }
 

@@ -206,12 +206,20 @@
       '<span class="rest-value">' + value + '분</span>' + STEPS.slice(2).map(btn).join('') + '</div>';
   }
 
-  function settingsScreen() {
-    var isResting = resting();
-    setMode('settings',
-      '<div class="rest-box wide">' +
-      '  <h2>👨‍👩‍👦 부모님 설정</h2>' +
-      '  <div class="rest-row"><b>운전 시간 제한</b>' +
+  var settingsTab = 'time';
+
+  // 탭: ⏱ 시간 · 🧑‍🏫 코치 · 🔊 소리 · 🚗 운전 · 🖥 화면 (시간 말고는 js/prefs.js 의 SCHEMA 로 그린다)
+  function prefRows(tab) {
+    return Dash.prefs.SCHEMA.filter(function (it) { return it.tab === tab; }).map(function (it) {
+      var now = Dash.prefs.get(it.key);
+      return '<div class="rest-row"><b>' + it.label + '</b><div>' + it.options.map(function (o, i) {
+        return '<button type="button" class="rest-chip' + (o[0] === now ? ' on' : '') + '" data-pref="' + it.key + '" data-idx="' + i + '">' + o[1] + '</button>';
+      }).join('') + '</div></div>';
+    }).join('');
+  }
+
+  function timeRows(isResting) {
+    return '  <div class="rest-row"><b>운전 시간 제한</b>' +
       (settings.limitMin
         ? stepper('limit', settings.limitMin) + '<div>' + chips(LIMITS, settings.limitMin, 'limit', function (m) { return m + '분'; }) +
           '<button type="button" class="rest-chip" data-limit="0">제한 없음</button></div>'
@@ -221,16 +229,49 @@
       '<div>' + chips(RESTS, settings.restMin, 'rest', function (m) { return m + '분'; }) + '</div></div>' +
       '  <div class="rest-row"><b>오늘</b><div class="rest-used">' + mmss(usage.played) + ' 놀았어요' +
       (settings.limitMin ? ' · 남은 시간 ' + mmss(left()) : '') + (isResting ? ' · 쉬는 중 (' + mmss((usage.restUntil - Date.now()) / 1000) + ')' : '') + '</div></div>' +
-      '  <div class="rest-actions">' +
+      '  <div class="rest-actions left">' +
       '    <button type="button" class="rest-btn" data-act="reset">놀이 시간 처음부터</button>' +
-      '    <button type="button" class="rest-btn" data-act="name">✏️ 이름 바꾸기</button>' +
       (isResting ? '    <button type="button" class="rest-btn" data-act="end">쉬는 시간 끝내기</button>' : '') +
+      '  </div>';
+  }
+
+  function settingsScreen() {
+    var isResting = resting();
+    var body = settingsTab === 'time' ? timeRows(isResting) : prefRows(settingsTab);
+    if (settingsTab === 'screen') {
+      body += '<div class="rest-actions left"><button type="button" class="rest-btn" data-act="name">✏️ 이름 바꾸기</button></div>';
+    }
+    var box = root.querySelector('.rest-box.wide');
+    var scroll = box ? box.scrollTop : 0;
+    setMode('settings',
+      '<div class="rest-box wide">' +
+      '  <h2>👨‍👩‍👦 부모님 설정</h2>' +
+      '  <div class="rest-tabs">' + Dash.prefs.TABS.map(function (t) {
+        return '<button type="button" class="rest-tab' + (t.id === settingsTab ? ' on' : '') + '" data-ptab="' + t.id + '">' + t.name + '</button>';
+      }).join('') + '</div>' +
+      body +
+      '  <div class="rest-actions">' +
       '    <button type="button" class="rest-btn primary" data-act="close">닫기</button>' +
       '  </div>' +
       '</div>', 'rest-gate');
+    // 같은 탭에서 값을 바꿨으면 보던 자리 그대로
+    var nb = root.querySelector('.rest-box.wide');
+    if (nb && box) nb.scrollTop = scroll;
   }
 
   function settingsClick(t) {
+    if (t.hasAttribute('data-ptab')) {
+      settingsTab = t.getAttribute('data-ptab');
+      settingsScreen();
+      var nb = root.querySelector('.rest-box.wide');
+      if (nb) nb.scrollTop = 0;
+      return;
+    }
+    if (t.hasAttribute('data-pref')) {
+      var it = Dash.prefs.SCHEMA.filter(function (x) { return x.key === t.getAttribute('data-pref'); })[0];
+      if (it) Dash.prefs.set(it.key, it.options[parseInt(t.getAttribute('data-idx'), 10)][0]);
+      return settingsScreen();
+    }
     if (t.hasAttribute('data-limit')) settings.limitMin = parseInt(t.getAttribute('data-limit'), 10);
     else if (t.hasAttribute('data-rest')) settings.restMin = parseInt(t.getAttribute('data-rest'), 10);
     else if (t.hasAttribute('data-step')) {

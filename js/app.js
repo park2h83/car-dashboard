@@ -119,6 +119,7 @@
   Dash.setup.init();
   Dash.wheel.init(input);
   Dash.windshield.init(state);
+  Dash.prefs.init(state);
   Dash.coach.init(state);
   Dash.parkview.init(state);
   Dash.scorecard.init(state);

@@ -129,6 +129,9 @@
     if (s.parkingBrake) decel += PARKING_BRAKE_DECEL;
     if (s.gear === 'P') decel += BRAKE_DECEL;
 
+    // 부모님이 정한 가장 빠른 속도: 넘으면 엑셀이 안 듣고 서서히 줄어든다 (갑자기 뚝 떨어지지 않게)
+    var cap = Math.min(MAX_SPEED, s.speedCap || MAX_SPEED);
+    if (s.gear !== 'R' && s.speed >= cap && accel > 0) accel = 0;
     var maxSpeed = s.gear === 'R' ? MAX_REVERSE_SPEED : MAX_SPEED;
     s.speed = clamp(s.speed + (accel - decel) * dt, 0, maxSpeed);
 

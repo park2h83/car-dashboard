@@ -6,7 +6,9 @@
 (function (Dash) {
   'use strict';
 
-  var MASTER_VOLUME = 0.8;
+  var MASTER_VOLUME = 0.8;    // 부모님 설정에서 바꾼다 (js/prefs.js)
+  var engineLevel = 1;
+  var voiceOn = true;
 
   var ctx = null;
   var master = null;
@@ -249,7 +251,7 @@
   var speakTimer = 0;
   var utterance = null; // Safari 는 말하는 도중 이 객체가 지워지면 말이 끊겨서 붙잡아 둔다
   function speak(text) {
-    if (muted || document.hidden || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    if (muted || !voiceOn || document.hidden || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
     var synth = window.speechSynthesis;
     function say() {
       try {
@@ -282,7 +284,7 @@
     });
     engine.filter.frequency.setTargetAtTime(300 + modeTone + s.rpm * 0.25 + s.throttle * 1500, t, 0.05);
     var engineVol = s.engineOn ? (0.18 + s.throttle * 0.25 + (s.rpm / Dash.vehicle.LIMIT_RPM) * 0.15) * modeVol : 0;
-    engine.gain.gain.setTargetAtTime(engineVol, t, s.engineOn ? 0.05 : 0.25);
+    engine.gain.gain.setTargetAtTime(engineVol * engineLevel, t, s.engineOn ? 0.05 : 0.25);
 
     // 경적, ABS
     loops.horn.gain.setTargetAtTime(s.horn ? 0.22 : 0, t, 0.015);
@@ -346,6 +348,18 @@
     },
 
     isMuted: function () { return muted; },
+
+    // 부모님 설정: 전체 소리 크기, 엔진 소리 크기(0 이면 끔)
+    setVolume: function (level, engineMul) {
+      MASTER_VOLUME = level;
+      engineLevel = engineMul;
+      if (master) master.gain.setTargetAtTime(muted ? 0 : MASTER_VOLUME, now(), 0.05);
+    },
+    // 부모님 설정: 내비·AI·코치가 말로 안내할지
+    setVoice: function (on) {
+      voiceOn = on;
+      if (!on && window.speechSynthesis) window.speechSynthesis.cancel();
+    },
 
     update: function (s) {
       var events = s.events;
