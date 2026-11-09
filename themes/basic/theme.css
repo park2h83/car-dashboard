@@ -1,0 +1,95 @@
+/* 기본 테마 (개발용). 모든 규칙은 .theme-basic 아래에 둔다. */
+.theme-basic .tb {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3vh 4vw 2vh;
+  background: radial-gradient(ellipse at 50% 40%, #151b22, #000 70%);
+  font-variant-numeric: tabular-nums;
+}
+
+.theme-basic .tb-indicators {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.theme-basic .tb-ind {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  color: #fff;
+  opacity: 0.1;
+}
+.theme-basic .tb-ind svg { width: 100%; height: 100%; }
+.theme-basic .tb-ind.on { opacity: 1; }
+.theme-basic .tb-ind.on.green { color: #39d353; }
+.theme-basic .tb-ind.on.blue { color: #3d8bff; }
+.theme-basic .tb-ind.on.red { color: #ff4d4d; }
+.theme-basic .tb-ind.on.amber { color: #ffb020; }
+.theme-basic .tb-ind.on.white { color: #e8ecf1; }
+
+.theme-basic .tb-limit { text-align: center; color: #7d8794; font-size: 15px; }
+.theme-basic .tb-limit b { color: #e8ecf1; font-size: 20px; }
+.theme-basic .tb-limit.over b { color: #ff4d4d; }
+
+.theme-basic .tb-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4vw;
+}
+.theme-basic .tb-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.theme-basic .tb-center { align-items: center; flex: 0 0 auto; }
+
+.theme-basic .tb-label { color: #7d8794; font-size: 14px; }
+.theme-basic .tb-value { font-size: 32px; font-weight: 600; }
+.theme-basic .tb-speed { font-size: 18vh; font-weight: 200; line-height: 1; }
+.theme-basic .tb-unit { color: #7d8794; font-size: 16px; }
+.theme-basic .tb-gear {
+  margin-top: 1vh;
+  font-size: 34px;
+  font-weight: 700;
+  color: #4fc3ff;
+}
+
+.theme-basic .tb-bar {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: #1a1f26;
+  overflow: hidden;
+}
+.theme-basic .tb-fill {
+  height: 100%;
+  width: 0;
+  background: #4fc3ff;
+}
+.theme-basic .tb-fill.over { background: #ff4d4d; }
+.theme-basic .tb-fill.fuel { background: #e8ecf1; }
+.theme-basic .tb-fill.fuel.low { background: #ffb020; }
+.theme-basic .tb-fill.temp { background: linear-gradient(90deg, #3d8bff, #39d353 60%, #ff4d4d); }
+/* 6500rpm (= 7000 중 92.9%) 부터 빨간 구간 */
+.theme-basic .tb-redline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 92.9%;
+  right: 0;
+  background: rgba(255, 77, 77, 0.35);
+}
+
+.theme-basic .tb-footer {
+  display: flex;
+  justify-content: center;
+  gap: 4vw;
+  color: #7d8794;
+  font-size: 15px;
+}
+.theme-basic .tb-footer b { color: #e8ecf1; font-weight: 600; }

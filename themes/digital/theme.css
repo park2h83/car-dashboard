@@ -1,0 +1,431 @@
+/* 디지털 테마 (어두운 화면 / 화이트). 이 테마 전용 루트 클래스 .dg 아래에만 규칙을 둔다.
+   .dg-stage 안의 좌표는 1600x680 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다. */
+.dg {
+  --bg1: #0d131a;
+  --bg2: #020304;
+  --text: #f2f5f8;
+  --muted: #8b95a1;
+  --dim: #2a323d;
+  --panel: rgba(22, 28, 36, 0.78);
+  --panel-line: #263040;
+  --road: #2b313a;
+  --road-school: #6a2323;
+  --mark: #e8ecf1;
+  --center: #f2c230;
+  --haze: #0d131a;
+  --accent: #4fc3ff;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse 70% 80% at 50% 30%, var(--bg1), var(--bg2));
+  color: var(--text);
+  font-family: -apple-system, "SF Pro Display", "Apple SD Gothic Neo", "Helvetica Neue", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.4s;
+}
+.dg.light {
+  --bg1: #ffffff;
+  --bg2: #dfe5ec;
+  --text: #121a22;
+  --muted: #5f6b77;
+  --dim: #c9d1da;
+  --panel: rgba(255, 255, 255, 0.82);
+  --panel-line: #d3dae2;
+  --road: #b4bcc6;
+  --road-school: #d9908a;
+  --mark: #ffffff;
+  --center: #f0b400;
+  --haze: #f4f6f9;
+}
+.dg[data-mode="eco"] { --accent: #39d353; }
+.dg[data-mode="sport"] { --accent: #ff3b30; }
+.dg.ap { --accent: #3d8bff; }
+
+.dg-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 680px;
+  transform-origin: 0 0;
+}
+.dg-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* 시동 꺼짐: 화면이 거의 꺼진다 */
+.dg-svg, .dg-left, .dg-top, .dg-ap { transition: opacity 0.8s; }
+.dg.off .dg-svg { opacity: 0.12; }
+.dg.off .dg-left { opacity: 0.18; }
+
+/* ---- 도로 ---- */
+.dg .haze-stop { stop-color: var(--haze); }
+.dg .rd-surface { fill: var(--road); }
+.dg .rd-surface.school { fill: var(--road-school); }
+.dg .rd-center { fill: var(--center); }
+.dg .rd-edge,
+.dg .rd-dash { fill: var(--mark); opacity: 0.85; }
+.dg .rd-post { fill: var(--mark); opacity: 0.6; }
+.dg .rd-ap-lines { fill: #4d98ff; }
+.dg .rd-ap-path { fill: rgba(61, 139, 255, 0.28); }
+.dg .rd-fcw { fill: rgba(255, 59, 48, 0.45); animation: dg-blink 0.4s steps(1) infinite; }
+.dg .rd-cam-pole { stroke: #6b7480; }
+.dg .rd-cam-box { fill: #39404a; stroke: #ff3b30; stroke-width: 1.5; }
+
+/* ---- 차 (뒤에서 본 모습) ---- */
+.dg .car-shadow { fill: rgba(0, 0, 0, 0.45); }
+.dg .car-wheel { fill: #111; }
+.dg .car-glass { fill: #1d2732; }
+.dg .car-bodyfill, .dg .car-cabin { stroke: rgba(0, 0, 0, 0.35); stroke-width: 0.03; }
+.dg .car-bumper { fill: rgba(0, 0, 0, 0.25); }
+.dg .car-tail { fill: #7a1010; }
+.dg .car-tail.on { fill: #ff3a3a; stroke: rgba(255, 60, 60, 0.45); stroke-width: 0.08; }
+.dg .car-blink { fill: #5a3a0c; }
+.dg .car-blink.on { fill: #ffc040; stroke: rgba(255, 176, 32, 0.45); stroke-width: 0.06; }
+.dg .car-reverse { fill: #fff; }
+.dg .car-plate { fill: #e9edf2; }
+.dg .car.ego .car-bodyfill,
+.dg .car.ego .car-cabin { stroke: #7d8794; stroke-width: 0.025; }
+.dg .car.lead .car-bodyfill,
+.dg .car.lead .car-cabin { stroke: #3d8bff; stroke-width: 0.09; }
+.dg .car.danger .car-bodyfill,
+.dg .car.danger .car-cabin { stroke: #ff3b30; stroke-width: 0.1; }
+.dg .car.beside .car-bodyfill,
+.dg .car.beside .car-cabin { stroke: #ffb020; stroke-width: 0.09; }
+
+/* ---- 경고등 ---- */
+.dg-ind {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  color: var(--text);
+  opacity: 0.08;
+}
+.dg-ind svg { width: 100%; height: 100%; }
+.dg-ind.on { opacity: 1; }
+.dg-ind.on.red { color: #ff3b30; }
+.dg-ind.on.amber { color: #ffa000; }
+.dg-ind.on.green { color: #22c55e; }
+.dg-ind.on.blue { color: #3d8bff; }
+.dg-ind.on.white { color: var(--text); }
+.dg-icons { display: flex; gap: 14px; }
+.dg-turn { position: absolute; top: 26px; width: 58px; height: 58px; }
+.dg-turn-left { left: 488px; }
+.dg-turn-right { left: 1054px; }
+.dg-bottom {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 18px;
+}
+
+/* ---- 왼쪽: 속도 ---- */
+.dg-left {
+  position: absolute;
+  left: 40px;
+  top: 22px;
+  width: 400px;
+  height: 580px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.dg-speedrow { display: flex; align-items: center; gap: 22px; margin-top: 18px; }
+.dg-limit {
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: #fff;
+  border: 9px solid #e0201b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  font-size: 34px;
+  font-weight: 800;
+}
+.dg-limit.over { animation: dg-over 0.6s steps(1) infinite; }
+@keyframes dg-over {
+  0% { background: #e0201b; color: #fff; box-shadow: 0 0 24px #ff3b30; }
+  50% { background: #fff; color: #111; box-shadow: none; }
+}
+.dg-speed { display: flex; flex-direction: column; line-height: 1; }
+.dg-speed b { font-size: 150px; font-weight: 200; letter-spacing: -6px; }
+.dg-speed b.over { color: #ff3b30; }
+.dg-speed small { font-size: 22px; color: var(--muted); margin-left: 6px; }
+
+.dg-rpm-segs { display: flex; gap: 3px; height: 26px; }
+.dg-rpm-segs i {
+  flex: 1;
+  border-radius: 3px;
+  background: var(--dim);
+  transform: skewX(-12deg);
+}
+.dg-rpm-segs i.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.dg-rpm-segs i.red { background: rgba(255, 59, 48, 0.3); }
+.dg-rpm-segs i.red.on { background: #ff3b30; box-shadow: 0 0 6px #ff3b30; }
+.dg-rpm-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 16px; color: var(--muted); }
+.dg-rpm-unit { font-size: 13px; color: var(--muted); text-align: right; }
+
+.dg-gears { display: flex; align-items: baseline; gap: 22px; font-size: 40px; font-weight: 700; color: var(--dim); }
+.dg-gears span.on { color: var(--text); text-shadow: 0 0 14px var(--accent); }
+.dg-gearnum { margin-left: -16px; font-size: 26px; color: var(--accent); }
+.dg-mode {
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.dg-gauge { display: flex; align-items: center; gap: 12px; }
+.dg-gicon { width: 28px; height: 28px; color: var(--muted); }
+.dg-gicon svg { width: 100%; height: 100%; }
+.dg-gbar { flex: 1; height: 12px; border-radius: 6px; background: var(--dim); overflow: hidden; }
+.dg-gbar i { display: block; height: 100%; width: 0; background: var(--text); border-radius: 6px; }
+.dg-gbar i.low { background: #ffa000; }
+.dg-gbar.temp i { background: linear-gradient(90deg, #4fc3ff, #22c55e 50%, #ffa000 85%, #ff3b30); }
+.dg-gbar.temp i.hot { background: #ff3b30; }
+.dg-gauge em { width: 78px; font-style: normal; font-size: 16px; color: var(--muted); text-align: right; }
+
+/* ---- 가운데: 내비 카드·자율주행·팝업·말풍선 ---- */
+.dg-top {
+  position: absolute;
+  left: 560px;
+  top: 20px;
+  width: 480px;
+  display: flex;
+  justify-content: center;
+}
+.dg-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 22px 10px 12px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+.dg-nav .nav-arrow { width: 64px; height: 64px; fill: none; stroke: var(--text); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.dg-nav b { display: block; font-size: 32px; }
+.dg-nav span { font-size: 17px; color: var(--muted); }
+.dg-roadname {
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  font-size: 18px;
+  color: var(--muted);
+}
+.dg-ap {
+  position: absolute;
+  left: 50%;
+  top: 112px;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.dg-ap.show { opacity: 1; }
+
+.dg-popup {
+  position: absolute;
+  left: 640px;
+  top: 190px;
+  width: 320px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 2px solid var(--accent);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.dg-popup.show { opacity: 1; }
+.dg-popup .t { font-size: 18px; color: var(--muted); }
+.dg-popup .v { font-size: 40px; font-weight: 700; }
+
+.dg-bubble {
+  position: absolute;
+  left: 50%;
+  top: 540px;
+  transform: translate(-50%, 8px);
+  max-width: 560px;
+  padding: 12px 22px;
+  border-radius: 20px;
+  background: #ffb020;
+  color: #1a1400;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+  pointer-events: none;
+}
+.dg-bubble.show { opacity: 1; transform: translate(-50%, 0); }
+.dg.ap .dg-bubble { background: #3d8bff; color: #fff; }
+
+/* ---- 오른쪽: 정보 카드 ---- */
+.dg-right {
+  position: absolute;
+  left: 1160px;
+  top: 22px;
+  width: 400px;
+  height: 580px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dg-right-head { display: flex; justify-content: space-between; align-items: center; }
+.dg-clock { font-size: 30px; font-weight: 600; }
+.dg-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 22px;
+  border-radius: 22px;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  overflow: hidden;
+  font-size: 18px;
+}
+.dg-foot { display: flex; justify-content: space-between; font-size: 16px; color: var(--muted); padding: 0 6px; }
+
+.dg .info-title { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+.dg .info-row { display: flex; justify-content: space-between; align-items: baseline; color: var(--muted); font-size: 17px; }
+.dg .info-row b { color: var(--text); font-size: 22px; font-weight: 600; }
+.dg .info-label { font-size: 16px; color: var(--muted); }
+.dg .info-sub { font-size: 15px; color: var(--muted); text-align: center; }
+.dg .info-bar { height: 12px; border-radius: 6px; background: var(--dim); overflow: hidden; }
+.dg .info-bar i { display: block; height: 100%; background: var(--accent); }
+.dg .info-bar.big { height: 18px; }
+.dg .info-bar.big i { background: #22c55e; }
+.dg .info-big { font-size: 64px; font-weight: 700; text-align: center; color: #22c55e; padding: 30px 0 10px; }
+.dg .info-car { height: 250px; align-self: center; overflow: visible; }
+.dg .car-body { fill: #f5f7fa; stroke: #7d8794; stroke-width: 2; }
+.dg .info-car .car-glass { fill: #2a323c; }
+.dg .tire { fill: #4b5563; }
+.dg .tire.bad { fill: #ffa000; }
+.dg .tire-psi { fill: var(--text); font-size: 16px; font-weight: 700; }
+.dg .tire-psi.bad { fill: #ffa000; }
+.dg .door { fill: none; stroke: #7d8794; stroke-width: 3; stroke-linecap: round; }
+.dg .door.open { stroke: #ff3b30; stroke-width: 4; }
+.dg .info-card .nav-arrow,
+.dg .dg-card .nav-arrow { width: 140px; height: 140px; align-self: center; fill: none; stroke: var(--text); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.dg .nav-dist { font-size: 44px; font-weight: 700; text-align: center; }
+.dg .nav-word { font-size: 20px; text-align: center; color: var(--accent); }
+.dg .clim-temps { display: flex; justify-content: space-around; font-size: 40px; font-weight: 700; }
+.dg .road-name { font-size: 26px; font-weight: 700; text-align: center; padding: 10px 0; }
+.dg .ap-state { font-size: 28px; font-weight: 700; text-align: center; color: #3d8bff; padding: 8px 0; }
+.dg .off-hint { margin-top: 110px; font-size: 22px; line-height: 1.6; text-align: center; color: var(--muted); }
+
+@keyframes dg-blink { 50% { opacity: 0.25; } }
+
+/* ---- 다가오는 표지판·신호등 ---- */
+.dg-limitcol { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dg-nextsign { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 92px; }
+.dg-nextsign svg { width: 70px; height: 70px; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4)); }
+.dg-nextsign span { font-size: 15px; color: var(--muted); }
+.dg-light {
+  position: absolute;
+  left: 1058px;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.dg-lamps { display: flex; gap: 6px; padding: 6px 8px; border-radius: 10px; background: #111; border: 2px solid #333; }
+.dg-lamps i { width: 18px; height: 18px; border-radius: 50%; background: #2a2a2a; }
+.dg-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
+.dg-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 10px #ffb020; }
+.dg-lamps i.green.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+.dg-light span { font-size: 14px; color: var(--muted); }
+
+/* ---- 길 위의 것들 ---- */
+.dg .shadow { fill: rgba(0, 0, 0, 0.4); }
+.dg .rd-zebra { fill: var(--mark); opacity: 0.9; }
+.dg .rd-bump-y { fill: #ffcf2e; }
+.dg .rd-bump-w { fill: #f5f5f5; }
+.dg .rd-closed { fill: rgba(255, 106, 0, 0.22); }
+.dg .rd-beam { fill: rgba(255, 244, 200, 0.12); }
+.dg .rd-beam.strong { fill: rgba(255, 244, 200, 0.3); }
+.dg .pole { stroke: #6b7480; }
+.dg .lamp-box { fill: #111; stroke: #333; stroke-width: 1; }
+.dg .lamp { fill: #2a2a2a; }
+.dg .lamp.red.on { fill: #ff4a40; stroke: rgba(255, 59, 48, 0.4); stroke-width: 3; }
+.dg .lamp.yellow.on { fill: #ffc040; stroke: rgba(255, 176, 32, 0.4); stroke-width: 3; }
+.dg .lamp.green.on { fill: #34d870; stroke: rgba(34, 197, 94, 0.4); stroke-width: 3; }
+
+/* ---- 터널 ---- */
+.dg.tunnel { --road: #2a2620; --haze: #120f0a; }
+.dg.light.tunnel { --road: #6f6a60; --haze: #3a352c; }
+.dg .rd-tunnel-wall { fill: #3a342a; }
+.dg .rd-tunnel-light { fill: #ffd27a; }
+
+/* ---- 비 ---- */
+.dg.wet { --road: #20262e; }
+.dg.light.wet { --road: #8f98a3; }
+.dg .rain-streak { stroke: rgba(200, 215, 235, 0.35); stroke-width: 1.2; fill: none; }
+.dg .drop { fill: rgba(210, 230, 255, 0.28); stroke: rgba(255, 255, 255, 0.55); stroke-width: 0.8; }
+.dg.light .drop { fill: rgba(120, 150, 190, 0.25); stroke: rgba(70, 100, 140, 0.5); }
+.dg .wiper-arm { stroke: #15181c; stroke-width: 6; stroke-linecap: round; }
+.dg .wiper-blade { stroke: #050607; stroke-width: 10; stroke-linecap: round; }
+.dg-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- 밤 ---- */
+.dg-dark, .dg-stars { display: none; }
+.dg.night .dg-dark, .dg.night .dg-stars { display: inline; }
+.dg-stars circle { fill: #fff; opacity: 0.7; }
+.dg.night,
+.dg.light.night {
+  /* 화이트 테마도 밤에는 눈부시지 않게 어두운 화면으로 */
+  --bg1: #0a1020;
+  --bg2: #000;
+  --text: #e9eef5;
+  --muted: #7f8a98;
+  --dim: #232b36;
+  --panel: rgba(16, 22, 32, 0.82);
+  --panel-line: #222c3a;
+  --road: #1b2028;
+  --mark: #c9d0d9;
+  --haze: #0a1020;
+}
+.dg .rd-beam { fill: rgba(255, 244, 200, 0.03); }
+.dg .rd-beam.strong { fill: rgba(255, 244, 200, 0.1); }
+.dg .rd-beam.high { fill: rgba(235, 245, 255, 0.12); }
+.dg.night .car-tail { fill: #d42020; }
+.dg.night .car-tail.on { fill: #ff4040; stroke: rgba(255, 60, 60, 0.55); stroke-width: 0.12; }
+
+/* 가로등 */
+.dg .st-pole { stroke: #6b7480; }
+.dg .st-head { fill: #9aa4b0; }
+.dg.night .st-head { fill: #ffe09a; stroke: rgba(255, 176, 32, 0.4); stroke-width: 3; }
+.dg .st-pool { fill: rgba(255, 200, 110, 0.18); }
+
+/* 주유소 */
+.dg .st-roof { fill: #e0201b; stroke: #fff; stroke-width: 1; }
+.dg .st-under { fill: rgba(240, 244, 250, 0.35); }
+.dg.night .st-under { fill: rgba(255, 250, 230, 0.55); }
+.dg .st-pillar { stroke: #c9ced6; }
+.dg .st-name { fill: #fff; font-weight: 800; }

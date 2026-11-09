@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="계기판">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <title>자동차 계기판</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/overlays.css">
+  <!-- 테마 스타일: 테마를 추가하면 여기에 한 줄 추가 -->
+  <link rel="stylesheet" href="themes/classic/theme.css">
+  <link rel="stylesheet" href="themes/digital/theme.css">
+  <link rel="stylesheet" href="themes/basic/theme.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 계기판: 선택된 테마가 이 안을 그린다 -->
+    <main id="cluster"></main>
+
+    <div id="toast" aria-live="polite"></div>
+
+    <!-- 테마 고르기 화면 (🎨 테마 버튼으로 연다. 내용은 app.js 가 만든다) -->
+    <div id="theme-picker" hidden></div>
+
+    <!-- 운전면허증 만들기 (js/license.js) -->
+    <div id="license" hidden></div>
+
+    <!-- 쉬는 시간 화면 / 부모님 설정 (js/rest.js) -->
+    <div id="rest" hidden></div>
+
+    <!-- 처음 열 때 이름 정하기 (js/setup.js) -->
+    <div id="setup" hidden></div>
+
+    <!-- 운전 조작부: 가운데 버튼들은 js/core/controls.js 의 설정으로 만들어진다 -->
+    <section id="controls">
+      <div class="ctrl-left">
+        <button class="start-btn" data-action="start" type="button">
+          <span>ENGINE</span><span>START</span><span>STOP</span>
+        </button>
+        <div class="gear-selector" role="group" aria-label="기어">
+          <button data-gear="P" type="button">P</button>
+          <button data-gear="R" type="button">R</button>
+          <button data-gear="N" type="button">N</button>
+          <button data-gear="D" type="button">D</button>
+        </div>
+      </div>
+
+      <div class="ctrl-mid">
+        <div class="ctrl-quick" id="ctrl-quick"></div>
+        <div class="ctrl-tabs" id="ctrl-tabs"></div>
+        <div class="ctrl-panel" id="ctrl-panel"></div>
+      </div>
+
+      <div class="ctrl-pedals">
+        <div class="pedal pedal-brake" data-pedal="brake">브레이크</div>
+        <div class="pedal pedal-accel" data-pedal="accel">엑셀</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="rotate-hint">📱↻ 아이패드를 가로로 돌려주세요</div>
+
+  <!-- 순서 중요: core → 테마 → app -->
+  <script src="js/config.js"></script>
+  <script src="js/core/state.js"></script>
+  <script src="js/core/util.js"></script>
+  <script src="js/core/signs.js"></script>
+  <script src="js/core/road.js"></script>
+  <script src="js/core/roadside.js"></script>
+  <script src="js/core/weather.js"></script>
+  <script src="js/core/traffic.js"></script>
+  <script src="js/core/autopilot.js"></script>
+  <script src="js/core/vehicle.js"></script>
+  <script src="js/core/warnings.js"></script>
+  <script src="js/core/sound.js"></script>
+  <script src="js/core/icons.js"></script>
+  <script src="js/core/gauge.js"></script>
+  <script src="js/core/scene.js"></script>
+  <script src="js/core/info.js"></script>
+  <script src="js/core/themes.js"></script>
+  <script src="js/core/controls.js"></script>
+  <!-- 테마 스크립트: 테마를 추가하면 여기에 한 줄 추가 -->
+  <script src="themes/classic/theme.js"></script>
+  <script src="themes/digital/theme.js"></script>
+  <script src="themes/basic/theme.js"></script>
+  <script src="js/license.js"></script>
+  <script src="js/rest.js"></script>
+  <script src="js/setup.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

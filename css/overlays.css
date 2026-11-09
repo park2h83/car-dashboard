@@ -1,0 +1,231 @@
+/* 화면 위에 뜨는 것들: 운전면허증 만들기, 쉬는 시간, 부모님 확인·설정 */
+
+#license,
+#rest,
+#setup {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.75);
+  touch-action: pan-y;
+}
+#license[hidden],
+#rest[hidden],
+#setup[hidden] { display: none; }
+#rest { z-index: 80; }  /* 쉬는 시간은 무엇보다 위에 */
+#setup { z-index: 90; } /* 이름 정하기는 쉬는 시간 화면보다도 위에 (부모님이 연다) */
+
+.lic-box,
+.rest-box {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 26px 30px 28px;
+  border-radius: 26px;
+  background: #fffaf0;
+  color: #1d2430;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+.lic-box h2,
+.rest-box h2 { margin: 6px 0 12px; font-size: 30px; }
+.lic-box p { font-size: 20px; margin: 8px 0; }
+
+.lic-close {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #d8d2c4;
+  background: #fff;
+  font-size: 22px;
+  color: #444;
+}
+
+.lic-btn,
+.rest-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  padding: 0 26px;
+  border-radius: 18px;
+  border: 3px solid #d8d2c4;
+  background: #fff;
+  color: #1d2430;
+  font: inherit;
+  font-size: 21px;
+  font-weight: 700;
+}
+.lic-btn.primary,
+.rest-btn.primary { background: #3a8bff; border-color: #3a8bff; color: #fff; }
+.lic-btn:active,
+.rest-btn:active { transform: scale(0.97); }
+.lic-actions,
+.rest-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 18px; }
+
+.lic-steps { display: inline-block; text-align: left; font-size: 22px; line-height: 2; margin: 10px 0; }
+.lic-big { font-size: 26px !important; font-weight: 800; }
+.lic-note { font-size: 15px !important; color: #7a7466; }
+
+/* 필기시험 */
+.lic-progress { font-size: 18px; font-weight: 700; color: #3a8bff; }
+.lic-question { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 8px 0 14px; }
+.lic-question p { font-size: 26px !important; font-weight: 800; }
+.lic-sign { width: 140px; height: 140px; }
+.lic-emoji { font-size: 96px; line-height: 1.1; }
+.lic-answers { display: flex; flex-direction: column; gap: 10px; align-items: stretch; max-width: 520px; margin: 0 auto; }
+.lic-btn.answer { font-size: 22px; }
+.lic-btn.answer.right { background: #22c55e; border-color: #22c55e; color: #fff; }
+.lic-btn.answer.wrong { background: #ffe1df; border-color: #ff9a92; color: #b33; }
+.lic-feedback { min-height: 32px; margin-top: 12px; font-size: 22px; font-weight: 800; }
+
+/* 사진 맞추기 */
+.lic-adjust { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.lic-crop { width: 240px; height: 320px; border-radius: 18px; border: 4px solid #3a8bff; touch-action: none; background: #ddd; }
+.lic-zoom { display: flex; align-items: center; gap: 10px; font-size: 16px; color: #7a7466; }
+.lic-zoom input { width: 240px; height: 40px; }
+
+/* 완성된 면허증 */
+.lic-save-img { display: block; width: 100%; max-width: 640px; margin: 0 auto; border-radius: 22px; -webkit-touch-callout: default; }
+.lic-card { width: 100%; max-width: 640px; height: auto; border-radius: 22px; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25); }
+
+/* ---- 쉬는 시간 ---- */
+#rest.rest-lock { background: linear-gradient(#0d1b3a, #1d2f5a); }
+.rest-lock .rest-box { background: transparent; box-shadow: none; color: #fff; }
+.rest-car { position: relative; display: inline-block; margin-top: 30px; }
+.zzz { position: absolute; right: -50px; top: -40px; font-size: 36px; font-weight: 800; color: #cfe3ff; }
+.zzz b, .zzz i { font-style: normal; display: inline-block; animation: zzz 2.4s infinite; }
+.zzz b { animation-delay: 0.4s; font-size: 44px; }
+.zzz i { animation-delay: 0.8s; font-size: 54px; }
+@keyframes zzz { 0%, 100% { opacity: 0.2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-10px); } }
+.rest-msg { font-size: 24px; line-height: 1.6; }
+.rest-time { font-size: 72px; font-weight: 800; margin: 10px 0; font-variant-numeric: tabular-nums; }
+.rest-tips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.rest-tips span { padding: 10px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.15); font-size: 18px; }
+.rest-parent {
+  margin-top: 30px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 15px;
+}
+
+/* 부모님 확인 (곱셈) */
+.rest-q { font-size: 40px; font-weight: 800; margin: 8px 0; }
+.rest-note { min-height: 24px; color: #b33; font-size: 18px; }
+.rest-pad { display: grid; grid-template-columns: repeat(3, 90px); gap: 10px; justify-content: center; }
+.rest-pad button {
+  height: 70px;
+  border-radius: 16px;
+  border: 2px solid #d8d2c4;
+  background: #fff;
+  font: inherit;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d2430;
+}
+.rest-cancel { margin-top: 14px; padding: 10px 24px; border-radius: 999px; border: 2px solid #d8d2c4; background: #fff; font: inherit; font-size: 17px; }
+
+/* 부모님 설정 */
+.rest-box.wide { width: min(820px, 100%); text-align: left; }
+.rest-box.wide h2 { text-align: center; }
+.rest-row { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.rest-row > b { font-size: 19px; }
+.rest-row > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.rest-chip {
+  min-width: 80px;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 2px solid #d8d2c4;
+  background: #fff;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+  color: #1d2430;
+}
+.rest-chip.on { background: #3a8bff; border-color: #3a8bff; color: #fff; }
+.rest-used { font-size: 19px; color: #4a5260; }
+
+/* 시간 직접 정하기: [−5] [−1] 20분 [+1] [+5] */
+.rest-stepper { display: flex; align-items: center; gap: 8px; }
+.rest-step {
+  width: 70px;
+  height: 58px;
+  border-radius: 14px;
+  border: 2px solid #d8d2c4;
+  background: #fff;
+  font: inherit;
+  font-size: 21px;
+  font-weight: 800;
+  color: #1d2430;
+}
+.rest-step:active { transform: scale(0.96); }
+.rest-value { min-width: 110px; text-align: center; font-size: 34px; font-weight: 800; color: #3a8bff; }
+.rest-off { align-self: center; font-size: 22px; font-weight: 800; color: #7a7466; margin-right: 8px; }
+
+/* ---- 처음 열 때 이름 정하기 ---- */
+#setup { background: linear-gradient(#0d1b3a, #1d2f5a); }
+.setup-box {
+  width: min(620px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 24px 30px 26px;
+  border-radius: 26px;
+  background: #fffaf0;
+  color: #1d2430;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  touch-action: pan-y;
+}
+.setup-car { font-size: 64px; line-height: 1; }
+.setup-box h2 { margin: 6px 0 14px; font-size: 30px; }
+.setup-row { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; text-align: left; }
+.setup-row b { font-size: 20px; }
+.setup-row small { font-weight: 400; color: #7a7466; font-size: 15px; }
+.setup-row input {
+  height: 62px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 3px solid #d8d2c4;
+  background: #fff;
+  color: #1d2430;
+  font: inherit;
+  font-size: 26px; /* 16px 보다 크면 아이패드가 화면을 확대하지 않는다 */
+  font-weight: 700;
+  /* 앱 전체는 글자 선택을 꺼 두었지만 입력칸은 써야 하니 켠다 */
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: manipulation;
+}
+.setup-row input:focus { outline: none; border-color: #3a8bff; }
+.setup-note { font-size: 15px; color: #7a7466; line-height: 1.6; margin: 10px 0 0; }
+.setup-actions { display: flex; gap: 12px; justify-content: center; margin-top: 18px; }
+.setup-btn {
+  min-height: 64px;
+  padding: 0 30px;
+  border-radius: 18px;
+  border: 3px solid #d8d2c4;
+  background: #fff;
+  color: #1d2430;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 800;
+}
+.setup-btn.primary { background: #3a8bff; border-color: #3a8bff; color: #fff; }
+.setup-btn:active { transform: scale(0.97); }
