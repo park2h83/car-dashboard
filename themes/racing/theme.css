@@ -1,0 +1,434 @@
+/* 레이싱카 테마. 모든 규칙은 .theme-racing 아래에 둔다.
+   .rc-stage 안의 좌표는 1600x680 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다. */
+.theme-racing .rc {
+  --accent: #4fc3ff;
+  --accent-dim: rgba(79, 195, 255, 0.25);
+  --text: #f3f5f8;
+  --muted: #8d97a3;
+  --dim: #262b33;
+  --panel: #0e1116;
+  --panel-line: #232932;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #050607;
+  color: var(--text);
+  font-family: "Avenir Next", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+/* 주행 모드: 에코 초록, 컴포트 파랑, 스포츠 빨강 (+ 카본 무늬와 굵은 테두리) */
+.theme-racing .rc[data-mode="eco"] { --accent: #39d353; --accent-dim: rgba(57, 211, 83, 0.25); }
+.theme-racing .rc[data-mode="sport"] { --accent: #ff3b30; --accent-dim: rgba(255, 59, 48, 0.3); }
+.theme-racing .rc.ap { --accent: #3d8bff; --accent-dim: rgba(61, 139, 255, 0.3); }
+
+.theme-racing .rc-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 55% 75% at 50% 55%, #14191f 0%, #050607 70%);
+  transition: opacity 0.6s;
+}
+.theme-racing .rc[data-mode="eco"] .rc-bg {
+  background: radial-gradient(ellipse 55% 75% at 50% 55%, #0d2414 0%, #040805 70%);
+}
+.theme-racing .rc[data-mode="sport"] .rc-bg {
+  background:
+    radial-gradient(ellipse 55% 75% at 50% 55%, rgba(70, 10, 6, 0.9) 0%, rgba(8, 2, 2, 0.95) 70%),
+    repeating-linear-gradient(45deg, #1a1a1c 0 6px, #0b0b0c 6px 12px);
+}
+
+.theme-racing .rc-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 680px;
+  transform-origin: 0 0;
+}
+.theme-racing .rc-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* ---- 시프트 라이트 ---- */
+.theme-racing .rc-ledbar {
+  position: absolute;
+  left: 470px;
+  top: 10px;
+  width: 660px;
+  height: 64px;
+  padding: 0 14px;
+  border-radius: 32px;
+  background: linear-gradient(#16191e, #08090b);
+  border: 2px solid #2a3039;
+  display: flex;
+  align-items: center;
+}
+.theme-racing .rc-leds { flex: 1; display: flex; justify-content: space-between; }
+.theme-racing .rc-leds i {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid #000;
+}
+.theme-racing .rc-leds i.g { background: #0f2a17; }
+.theme-racing .rc-leds i.y { background: #2e2a0c; }
+.theme-racing .rc-leds i.r { background: #2e0d0d; }
+/* 켜진 LED: 매 프레임 바뀌므로 흐린 그림자 대신 가운데가 밝은 그라데이션으로 빛나 보이게 */
+.theme-racing .rc-leds i.g.on { background: radial-gradient(circle at 40% 35%, #e6ffe9 0, #22e05a 45%, #0f8a33 100%); border-color: #7dffa0; }
+.theme-racing .rc-leds i.y.on { background: radial-gradient(circle at 40% 35%, #fffbe0 0, #ffd21f 45%, #b38a00 100%); border-color: #ffe98a; }
+.theme-racing .rc-leds i.r.on { background: radial-gradient(circle at 40% 35%, #ffe3e3 0, #ff2a2a 45%, #a80f0f 100%); border-color: #ff9a9a; }
+.theme-racing .rc-leds i.shift { background: radial-gradient(circle at 40% 35%, #f0f5ff 0, #2f7dff 45%, #0f3fa8 100%); border-color: #bcd4ff; }
+
+/* ---- RPM 계기 ---- */
+.theme-racing .rc-ring { fill: none; stroke: var(--accent); stroke-width: 4; transition: stroke 0.4s; }
+.theme-racing .rc[data-mode="sport"] .rc-ring,
+.theme-racing .rc[data-mode="eco"] .rc-ring { stroke-width: 8; }
+.theme-racing .rc-ap-ring { fill: none; stroke: #3d8bff; stroke-width: 4; stroke-dasharray: 14 10; opacity: 0; transition: opacity 0.4s; }
+.theme-racing .rc.ap .rc-ap-ring { opacity: 0.9; }
+.theme-racing .rc-track { fill: none; stroke: #1b2027; stroke-width: 34; }
+.theme-racing .rc-sweep { fill: none; stroke: var(--accent); stroke-width: 34; transition: stroke 0.3s; }
+.theme-racing .rc-sweep.hot { stroke: #ff2a2a; }
+.theme-racing .rc-red { fill: none; stroke: #d0141a; stroke-width: 10; }
+.theme-racing .rc .tick-major { stroke: #f3f5f8; stroke-width: 4; }
+.theme-racing .rc .tick-minor { stroke: #7a8490; stroke-width: 2; }
+.theme-racing .rc .tick-major.hot,
+.theme-racing .rc .tick-minor.hot { stroke: #ff3b30; }
+.theme-racing .rc .tick-label { fill: #f3f5f8; font-size: 32px; font-weight: 800; font-style: italic; }
+.theme-racing .rc .tick-label.hot { fill: #ff3b30; }
+.theme-racing .rc-pointer { fill: #fff; stroke: rgba(255, 255, 255, 0.35); stroke-width: 5; paint-order: stroke; }
+.theme-racing .rc-unit { fill: var(--muted); font-size: 18px; font-weight: 700; letter-spacing: 2px; }
+.theme-racing .rc-gear { fill: #fff; font-size: 210px; font-weight: 900; }
+.theme-racing .rc-gear.rev { fill: #ffb020; }
+.theme-racing .rc-gear.park { fill: #c9d1da; }
+.theme-racing .rc-speed { fill: #fff; font-size: 70px; font-weight: 800; }
+.theme-racing .rc .rc-speed.over { fill: #ff3b30; }
+.theme-racing .rc[data-mode="sport"] .rc-speed,
+.theme-racing .rc[data-mode="sport"] .rc-gear { font-style: italic; }
+.theme-racing .rc[data-mode="sport"] .rc-gear { fill: #fff2f0; }
+.theme-racing .rc[data-mode="eco"] .rc-speed { fill: #b6f5c3; }
+.theme-racing .rc-kmh { fill: var(--muted); font-size: 20px; font-weight: 700; }
+
+.theme-racing .rc-prnd {
+  position: absolute;
+  left: 700px;
+  top: 252px;
+  width: 200px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 30px;
+  font-weight: 800;
+  color: #3a424d;
+}
+.theme-racing .rc-prnd span.on { color: var(--accent); }
+
+/* 시동 꺼짐: 계기 조명이 꺼진다 */
+.theme-racing .rc-svg, .theme-racing .rc-left, .theme-racing .rc-right, .theme-racing .rc-prnd, .theme-racing .rc-ledbar { transition: opacity 0.6s; }
+.theme-racing .rc.off .rc-svg { opacity: 0.25; }
+.theme-racing .rc.off .rc-prnd,
+.theme-racing .rc.off .rc-ledbar { opacity: 0.35; }
+.theme-racing .rc.off .rc-left { opacity: 0.4; }
+.theme-racing .rc.off .rc-right .rc-card { opacity: 0.8; }
+
+/* ---- 경고등 ---- */
+.theme-racing .rc-group { position: absolute; display: flex; gap: 14px; }
+.theme-racing .rc-top-left { left: 34px; top: 20px; }
+.theme-racing .rc-top-right { right: 34px; top: 20px; }
+.theme-racing .rc-bottom { left: 50%; bottom: 8px; transform: translateX(-50%); gap: 18px; }
+.theme-racing .rc-ind {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  color: #fff;
+  opacity: 0.08;
+}
+.theme-racing .rc-ind svg { width: 100%; height: 100%; }
+.theme-racing .rc-ind.on { opacity: 1; }
+.theme-racing .rc-ind.on.red { color: #ff3b30; }
+.theme-racing .rc-ind.on.amber { color: #ffb020; }
+.theme-racing .rc-ind.on.green { color: #2fdc5a; }
+.theme-racing .rc-ind.on.blue { color: #3d8bff; }
+.theme-racing .rc-ind.on.white { color: #e8ecf1; }
+.theme-racing .rc-turn { position: absolute; top: 12px; width: 60px; height: 60px; }
+.theme-racing .rc-turn-left { left: 396px; }
+.theme-racing .rc-turn-right { left: 1144px; }
+
+/* ---- 왼쪽: 도로·랩 타이머·연료 ---- */
+.theme-racing .rc-left {
+  position: absolute;
+  left: 30px;
+  top: 86px;
+  width: 490px;
+  height: 530px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.theme-racing .rc-roadrow { position: relative; height: 104px; display: flex; align-items: flex-start; gap: 20px; }
+.theme-racing .rc-limit {
+  flex: 0 0 auto;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: #fff;
+  border: 9px solid #e0201b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  font-size: 36px;
+  font-weight: 800;
+}
+.theme-racing .rc-limit.over { animation: rc-over 0.6s steps(1) infinite; }
+@keyframes rc-over {
+  0% { background: #e0201b; color: #fff; box-shadow: 0 0 24px #ff3b30; }
+  50% { background: #fff; color: #111; box-shadow: none; }
+}
+.theme-racing .rc-light,
+.theme-racing .rc-sign {
+  width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  color: var(--muted);
+}
+.theme-racing .rc-light { padding-top: 22px; }
+.theme-racing .rc-sign svg { width: 72px; height: 72px; }
+.theme-racing .rc-lamps { display: flex; gap: 5px; padding: 5px 7px; border-radius: 9px; background: #111; border: 2px solid #333; }
+.theme-racing .rc-lamps i { width: 18px; height: 18px; border-radius: 50%; background: #2a2a2a; }
+.theme-racing .rc-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
+.theme-racing .rc-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 10px #ffb020; }
+.theme-racing .rc-lamps i.green.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+.theme-racing .rc-camera {
+  position: absolute;
+  left: 340px;
+  top: 30px;
+  font-size: 20px;
+  color: #ffb020;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.theme-racing .rc-camera.show { opacity: 1; }
+
+.theme-racing .rc-lap {
+  padding: 12px 20px 14px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 2px solid var(--panel-line);
+  border-left: 8px solid #ffd21f;
+}
+.theme-racing .rc-lap.flash { border-color: #ffd21f; background: #241f06; }
+.theme-racing .rc-lap-head { display: flex; justify-content: space-between; align-items: baseline; }
+.theme-racing .rc-lap-no { font-size: 26px; font-weight: 900; font-style: italic; color: #ffd21f; letter-spacing: 1px; }
+.theme-racing .rc-lap-flag { font-size: 20px; font-weight: 800; color: #ffd21f; opacity: 0; }
+.theme-racing .rc-lap.flash .rc-lap-flag { opacity: 1; }
+.theme-racing .rc-lap-time { font-size: 64px; font-weight: 800; line-height: 1.1; letter-spacing: 1px; }
+.theme-racing .rc-lap-rows { display: flex; gap: 24px; font-size: 16px; color: var(--muted); }
+.theme-racing .rc-lap-rows b { margin-left: 8px; font-size: 22px; color: var(--text); }
+
+.theme-racing .rc-gauge { display: flex; align-items: center; gap: 12px; }
+.theme-racing .rc-gicon { width: 30px; height: 30px; color: var(--muted); }
+.theme-racing .rc-gicon svg { width: 100%; height: 100%; }
+.theme-racing .rc-gbar { flex: 1; height: 16px; border-radius: 3px; background: var(--dim); overflow: hidden; transform: skewX(-14deg); }
+.theme-racing .rc-gbar i { display: block; height: 100%; width: 0; background: #e8ecf1; }
+.theme-racing .rc-gbar i.low { background: #ffa000; }
+.theme-racing .rc-gbar.temp i { background: linear-gradient(90deg, #4fc3ff, #22c55e 50%, #ffa000 85%, #ff3b30); }
+.theme-racing .rc-gbar.temp i.hot { background: #ff3b30; }
+.theme-racing .rc-gauge em { width: 84px; font-style: normal; font-size: 18px; color: var(--muted); text-align: right; }
+
+.theme-racing .rc-pedals {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  align-items: center;
+  row-gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.theme-racing .rc-pbar { height: 14px; border-radius: 3px; background: var(--dim); overflow: hidden; }
+.theme-racing .rc-pbar i { display: block; height: 100%; transform-origin: 0 50%; transform: scaleX(0); }
+.theme-racing .rc-pbar.thr i { background: #22e05a; }
+.theme-racing .rc-pbar.brk i { background: #ff2a2a; }
+.theme-racing .rc-badges { display: flex; gap: 10px; align-items: center; min-height: 40px; }
+.theme-racing .rc-mode {
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #000;
+  font-size: 18px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+.theme-racing .rc[data-mode="sport"] .rc-mode { animation: rc-pulse 1s ease-in-out infinite; }
+@keyframes rc-pulse { 50% { opacity: 0.55; } }
+.theme-racing .rc-ap {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 330px;
+}
+.theme-racing .rc-ap:empty { display: none; }
+.theme-racing .rc-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--panel-line);
+  font-size: 16px;
+  color: var(--muted);
+}
+
+/* ---- 오른쪽: 내비·정보창 ---- */
+.theme-racing .rc-right {
+  position: absolute;
+  left: 1080px;
+  top: 86px;
+  width: 490px;
+  height: 530px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.theme-racing .rc-top { height: 80px; display: flex; align-items: center; }
+.theme-racing .rc-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 6px 16px 6px 8px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 2px solid var(--accent);
+}
+.theme-racing .rc-nav .nav-arrow { width: 62px; height: 62px; fill: none; stroke: #fff; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+.theme-racing .rc-nav b { display: block; font-size: 30px; }
+.theme-racing .rc-nav span { font-size: 17px; color: var(--muted); }
+.theme-racing .rc-road {
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  font-size: 19px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.theme-racing .rc-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 2px solid var(--panel-line);
+  border-top: 4px solid var(--accent);
+  font-size: 18px;
+}
+.theme-racing .rc-page { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.theme-racing .rc-status { height: 30px; display: flex; justify-content: center; align-items: center; font-size: 17px; font-weight: 700; }
+.theme-racing .st-over { color: #ff3b30; animation: rc-blink 0.6s steps(1) infinite; }
+.theme-racing .st-warn { color: #ffb020; }
+.theme-racing .st-info { color: #6fb1ff; }
+@keyframes rc-blink { 50% { opacity: 0.2; } }
+
+/* 정보창 페이지 (js/core/info.js) */
+.theme-racing .info-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 1px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--panel-line);
+}
+.theme-racing .info-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 17px; color: var(--muted); }
+.theme-racing .info-row b { color: #fff; font-size: 21px; font-weight: 700; }
+.theme-racing .info-label { font-size: 16px; color: var(--muted); }
+.theme-racing .info-sub { font-size: 15px; color: var(--muted); text-align: center; }
+.theme-racing .info-bar { height: 14px; border-radius: 3px; background: var(--dim); overflow: hidden; }
+.theme-racing .info-bar i { display: block; height: 100%; background: var(--accent); }
+.theme-racing .info-bar.big { height: 20px; }
+.theme-racing .info-bar.big i { background: #39d353; }
+.theme-racing .info-car { height: 200px; align-self: center; overflow: visible; }
+.theme-racing .info-car .car-body { fill: none; stroke: #8d97a3; stroke-width: 2; }
+.theme-racing .info-car .car-glass { fill: #2a323c; }
+.theme-racing .tire { fill: #4b5563; }
+.theme-racing .tire.bad { fill: #ffb020; }
+.theme-racing .tire-psi { fill: #e8ecf1; font-size: 16px; font-weight: 700; }
+.theme-racing .tire-psi.bad { fill: #ffb020; }
+.theme-racing .door { fill: none; stroke: #8d97a3; stroke-width: 3; stroke-linecap: round; }
+.theme-racing .door.open { stroke: #ff3b30; stroke-width: 4; }
+.theme-racing .rc-page .nav-arrow { width: 110px; height: 110px; align-self: center; fill: none; stroke: #fff; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.theme-racing .nav-dist { font-size: 36px; font-weight: 800; text-align: center; }
+.theme-racing .nav-word { font-size: 20px; text-align: center; color: var(--accent); }
+.theme-racing .clim-temps { display: flex; justify-content: space-around; font-size: 36px; font-weight: 800; }
+.theme-racing .road-name { font-size: 24px; font-weight: 800; text-align: center; padding: 6px 0; }
+.theme-racing .info-big { font-size: 60px; font-weight: 800; text-align: center; color: #39d353; padding: 20px 0 8px; }
+.theme-racing .ap-state { font-size: 26px; font-weight: 800; text-align: center; color: #6fb1ff; padding: 4px 0; }
+.theme-racing .off-hint { margin-top: 70px; font-size: 22px; line-height: 1.6; text-align: center; color: var(--muted); }
+
+.theme-racing .rc-popup {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 130px;
+  height: 230px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 16px;
+  background: rgba(10, 12, 16, 0.97);
+  border: 3px solid var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.theme-racing .rc-popup.show { opacity: 1; }
+.theme-racing .rc-popup .t { font-size: 20px; color: var(--muted); }
+.theme-racing .rc-popup .v { font-size: 44px; font-weight: 800; text-align: center; }
+
+.theme-racing .rc-msg {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 44px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(30, 24, 4, 0.97);
+  border: 3px solid #ffd21f;
+  color: #ffe27a;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+  word-break: keep-all;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s, transform 0.15s;
+  pointer-events: none;
+}
+.theme-racing .rc-msg.show { opacity: 1; transform: none; }
+
+/* 밤: 화면이 조금 어두워진다 (덮개 한 장, 필터 없이) */
+.theme-racing .rc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 6, 0, 0.22);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s;
+}
+.theme-racing .rc.night::after { opacity: 1; }

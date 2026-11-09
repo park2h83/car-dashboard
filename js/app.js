@@ -144,7 +144,8 @@
 
   var lastMessage = '';
   function renderToast() {
-    var message = current.showsMessages ? '' : state.message;
+    // 주차 화면이 계기판을 덮고 있으면 테마가 그리는 안내도 가려지니 노란 알림으로
+    var message = current.showsMessages && !state.parking.on ? '' : state.message;
     if (message === lastMessage) return;
     lastMessage = message;
     if (message) toast.textContent = message;

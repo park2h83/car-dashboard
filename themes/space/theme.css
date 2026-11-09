@@ -1,0 +1,465 @@
+/* 미래 우주선 테마. 이 테마 전용 루트 클래스 .sp 아래(.theme-space)에만 규칙을 둔다.
+   .sp-stage 안의 좌표는 1600x680 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
+   빛나는 느낌은 움직이지 않는 그림자·그라데이션으로만 낸다 (매 프레임 바뀌는 것에는 흐림 효과를 쓰지 않는다). */
+.theme-space .sp {
+  --neon: #36d6ff;
+  --neon-rgb: 54, 214, 255;
+  --text: #e9f6ff;
+  --muted: #7fa3bf;
+  --dim: #13263a;
+  --panel: rgba(8, 24, 48, 0.55);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse 70% 90% at 50% 50%, #0a1830 0%, #03050d 70%), #000;
+  color: var(--text);
+  font-family: "Avenir Next", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+/* 주행 모드: 에코 초록, 컴포트 하늘색, 스포츠 빨강(+ 워프 빛줄기, 빠른 레이더) */
+.theme-space .sp[data-mode="eco"] {
+  --neon: #39ff88;
+  --neon-rgb: 57, 255, 136;
+  background: radial-gradient(ellipse 70% 90% at 50% 50%, #08261a 0%, #020a06 70%), #000;
+}
+.theme-space .sp[data-mode="sport"] {
+  --neon: #ff3b6b;
+  --neon-rgb: 255, 59, 107;
+  background: radial-gradient(ellipse 70% 90% at 50% 50%, #2a0818 0%, #0b0207 70%), #000;
+}
+/* 자율주행: 보라빛 파랑 + 레이더 둘레가 돌고, 내 차선 앞길이 빛난다 */
+.theme-space .sp.ap {
+  --neon: #7f8cff;
+  --neon-rgb: 127, 140, 255;
+}
+
+/* 화면 전체 홀로그램 줄무늬 (움직이지 않는 덮개) */
+.theme-space .sp::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, 0.025) 3px 4px);
+  pointer-events: none;
+}
+/* 밤: 조금 더 어둡고 별이 또렷하다 */
+.theme-space .sp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(0, 0, 8, 0.25);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s;
+}
+.theme-space .sp.night::after { opacity: 1; }
+
+/* 스포츠: 워프 빛줄기 (transform 애니메이션만 쓴다) */
+.theme-space .sp-warp {
+  position: absolute;
+  left: -20%;
+  top: -40%;
+  width: 140%;
+  height: 180%;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 59, 107, 0.1) 0deg 0.8deg, transparent 0.8deg 7deg);
+  opacity: 0;
+  transition: opacity 0.6s;
+  pointer-events: none;
+}
+.theme-space .sp[data-mode="sport"]:not(.off) .sp-warp { opacity: 1; animation: sp-warp 0.9s linear infinite; will-change: transform; }
+@keyframes sp-warp { from { transform: scale(1); } to { transform: scale(1.18); } }
+
+.theme-space .sp-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 680px;
+  transform-origin: 0 0;
+}
+.theme-space .sp-svg { position: absolute; inset: 0; overflow: visible; }
+
+.theme-space .sp-stars circle { fill: #cfe6ff; opacity: 0.35; }
+.theme-space .sp.night .sp-stars circle { opacity: 0.95; }
+
+/* ---- 레이더 ---- */
+.theme-space .sp-stop-a { stop-color: rgba(var(--neon-rgb), 0.12); }
+.theme-space .sp-stop-b { stop-color: rgba(var(--neon-rgb), 0.03); }
+.theme-space .sp-radar-face { stroke: none; }
+.theme-space .sp-ring { fill: none; stroke: rgba(var(--neon-rgb), 0.35); stroke-width: 1.5; stroke-dasharray: 4 6; }
+.theme-space .sp-ring.outer { stroke: var(--neon); stroke-width: 4; stroke-dasharray: none; }
+.theme-space .sp.warn .sp-ring.outer { stroke: #ff2a2a; stroke-width: 7; }
+.theme-space .sp-cross { stroke: rgba(var(--neon-rgb), 0.18); stroke-width: 1.5; }
+.theme-space .sp-rlabel { fill: rgba(var(--neon-rgb), 0.75); font-size: 15px; font-weight: 700; }
+.theme-space .sp-rlabel.big { font-size: 20px; fill: var(--neon); }
+.theme-space .sp-lane { stroke: rgba(var(--neon-rgb), 0.45); stroke-width: 2; stroke-dasharray: 14 12; }
+.theme-space .sp-lane-edge { stroke: rgba(var(--neon-rgb), 0.8); stroke-width: 3; }
+.theme-space .sp-ap-path { fill: url(#sp-path-g); opacity: 0; transition: opacity 0.4s; }
+.theme-space .sp.ap .sp-ap-path { opacity: 1; }
+
+.theme-space .sp-car-body { stroke: rgba(var(--neon-rgb), 0.85); stroke-width: 2; }
+.theme-space .sp-car-glass { fill: #0b1422; }
+.theme-space .sp-ego .sp-car-body { stroke: #ffffff; stroke-width: 3; }
+.theme-space .sp-car.lead .sp-car-body { stroke: #7f8cff; stroke-width: 4; }
+.theme-space .sp-car.beside .sp-car-body { stroke: #ffb020; stroke-width: 4; }
+.theme-space .sp-car.danger .sp-car-body { stroke: #ff2a2a; stroke-width: 5; }
+.theme-space .sp-obstacle { display: none; }
+.theme-space .sp-obstacle.show { display: inline; }
+.theme-space .sp-obstacle circle { fill: #ff2a2a; stroke: #ffd0d0; stroke-width: 2; }
+.theme-space .sp-obstacle text { fill: #fff; font-size: 20px; font-weight: 900; }
+
+.theme-space .sp-sweep {
+  position: absolute;
+  left: 572px;
+  top: 132px;
+  width: 456px;
+  height: 456px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg 290deg, rgba(var(--neon-rgb), 0.04) 290deg, rgba(var(--neon-rgb), 0.38) 359deg, rgba(var(--neon-rgb), 0.7) 360deg);
+  animation: sp-spin 3s linear infinite;
+  will-change: transform;
+  pointer-events: none;
+}
+.theme-space .sp[data-mode="eco"] .sp-sweep { animation-duration: 4.5s; }
+.theme-space .sp[data-mode="sport"] .sp-sweep { animation-duration: 1.4s; }
+.theme-space .sp.off .sp-sweep { display: none; }
+@keyframes sp-spin { to { transform: rotate(360deg); } }
+
+.theme-space .sp-ap-ring {
+  position: absolute;
+  left: 554px;
+  top: 114px;
+  width: 492px;
+  height: 492px;
+  border-radius: 50%;
+  border: 4px dashed #7f8cff;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.theme-space .sp.ap .sp-ap-ring { opacity: 1; animation: sp-spin 14s linear infinite; will-change: transform; }
+
+/* ---- 경고등 ---- */
+.theme-space .sp-group { position: absolute; display: flex; gap: 14px; }
+.theme-space .sp-top-left { left: 30px; top: 18px; }
+.theme-space .sp-top-right { right: 30px; top: 18px; }
+.theme-space .sp-bottom { left: 50%; bottom: 8px; transform: translateX(-50%); gap: 18px; }
+.theme-space .sp-ind {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  color: var(--text);
+  opacity: 0.08;
+}
+.theme-space .sp-ind svg { width: 100%; height: 100%; }
+.theme-space .sp-ind.on { opacity: 1; }
+.theme-space .sp-ind.on.red { color: #ff3b30; }
+.theme-space .sp-ind.on.amber { color: #ffb020; }
+.theme-space .sp-ind.on.green { color: #39ff88; }
+.theme-space .sp-ind.on.blue { color: #7f9cff; }
+.theme-space .sp-ind.on.white { color: #e9f6ff; }
+.theme-space .sp-turn { position: absolute; top: 18px; width: 64px; height: 64px; }
+.theme-space .sp-turn-left { left: 444px; }
+.theme-space .sp-turn-right { left: 1092px; }
+
+/* ---- 위: 항로 (내비) ---- */
+.theme-space .sp-top {
+  position: absolute;
+  left: 520px;
+  top: 12px;
+  width: 560px;
+  height: 82px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.theme-space .sp-nav,
+.theme-space .sp-road {
+  max-width: 100%;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 2px solid rgba(var(--neon-rgb), 0.7);
+  box-shadow: 0 0 18px rgba(var(--neon-rgb), 0.25), inset 0 0 18px rgba(var(--neon-rgb), 0.12);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.theme-space .sp-nav { display: flex; align-items: center; gap: 12px; padding: 6px 18px 6px 8px; }
+.theme-space .sp-nav .nav-arrow { width: 58px; height: 58px; flex: 0 0 auto; fill: none; stroke: var(--neon); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.theme-space .sp-nav b { display: block; font-size: 28px; }
+.theme-space .sp-nav span { display: block; font-size: 17px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.theme-space .sp-road { padding: 10px 22px; font-size: 20px; color: var(--muted); text-overflow: ellipsis; }
+
+/* ---- 왼쪽: 속도·엔진·기어 ---- */
+.theme-space .sp-left {
+  position: absolute;
+  left: 30px;
+  top: 96px;
+  width: 500px;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.theme-space .sp-roadrow { position: relative; height: 100px; display: flex; align-items: flex-start; gap: 18px; }
+.theme-space .sp-limit {
+  flex: 0 0 auto;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #fff;
+  border: 9px solid #e0201b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  font-size: 34px;
+  font-weight: 800;
+}
+.theme-space .sp-limit.over { animation: sp-over 0.6s steps(1) infinite; }
+@keyframes sp-over {
+  0% { background: #e0201b; color: #fff; box-shadow: 0 0 24px #ff3b30; }
+  50% { background: #fff; color: #111; box-shadow: none; }
+}
+.theme-space .sp-light,
+.theme-space .sp-sign {
+  width: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  color: var(--muted);
+}
+.theme-space .sp-light { padding-top: 20px; }
+.theme-space .sp-sign svg { width: 70px; height: 70px; }
+.theme-space .sp-lamps { display: flex; gap: 5px; padding: 5px 7px; border-radius: 9px; background: #050a12; border: 2px solid #23344a; }
+.theme-space .sp-lamps i { width: 18px; height: 18px; border-radius: 50%; background: #1a2533; }
+.theme-space .sp-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
+.theme-space .sp-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 10px #ffb020; }
+.theme-space .sp-lamps i.green.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+.theme-space .sp-camera {
+  position: absolute;
+  left: 330px;
+  top: 30px;
+  font-size: 20px;
+  color: #ffb020;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.theme-space .sp-camera.show { opacity: 1; }
+
+/* 빛나는 숫자: 숫자 뒤에 움직이지 않는 빛 무리를 깔고, 숫자 자체엔 흐림 효과를 안 쓴다 */
+.theme-space .sp-speed {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  height: 140px;
+  padding-left: 6px;
+  background: radial-gradient(ellipse 40% 50% at 22% 55%, rgba(var(--neon-rgb), 0.28), transparent 70%);
+}
+.theme-space .sp-speed b { font-size: 140px; font-weight: 300; line-height: 140px; letter-spacing: -4px; color: #f4fbff; -webkit-text-stroke: 2px rgba(var(--neon-rgb), 0.9); }
+.theme-space .sp-speed b.over { color: #ff3b30; -webkit-text-stroke-color: #ffb0a8; }
+.theme-space .sp-speed small { font-size: 24px; color: var(--neon); font-weight: 700; }
+.theme-space .sp[data-mode="sport"] .sp-speed b { font-style: italic; font-weight: 500; }
+
+.theme-space .sp-label { font-size: 16px; color: var(--muted); margin-bottom: 6px; }
+.theme-space .sp-label b { color: var(--text); font-size: 18px; }
+.theme-space .sp-rpm-segs { display: flex; gap: 4px; height: 24px; }
+.theme-space .sp-rpm-segs i { flex: 1; border-radius: 3px; background: var(--dim); }
+.theme-space .sp-rpm-segs i.on { background: var(--neon); }
+.theme-space .sp-rpm-segs i.red { background: rgba(255, 59, 48, 0.25); }
+.theme-space .sp-rpm-segs i.red.on { background: #ff3b30; }
+
+.theme-space .sp-gears { display: flex; align-items: baseline; gap: 20px; font-size: 40px; font-weight: 800; color: #24364c; }
+.theme-space .sp-gears span.on { color: #fff; -webkit-text-stroke: 1.5px var(--neon); }
+.theme-space .sp-gearnum { margin-left: -14px; font-size: 26px; color: var(--neon); min-width: 16px; }
+.theme-space .sp-mode {
+  margin-left: auto;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--neon);
+  color: var(--neon);
+  font-size: 17px;
+  font-weight: 800;
+  font-style: normal;
+  white-space: nowrap;
+}
+.theme-space .sp[data-mode="sport"] .sp-mode { background: rgba(255, 59, 107, 0.2); animation: sp-pulse 1s ease-in-out infinite; }
+@keyframes sp-pulse { 50% { opacity: 0.55; } }
+
+.theme-space .sp-gauge { display: flex; align-items: center; gap: 12px; }
+.theme-space .sp-gicon { width: 28px; height: 28px; color: var(--neon); }
+.theme-space .sp-gicon svg { width: 100%; height: 100%; }
+.theme-space .sp-gbar { flex: 1; height: 14px; border-radius: 7px; background: var(--dim); overflow: hidden; border: 1px solid rgba(var(--neon-rgb), 0.35); }
+.theme-space .sp-gbar i { display: block; height: 100%; width: 0; background: var(--neon); border-radius: 7px; }
+.theme-space .sp-gbar i.low { background: #ffa000; }
+.theme-space .sp-gbar.temp i { background: linear-gradient(90deg, #36d6ff, #39ff88 50%, #ffa000 85%, #ff3b30); }
+.theme-space .sp-gbar.temp i.hot { background: #ff3b30; }
+.theme-space .sp-gauge em { width: 120px; font-style: normal; font-size: 16px; color: var(--muted); text-align: right; white-space: nowrap; }
+.theme-space .sp-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(var(--neon-rgb), 0.25);
+  font-size: 16px;
+  color: var(--muted);
+}
+
+/* ---- 오른쪽: AI 조종사·정보창 ---- */
+.theme-space .sp-right {
+  position: absolute;
+  left: 1078px;
+  top: 96px;
+  width: 492px;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.theme-space .sp-ai,
+.theme-space .sp-card {
+  border-radius: 18px;
+  background: var(--panel);
+  border: 2px solid rgba(var(--neon-rgb), 0.55);
+  box-shadow: 0 0 22px rgba(var(--neon-rgb), 0.18), inset 0 0 24px rgba(var(--neon-rgb), 0.1);
+}
+.theme-space .sp-ai { height: 196px; display: flex; align-items: center; gap: 18px; padding: 14px 18px; }
+.theme-space .sp.ap .sp-ai {
+  background: linear-gradient(135deg, rgba(60, 60, 170, 0.55), rgba(20, 30, 90, 0.55));
+  border: 3px solid #a8b2ff;
+  box-shadow: 0 0 34px rgba(127, 140, 255, 0.55), inset 0 0 30px rgba(127, 140, 255, 0.3);
+}
+.theme-space .sp-orb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #33475f, #0b1422 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theme-space .sp-orb b { font-size: 38px; font-weight: 900; color: #54657a; letter-spacing: 1px; }
+.theme-space .sp-orb i {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: rgba(var(--neon-rgb), 0.35);
+  border-bottom-color: rgba(var(--neon-rgb), 0.35);
+}
+.theme-space .sp-orb i.o2 { inset: 8px; border-top-color: transparent; border-bottom-color: transparent; border-left-color: rgba(var(--neon-rgb), 0.35); border-right-color: rgba(var(--neon-rgb), 0.35); }
+.theme-space .sp.ap .sp-orb { background: radial-gradient(circle at 40% 35%, #c9d0ff, #5b67ff 45%, #1b1f6b 80%); box-shadow: 0 0 30px rgba(127, 140, 255, 0.8); }
+.theme-space .sp.ap .sp-orb b { color: #fff; }
+.theme-space .sp.ap .sp-orb i { border-top-color: #c9d0ff; border-bottom-color: #c9d0ff; animation: sp-spin 2.4s linear infinite; }
+.theme-space .sp.ap .sp-orb i.o2 { border-left-color: #fff; border-right-color: #fff; border-top-color: transparent; border-bottom-color: transparent; animation: sp-spin 1.6s linear infinite reverse; }
+.theme-space .sp-ai-text { flex: 1; min-width: 0; }
+.theme-space .sp-ai-title { font-size: 16px; font-weight: 800; letter-spacing: 2px; color: var(--neon); }
+.theme-space .sp-ai-state { font-size: 26px; font-weight: 800; margin: 4px 0 6px; white-space: nowrap; }
+.theme-space .sp-ai-detail { font-size: 17px; line-height: 1.4; color: var(--muted); }
+.theme-space .sp-ai-target { color: #fff; font-size: 18px; }
+.theme-space .sp-ai-target b { font-size: 40px; font-weight: 800; color: #fff; }
+.theme-space .sp-ai-why { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #c9d0ff; }
+
+.theme-space .sp-card { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 18px; font-size: 18px; }
+.theme-space .sp-page { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 7px; overflow: hidden; }
+.theme-space .sp-status { height: 26px; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 700; }
+.theme-space .st-over { color: #ff3b30; animation: sp-blink 0.6s steps(1) infinite; }
+.theme-space .st-warn { color: #ffb020; }
+.theme-space .st-info { color: #7fd8ff; }
+@keyframes sp-blink { 50% { opacity: 0.2; } }
+
+/* 정보창 페이지 (js/core/info.js) */
+.theme-space .info-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--neon);
+  letter-spacing: 1px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(var(--neon-rgb), 0.3);
+}
+.theme-space .info-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 16px; color: var(--muted); }
+.theme-space .info-row b { color: #fff; font-size: 19px; font-weight: 700; }
+.theme-space .info-label { font-size: 15px; color: var(--muted); }
+.theme-space .info-sub { font-size: 14px; color: var(--muted); text-align: center; }
+.theme-space .info-bar { height: 12px; border-radius: 6px; background: var(--dim); overflow: hidden; }
+.theme-space .info-bar i { display: block; height: 100%; background: var(--neon); }
+.theme-space .info-bar.big { height: 18px; }
+.theme-space .info-bar.big i { background: #39ff88; }
+.theme-space .info-car { height: 150px; align-self: center; overflow: visible; }
+.theme-space .info-car .car-body { fill: none; stroke: var(--neon); stroke-width: 2; }
+.theme-space .info-car .car-glass { fill: #12233a; }
+.theme-space .tire { fill: #3b5068; }
+.theme-space .tire.bad { fill: #ffb020; }
+.theme-space .tire-psi { fill: #e9f6ff; font-size: 16px; font-weight: 700; }
+.theme-space .tire-psi.bad { fill: #ffb020; }
+.theme-space .door { fill: none; stroke: var(--neon); stroke-width: 3; stroke-linecap: round; }
+.theme-space .door.open { stroke: #ff3b30; stroke-width: 4; }
+.theme-space .sp-page .nav-arrow { width: 84px; height: 84px; align-self: center; fill: none; stroke: var(--neon); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.theme-space .nav-dist { font-size: 30px; font-weight: 800; text-align: center; }
+.theme-space .nav-word { font-size: 18px; text-align: center; color: var(--neon); }
+.theme-space .clim-temps { display: flex; justify-content: space-around; font-size: 32px; font-weight: 800; }
+.theme-space .road-name { font-size: 22px; font-weight: 800; text-align: center; padding: 4px 0; }
+.theme-space .info-big { font-size: 54px; font-weight: 800; text-align: center; color: #39ff88; padding: 10px 0 6px; }
+.theme-space .ap-state { font-size: 22px; font-weight: 800; text-align: center; color: #a8b2ff; padding: 2px 0; }
+.theme-space .off-hint { margin-top: 36px; font-size: 20px; line-height: 1.6; text-align: center; color: var(--muted); }
+
+/* ---- 레이더 위: 팝업·안내 문구 ---- */
+.theme-space .sp-popup {
+  position: absolute;
+  left: 620px;
+  top: 250px;
+  width: 360px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 18px;
+  background: rgba(4, 12, 26, 0.96);
+  border: 3px solid var(--neon);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  z-index: 1;
+}
+.theme-space .sp-popup.show { opacity: 1; }
+.theme-space .sp-popup .t { font-size: 20px; color: var(--muted); }
+.theme-space .sp-popup .v { font-size: 44px; font-weight: 800; text-align: center; }
+.theme-space .sp-msg {
+  position: absolute;
+  left: 560px;
+  top: 500px;
+  width: 480px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(30, 22, 4, 0.96);
+  border: 3px solid #ffd21f;
+  color: #ffe27a;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+  word-break: keep-all;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s, transform 0.15s;
+  pointer-events: none;
+  z-index: 1;
+}
+.theme-space .sp-msg.show { opacity: 1; transform: none; }
+
+/* 시동 꺼짐: 홀로그램 전원이 내려간다 */
+.theme-space .sp-left, .theme-space .sp-card, .theme-space .sp-top { transition: opacity 0.8s; }
+/* 내 흰색 차는 꺼져 있어도 하얗게 남겨 둔다 */
+.theme-space .sp-svg > * { transition: opacity 0.8s; }
+.theme-space .sp.off .sp-svg > :not(.sp-egog) { opacity: 0.3; }
+.theme-space .sp.off .sp-left { opacity: 0.3; }
+.theme-space .sp.off .sp-card { opacity: 0.7; }
+.theme-space .sp.off .sp-top { opacity: 0.5; }
+.theme-space .sp.off .sp-ai { border-color: #23344a; box-shadow: none; }

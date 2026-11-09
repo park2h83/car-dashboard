@@ -1,0 +1,371 @@
+/* 버스·트럭 테마. 모든 규칙은 .theme-bus 아래에 둔다.
+   .bs-stage 안의 좌표는 1600x680 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다. */
+.theme-bus .bs {
+  --accent: #4fc3ff;
+  --amber: #ffa21f;
+  --text: #eef1f4;
+  --muted: #8b95a1;
+  --panel-line: #2a2116;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 80% at 50% 50%, #15191e 0%, #060708 75%),
+    #000;
+  color: var(--text);
+  font-family: "Avenir Next", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+/* 주행 모드: 계기 뒷불 색과 RPM 계기의 띠가 바뀐다.
+   에코 = 초록 "연비 구간" 띠, 스포츠 = 빨간 "힘 구간" 띠 */
+.theme-bus .bs[data-mode="eco"] {
+  --accent: #39d353;
+  background: radial-gradient(ellipse 70% 80% at 50% 50%, #0e2415 0%, #040805 75%), #000;
+}
+.theme-bus .bs[data-mode="sport"] {
+  --accent: #ff3b30;
+  background: radial-gradient(ellipse 70% 80% at 50% 50%, #2c0d0a 0%, #0a0303 75%), #000;
+}
+.theme-bus .bs.ap { --accent: #3d8bff; }
+
+.theme-bus .bs-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 680px;
+  transform-origin: 0 0;
+}
+.theme-bus .bs-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* ---- 바늘 계기 ---- */
+.theme-bus .bs-glow { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0.7; transition: stroke 0.4s; }
+.theme-bus .bs[data-mode="eco"] .bs-glow,
+.theme-bus .bs[data-mode="sport"] .bs-glow { stroke-width: 6; opacity: 0.9; }
+.theme-bus .bs .tick-major { stroke: #f2f4f7; stroke-width: 4; }
+.theme-bus .bs .tick-minor { stroke: #9aa4b0; stroke-width: 2; }
+.theme-bus .bs .tick-major.hot,
+.theme-bus .bs .tick-minor.hot { stroke: #ff3b30; }
+.theme-bus .bs .tick-label { fill: #f2f4f7; font-size: 26px; font-weight: 700; }
+.theme-bus .bs .tick-label.hot { fill: #ff3b30; }
+.theme-bus .bs .bs-small .tick-label { font-size: 21px; }
+.theme-bus .bs-zone-red { fill: none; stroke: #c0141a; stroke-width: 10; opacity: 0.9; }
+.theme-bus .bs-zone-red.thin { stroke-width: 7; }
+.theme-bus .bs-zone-ok { fill: none; stroke: #2fdc5a; stroke-width: 7; opacity: 0.6; }
+.theme-bus .bs-band { fill: none; stroke-width: 12; opacity: 0; transition: opacity 0.4s; }
+.theme-bus .bs-band.eco { stroke: #39d353; }
+.theme-bus .bs-band.sport { stroke: #ff7a1c; }
+.theme-bus .bs[data-mode="eco"] .bs-band.eco { opacity: 0.9; }
+.theme-bus .bs[data-mode="sport"] .bs-band.sport { opacity: 0.9; }
+.theme-bus .bs-unit { fill: var(--muted); font-size: 20px; font-weight: 600; }
+.theme-bus .bs-unit.small { font-size: 15px; }
+.theme-bus .bs-hours { fill: var(--accent); font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+.theme-bus .bs-odo-box { fill: #120d04; stroke: #3a2a10; stroke-width: 2; }
+.theme-bus .bs-digital { fill: var(--amber); font-size: 42px; font-weight: 800; }
+.theme-bus .bs-digital.over { fill: #ff3b30; }
+.theme-bus .bs[data-mode="sport"] .bs-digital { font-style: italic; }
+.theme-bus .bs-sicon { color: var(--muted); }
+/* 빛나는 느낌은 반투명 테두리로 (흐림 필터는 바늘이 움직일 때마다 다시 그려서 느리다) */
+.theme-bus .needle path { fill: #ff5a1c; stroke: rgba(255, 90, 40, 0.3); stroke-width: 6; stroke-linejoin: round; paint-order: stroke; }
+.theme-bus .bs[data-mode="eco"] .needle path { fill: #f4f7fa; stroke: rgba(57, 211, 83, 0.45); }
+.theme-bus .needle.air1 path { fill: #ff3b30; stroke: rgba(255, 59, 48, 0.3); }
+.theme-bus .needle.air2 path { fill: #2fdc5a; stroke: rgba(47, 220, 90, 0.3); }
+.theme-bus .bs[data-mode="eco"] .needle.air1 path { fill: #ff3b30; }
+.theme-bus .bs[data-mode="eco"] .needle.air2 path { fill: #2fdc5a; }
+.theme-bus .bs-limit-mark { fill: #ffb020; }
+.theme-bus .bs-ap-mark { fill: #3d8bff; }
+
+/* 시동 꺼짐: 계기 조명이 꺼진다 (공기압 계기는 기계식이라 그대로) */
+.theme-bus .bs .tick-major, .theme-bus .bs .tick-minor, .theme-bus .bs .tick-label,
+.theme-bus .bs-glow, .theme-bus .bs-unit, .theme-bus .bs-digital, .theme-bus .bs-hours,
+.theme-bus .bs-lcd, .theme-bus .bs-banner { transition: opacity 0.6s; }
+.theme-bus .bs.off .tick-major, .theme-bus .bs.off .tick-minor, .theme-bus .bs.off .tick-label,
+.theme-bus .bs.off .bs-glow, .theme-bus .bs.off .bs-unit, .theme-bus .bs.off .bs-digital,
+.theme-bus .bs.off .bs-hours { opacity: 0.2; }
+.theme-bus .bs.off .bs-lcd { opacity: 0.6; }
+.theme-bus .bs.off .bs-banner { opacity: 0.45; }
+.theme-bus .bs.off .bs-limit { opacity: 0.2; }
+
+/* ---- 행선판 (다음 정류장) ---- */
+.theme-bus .bs-banner {
+  position: absolute;
+  left: 500px;
+  top: 8px;
+  width: 600px;
+  height: 78px;
+  padding: 6px 18px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle, rgba(255, 162, 31, 0.07) 1px, transparent 1.5px) 0 0 / 6px 6px,
+    #120d04;
+  border: 3px solid #2e2414;
+  color: var(--amber);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.theme-bus .bs-banner .l1 { font-size: 30px; font-weight: 800; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; }
+.theme-bus .bs-banner .l2 { font-size: 18px; font-weight: 600; color: #d58a24; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; }
+.theme-bus .bs-banner .nav-arrow { width: 22px; height: 22px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- 경고등 ---- */
+.theme-bus .bs-group { position: absolute; display: flex; gap: 14px; }
+.theme-bus .bs-top-left { left: 30px; top: 18px; }
+.theme-bus .bs-top-right { right: 30px; top: 18px; }
+.theme-bus .bs-bottom { left: 50%; bottom: 8px; transform: translateX(-50%); gap: 18px; }
+.theme-bus .bs-ind {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  color: #fff;
+  opacity: 0.08;
+}
+.theme-bus .bs-ind svg { width: 100%; height: 100%; }
+.theme-bus .bs-ind.on { opacity: 1; }
+.theme-bus .bs-ind.on.red { color: #ff3b30; }
+.theme-bus .bs-ind.on.amber { color: #ffb020; }
+.theme-bus .bs-ind.on.green { color: #2fdc5a; }
+.theme-bus .bs-ind.on.blue { color: #3d8bff; }
+.theme-bus .bs-ind.on.white { color: #e8ecf1; }
+.theme-bus .bs-turn { position: absolute; top: 16px; width: 62px; height: 62px; }
+.theme-bus .bs-turn-left { left: 420px; }
+.theme-bus .bs-turn-right { left: 1118px; }
+
+/* ---- 신호등·제한속도·표지판 ---- */
+.theme-bus .bs-roadrow {
+  position: absolute;
+  left: 650px;
+  top: 94px;
+  width: 300px;
+  height: 84px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px;
+}
+.theme-bus .bs-limit {
+  flex: 0 0 auto;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #fff;
+  border: 8px solid #e0201b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  font-size: 32px;
+  font-weight: 800;
+}
+.theme-bus .bs-limit.over { animation: bs-over 0.6s steps(1) infinite; }
+@keyframes bs-over {
+  0% { background: #e0201b; color: #fff; box-shadow: 0 0 22px #ff3b30; }
+  50% { background: #fff; color: #111; box-shadow: none; }
+}
+.theme-bus .bs-light,
+.theme-bus .bs-sign {
+  width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 15px;
+  color: var(--muted);
+}
+.theme-bus .bs-light { padding-top: 18px; }
+.theme-bus .bs-sign svg { width: 62px; height: 62px; }
+.theme-bus .bs-lamps { display: flex; gap: 5px; padding: 5px 7px; border-radius: 9px; background: #111; border: 2px solid #333; }
+.theme-bus .bs-lamps i { width: 16px; height: 16px; border-radius: 50%; background: #2a2a2a; }
+.theme-bus .bs-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
+.theme-bus .bs-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 10px #ffb020; }
+.theme-bus .bs-lamps i.green.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+.theme-bus .bs-camera {
+  position: absolute;
+  left: 1160px;
+  top: 552px;
+  transform: translateX(-50%);
+  font-size: 20px;
+  color: #ffb020;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.theme-bus .bs-camera.show { opacity: 1; }
+
+/* ---- 가운데 정보창 ---- */
+.theme-bus .bs-lcd {
+  position: absolute;
+  left: 652px;
+  top: 184px;
+  width: 296px;
+  height: 428px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: linear-gradient(#0f1217, #06080a);
+  border: 3px solid #2b323b;
+  border-top-color: var(--accent);
+  color: var(--text);
+  font-size: 18px;
+}
+.theme-bus .lcd-gears {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 18px;
+  font-size: 34px;
+  font-weight: 800;
+  color: #333b46;
+}
+.theme-bus .lcd-gears span.on { color: #fff; }
+.theme-bus .lcd-gearnum { margin-left: -14px; font-size: 24px; color: var(--accent); min-width: 14px; }
+.theme-bus .lcd-mode {
+  margin: 4px auto 2px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.theme-bus .bs.ap .lcd-mode { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.theme-bus .lcd-page { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 7px; padding-top: 6px; overflow: hidden; }
+.theme-bus .lcd-status { height: 28px; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 700; }
+.theme-bus .st-over { color: #ff3b30; animation: bs-blink 0.6s steps(1) infinite; }
+.theme-bus .st-warn { color: #ffb020; }
+.theme-bus .st-info { color: #6fb1ff; }
+.theme-bus .st-ap { color: #6fb1ff; }
+@keyframes bs-blink { 50% { opacity: 0.2; } }
+.theme-bus .lcd-foot {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid #1e252e;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* 정보창 페이지 (js/core/info.js) */
+.theme-bus .info-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #1e252e;
+}
+.theme-bus .info-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; color: var(--muted); }
+.theme-bus .info-row b { color: #fff; font-size: 19px; font-weight: 700; }
+.theme-bus .info-label { font-size: 15px; color: var(--muted); }
+.theme-bus .info-sub { font-size: 14px; color: var(--muted); text-align: center; }
+.theme-bus .info-bar { height: 12px; border-radius: 6px; background: #1d232b; overflow: hidden; }
+.theme-bus .info-bar i { display: block; height: 100%; background: var(--accent); }
+.theme-bus .info-bar.big { height: 18px; }
+.theme-bus .info-bar.big i { background: #39d353; }
+.theme-bus .info-car { height: 180px; align-self: center; overflow: visible; }
+.theme-bus .info-car .car-body { fill: none; stroke: #8b95a1; stroke-width: 2; }
+.theme-bus .info-car .car-glass { fill: #2a323c; }
+.theme-bus .tire { fill: #4b5563; }
+.theme-bus .tire.bad { fill: #ffb020; }
+.theme-bus .tire-psi { fill: #e8ecf1; font-size: 16px; font-weight: 700; }
+.theme-bus .tire-psi.bad { fill: #ffb020; }
+.theme-bus .door { fill: none; stroke: #8b95a1; stroke-width: 3; stroke-linecap: round; }
+.theme-bus .door.open { stroke: #ff3b30; stroke-width: 4; }
+.theme-bus .lcd-page .nav-arrow { width: 100px; height: 100px; align-self: center; fill: none; stroke: #fff; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.theme-bus .nav-dist { font-size: 32px; font-weight: 800; text-align: center; }
+.theme-bus .nav-word { font-size: 18px; text-align: center; color: var(--accent); }
+.theme-bus .clim-temps { display: flex; justify-content: space-around; font-size: 32px; font-weight: 800; }
+.theme-bus .road-name { font-size: 21px; font-weight: 800; text-align: center; padding: 4px 0; }
+.theme-bus .info-big { font-size: 54px; font-weight: 800; text-align: center; color: #39d353; padding: 16px 0 8px; }
+.theme-bus .ap-state { font-size: 22px; font-weight: 800; text-align: center; color: #6fb1ff; padding: 4px 0; }
+.theme-bus .off-hint { margin-top: 50px; font-size: 20px; line-height: 1.6; text-align: center; color: var(--muted); }
+
+.theme-bus .lcd-popup {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 60px;
+  height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 14px;
+  background: rgba(10, 14, 19, 0.97);
+  border: 3px solid var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.theme-bus .lcd-popup.show { opacity: 1; }
+.theme-bus .lcd-popup .t { font-size: 18px; color: var(--muted); }
+.theme-bus .lcd-popup .v { font-size: 40px; font-weight: 800; text-align: center; }
+.theme-bus .lcd-msg {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 40px;
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: rgba(26, 18, 4, 0.97);
+  border: 3px solid var(--amber);
+  color: #ffd27a;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+  word-break: keep-all;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s, transform 0.15s;
+  pointer-events: none;
+}
+.theme-bus .lcd-msg.show { opacity: 1; transform: none; }
+
+/* ---- 공기압 숫자·알림 ---- */
+.theme-bus .bs-air {
+  position: absolute;
+  left: 1386px;
+  top: 362px;
+  width: 196px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 17px;
+  color: var(--muted);
+}
+.theme-bus .bs-air-row { display: flex; align-items: center; gap: 8px; }
+.theme-bus .bs-air-row b { margin-left: auto; font-size: 24px; color: var(--text); }
+.theme-bus .bs-air-row i { width: 14px; height: 14px; border-radius: 50%; }
+.theme-bus .bs-air-row i.n1 { background: #ff3b30; }
+.theme-bus .bs-air-row i.n2 { background: #2fdc5a; }
+.theme-bus .bs-air-comp,
+.theme-bus .bs-air-low,
+.theme-bus .bs-air-puff { display: none; font-weight: 800; text-align: center; padding: 4px 0; border-radius: 8px; }
+.theme-bus .bs-air-comp { color: #6fb1ff; font-size: 16px; }
+.theme-bus .bs-air.comp .bs-air-comp { display: block; }
+.theme-bus .bs-air-low { color: #fff; background: #c0141a; font-size: 18px; animation: bs-blink 0.8s steps(1) infinite; }
+.theme-bus .bs-air.low .bs-air-low { display: block; }
+.theme-bus .bs-air-puff { color: #cfe8ff; font-size: 22px; }
+.theme-bus .bs-air.puff .bs-air-puff { display: block; }
+
+/* 밤: 계기판 조명이 조금 어둡고 따뜻해진다 */
+.theme-bus .bs::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(40, 24, 0, 0.16);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s;
+}
+.theme-bus .bs.night::after { opacity: 1; }
+.theme-bus .bs.night .tick-label { fill: #f5ead6; }
