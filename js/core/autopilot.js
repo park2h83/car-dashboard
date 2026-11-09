@@ -261,7 +261,10 @@
       drive(s, t.target, dt);
 
       // 도착 후 멈추면 주차까지
-      if (a.parking && s.speed < 0.5) {
+      // 주차장이면 AI 가 칸에 넣는 걸 보여 준다 (js/core/parking.js)
+      if (a.parking && s.speed < 0.5 && a.arrivedAt !== '주유소') {
+        Dash.parking.start(s, 'ai');
+      } else if (a.parking && s.speed < 0.5) {
         s.gear = 'P';
         s.parkingBrake = true;
         s.turnLeft = s.turnRight = false;

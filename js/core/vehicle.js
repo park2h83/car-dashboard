@@ -230,7 +230,7 @@
     var km = s.speed / 3600 * dt;
     s.odometer += km;
     s.trip += km;
-    if (km > 0 && s.gear !== 'R') {
+    if (km > 0 && s.gear !== 'R' && !s.parking.on) {
       s.roadDist += km * 1000;
       Dash.road.advance(s, km);
     }
@@ -557,21 +557,27 @@
       if (!s.road) Dash.road.init(s);
       updatePedals(s, input, dt);
       Dash.weather.update(s, dt);
-      Dash.roadside.update(s, dt);
-      Dash.traffic.update(s, dt);
-      Dash.autopilot.update(s, dt);
+      // 주차하는 동안은 도로·다른 차·길 이벤트·자율주행을 멈춘다 (js/core/parking.js)
+      if (!s.parking.on) {
+        Dash.roadside.update(s, dt);
+        Dash.traffic.update(s, dt);
+        Dash.autopilot.update(s, dt);
+      }
       combineControls(s);
       updateSpeed(s, dt);
+      Dash.parking.limitSpeed(s);
       updateGear(s, dt);
       updateRpm(s, dt);
       updateFuel(s, dt);
       updateTemps(s, dt);
       updateTires(s, dt);
       updateTrip(s, dt);
+      Dash.parking.update(s, input, dt);
       updateWipers(s, dt);
       updateBlink(s, dt);
       updateAlerts(s, dt);
       updateTimers(s, dt);
+      Dash.score.update(s, dt);
     },
 
     // 주행

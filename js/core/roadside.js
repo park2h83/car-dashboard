@@ -173,6 +173,7 @@
   function onPass(s, o) {
     if (o.type === 'light' && o.phase === 'red' && !s.autopilot.on) {
       U.emit(s, 'chime');
+      U.emit(s, 'redlight'); // 운전 점수 (score.js)
       U.say(s, '🚦 빨간불에 지나갔어요! 다음엔 꼭 멈춰요');
     }
     if (o.type === 'bump') {

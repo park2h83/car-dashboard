@@ -341,7 +341,7 @@
   var wasOverlayOpen = false;
   function overlayOpen() {
     return (Dash.rest && Dash.rest.isOpen()) ||
-      ['license', 'theme-picker', 'setup'].some(function (id) { var el = document.getElementById(id); return el && !el.hidden; });
+      ['license', 'theme-picker', 'setup', 'scorecard'].some(function (id) { var el = document.getElementById(id); return el && !el.hidden; });
   }
 
   function releaseAll() {

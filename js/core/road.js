@@ -195,10 +195,12 @@
       else U.announce(s, '⛽ 주유소에 도착했어요! 멈추고 시동을 끈 다음 주유 버튼을 눌러요', '주유소에 도착했어요. 시동을 끄고 주유해요');
       return;
     }
+    Dash.score.add(s, 5, '목적지에 잘 도착했어요');
     if (s.autopilot.on) {
       Dash.autopilot.onArrive(s, name);
     } else {
-      U.announce(s, '🏁 ' + U.kidCall() + ', ' + name + '에 도착했어!', U.kidCall() + ', ' + name + '에 도착했어요. 안내를 종료합니다');
+      U.announce(s, '🏁 ' + U.kidCall() + ', ' + name + '에 도착했어!', U.kidCall() + ', ' + name + '에 도착했어요. 이제 주차해 봐요');
+      Dash.parking.arrive(s); // 천천히 가면 주차 미션 (js/core/parking.js)
     }
   }
 

@@ -95,6 +95,21 @@
     rainSrc.loop = true;
     rainSrc.connect(filterNode('bandpass', 2500, 0.4, loops.rain));
     rainSrc.start();
+
+    // 주차 센서: "삐—" (켰다 껐다 하는 빠르기로 거리를 알려 준다)
+    loops.sensor = gainNode(0);
+    osc('sine', 1320, loops.sensor);
+  }
+
+  // 주차 센서: 가까울수록 빨리, 아주 가까우면 계속 (null 이면 조용)
+  function sensorGain(s, t) {
+    var p = s.parking;
+    if (!p || !p.on || !s.engineOn || p.phase === 'done') return 0;
+    var d = s.gear === 'R' ? p.sensor.rear : s.gear === 'D' ? p.sensor.front : null;
+    if (d == null) return 0;
+    if (d < 0.3) return 0.16;
+    var period = d < 0.6 ? 0.18 : d < 1.0 ? 0.32 : 0.55;
+    return (t % period) < 0.08 ? 0.16 : 0;
   }
 
   // 정해진 음높이로 "띵"
@@ -272,6 +287,7 @@
     loops.horn.gain.setTargetAtTime(s.horn ? 0.22 : 0, t, 0.015);
     loops.abs.gain.setTargetAtTime(s.absActive ? 0.25 : 0, t, 0.03);
     loops.rain.gain.setTargetAtTime(s.rainLevel * (s.inTunnel ? 0.02 : 0.14), t, 0.4);
+    loops.sensor.gain.setTargetAtTime(sensorGain(s, t), t, 0.005);
 
     // 공조 바람
     var c = s.climate;
@@ -344,7 +360,14 @@
 
       // 깜빡이 "똑—딱"
       if (s.blinkOn !== prev.blinkOn && (s.turnLeft || s.turnRight || s.hazard)) {
-        if (s.blinkOn) noise('bandpass', 2200, 0.03, 0.5); else noise('bandpass', 1500, 0.03, 0.4);
+        // 실제 차의 릴레이처럼 또렷하게: 짧은 딸깍 + 잡음
+        if (s.blinkOn) {
+          tone(2600, 0.012, 0.35, 'square');
+          noise('bandpass', 2400, 0.035, 0.9, 0, 2);
+        } else {
+          tone(1700, 0.012, 0.3, 'square');
+          noise('bandpass', 1500, 0.035, 0.8, 0, 2);
+        }
       }
       prev.blinkOn = s.blinkOn;
     }

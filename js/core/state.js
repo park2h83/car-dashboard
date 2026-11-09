@@ -150,6 +150,25 @@
       restSoon: false,    // 곧 쉬어야 함 (휴식 권장 경고등)
       restDue: false,     // 지금 쉬어야 함 → 차가 멈춘다
 
+      // ---- 주차 (js/core/parking.js) ----
+      // mode: 'mission' 도착해서 주차 미션 | 'ai' AI 가 주차 | 'free' 후진(R)할 때 둘러보기
+      parking: {
+        on: false, mode: '', pending: false, pendingRoad: '',
+        lot: null,                       // { w, h, slots, obstacles, target }
+        car: { x: 0, y: 0, h: 0, steer: 0 }, // 위에서 본 내 차 (m, 방향은 라디안: 0 = 오른쪽)
+        sensor: { front: null, rear: null }, // 가장 가까운 장애물까지 거리 (m, 없으면 null)
+        phase: '',                       // 'drive' | 'inSlot' | 'done'
+        stars: 0, timer: 0, ai: null
+      },
+
+      // ---- 운전 점수 (js/core/score.js): 한 번 운전마다 100점에서 시작, 후하게 ----
+      score: {
+        active: false, points: 100, startOdo: 0,
+        good: [], oops: [],              // [{ label, n, pts }]
+        pop: null,                       // { text, delta, points, t } 잠깐 뜨는 알림
+        card: null                       // 운전이 끝나면 보여 줄 성적표
+      },
+
       // ---- 표시 ----
       popup: { title: '', value: '', timer: 0 }, // 계기판에 잠깐 뜨는 설정값 (온도 변경 등)
       message: '',        // 안내 문구 (아이용 힌트, AI 가 하는 말)

@@ -117,6 +117,8 @@
   Dash.license.init(state);
   Dash.rest.init(state, input);
   Dash.setup.init();
+  Dash.parkview.init(state, input);
+  Dash.scorecard.init(state);
 
   Dash.controls.init(state, input, {
     openThemePicker: openThemePicker,
@@ -194,6 +196,8 @@
     safely(function () { Dash.sound.update(state); });
     safely(renderToast);
     safely(renderModeFlash);
+    safely(function () { Dash.parkview.update(state); });
+    safely(function () { Dash.scorecard.update(state); });
     if (state.engineOn !== wakeWanted) safely(function () { keepAwake(state.engineOn); });
     // 과속방지턱을 세게 넘으면 계기판이 흔들린다
     var shake = state.shake > 0

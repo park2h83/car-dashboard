@@ -1,0 +1,159 @@
+/* 주차 화면 (js/parkview.js): 계기판 자리를 덮는 위에서 본 주차장 + 버튼판 자리의 핸들 */
+#parkview {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: var(--controls-height);
+  z-index: 18;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: max(10px, env(safe-area-inset-top)) 16px 10px;
+  background: radial-gradient(ellipse at 50% 40%, #1a2028, #07090c 75%);
+  color: #e8ecf1;
+}
+#parkview[hidden] { display: none; }
+
+.pv-svg { flex: 1; min-width: 0; height: 100%; }
+.pv-side {
+  flex: 0 0 170px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+.pv-side.right { align-items: center; text-align: center; }
+.pv-title { font-size: 20px; font-weight: 800; color: #4fc3ff; }
+.pv-speed b { font-size: 54px; font-weight: 300; }
+.pv-speed small { margin-left: 4px; color: #8b95a1; font-size: 16px; }
+.pv-gear { font-size: 44px; font-weight: 800; color: #4fc3ff; }
+.pv-sens { display: flex; align-items: center; gap: 8px; font-size: 16px; color: #8b95a1; }
+.pv-sens i { flex: 1; height: 14px; border-radius: 7px; background: #262d36; }
+.pv-sens i.green { background: #39d353; }
+.pv-sens i.yellow { background: #ffb020; }
+.pv-sens i.red { background: #ff3b30; }
+.pv-goal { white-space: pre-line; font-size: 24px; font-weight: 800; line-height: 1.4; }
+.pv-stars { font-size: 40px; }
+
+/* 목표 칸: 초록으로 깜빡깜빡 */
+.pv-target { fill: rgba(57, 211, 83, 0.35); stroke: #39d353; stroke-width: 0.12; stroke-dasharray: 0.4 0.25; animation: pv-target 1.2s infinite alternate; }
+@keyframes pv-target { from { fill-opacity: 0.35; } to { fill-opacity: 0.9; } }
+.pv-p { font-size: 1.8px; font-weight: 900; fill: #fff; }
+.pv-guide { fill: none; stroke: #ffd23f; stroke-width: 0.12; stroke-opacity: 0.85; stroke-dasharray: 0.35 0.2; }
+
+/* 센서 표시: 가까울수록 초록 → 노랑 → 빨강 */
+.pv-sensor path { fill: none; stroke-width: 0.14; stroke-linecap: round; stroke: transparent; }
+.pv-sensor.green .lvl2, .pv-sensor.yellow .lvl2, .pv-sensor.red .lvl2 { stroke: #39d353; }
+.pv-sensor.yellow .lvl1, .pv-sensor.red .lvl1 { stroke: #ffb020; }
+.pv-sensor.red .lvl0 { stroke: #ff3b30; }
+
+/* 핸들: 가운데 버튼판 자리를 덮는다 */
+.ctrl-mid { position: relative; }
+#steer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: linear-gradient(#0b0d10, #15181d);
+}
+#steer[hidden] { display: none; }
+.st-wheel {
+  height: 100%;
+  max-height: 290px;
+  aspect-ratio: 1;
+  touch-action: none;
+}
+.st-wheel svg { width: 100%; height: 100%; display: block; }
+.st-side { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+.st-hint { font-size: 17px; color: #9aa4b0; line-height: 1.5; }
+.st-btn {
+  min-height: 60px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 2px solid #3a434f;
+  background: #1d232b;
+  color: #e8ecf1;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+}
+.st-btn.ai { border-color: #3d8bff; color: #9cc6ff; }
+.st-btn:active { transform: scale(0.96); }
+
+/* 점수 알림: 잠깐 떴다 사라진다 */
+#score-pop {
+  position: absolute;
+  right: 16px;
+  bottom: calc(var(--controls-height) + 12px);
+  z-index: 21;
+  max-width: calc(100% - 32px);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+#score-pop.show { opacity: 1; transform: none; }
+#score-pop.good { background: rgba(34, 160, 80, 0.95); }
+#score-pop.oops { background: rgba(70, 80, 95, 0.95); }
+#score-pop b { font-size: 20px; }
+#score-pop span { opacity: 0.8; }
+
+/* 운전 점수 성적표 */
+#scorecard {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.7);
+}
+#scorecard[hidden] { display: none; }
+.sc-box {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  touch-action: pan-y;
+  padding: 22px 28px 24px;
+  border-radius: 26px;
+  background: #fffaf0;
+  color: #1d2430;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: sc-in 0.4s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+@keyframes sc-in { from { transform: scale(0.7); opacity: 0; } to { transform: none; opacity: 1; } }
+.sc-head { font-size: 22px; font-weight: 800; color: #3a8bff; }
+.sc-trophy { font-size: 64px; line-height: 1.1; margin-top: 6px; }
+.sc-points { font-size: 30px; font-weight: 800; }
+.sc-points b { font-size: 84px; color: #ff8a00; font-variant-numeric: tabular-nums; }
+.sc-title { font-size: 26px; font-weight: 800; margin: 2px 0 6px; }
+.sc-sub { font-size: 16px; color: #7a7466; }
+.sc-tip { margin-top: 12px; font-size: 16px; font-weight: 700; color: #7a7466; }
+.sc-list { list-style: none; margin: 10px auto 0; padding: 0; max-width: 420px; text-align: left; }
+.sc-list li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 4px; font-size: 18px; border-bottom: 1px dashed #e4ddcd; }
+.sc-list.good b { color: #22a050; }
+.sc-list.oops b { color: #8a8f98; }
+.sc-ok {
+  margin-top: 18px;
+  min-height: 64px;
+  padding: 0 40px;
+  border-radius: 18px;
+  border: none;
+  background: #3a8bff;
+  color: #fff;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 800;
+}
+.sc-ok:active { transform: scale(0.97); }

@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/controls.css">
   <link rel="stylesheet" href="css/overlays.css">
+  <link rel="stylesheet" href="css/parking.css">
   <!-- 테마 스타일: 테마를 추가하면 여기에 한 줄 추가 -->
   <link rel="stylesheet" href="themes/classic/theme.css">
   <link rel="stylesheet" href="themes/digital/theme.css">
@@ -28,6 +29,13 @@
 
     <div id="toast" aria-live="polite"></div>
     <div id="mode-flash" aria-hidden="true"></div>
+
+    <!-- 주차 화면: 위에서 내려다본 주차장 (js/parkview.js) -->
+    <div id="parkview" hidden></div>
+
+    <!-- 운전 점수 성적표 (js/scorecard.js) -->
+    <div id="score-pop" aria-live="polite"></div>
+    <div id="scorecard" hidden></div>
 
     <!-- 테마 고르기 화면 (🎨 테마 버튼으로 연다. 내용은 app.js 가 만든다) -->
     <div id="theme-picker" hidden></div>
@@ -59,6 +67,8 @@
         <div class="ctrl-quick" id="ctrl-quick"></div>
         <div class="ctrl-tabs" id="ctrl-tabs"></div>
         <div class="ctrl-panel" id="ctrl-panel"></div>
+        <!-- 주차할 때 버튼판 자리에 나타나는 핸들 (js/parkview.js) -->
+        <div id="steer" hidden></div>
       </div>
 
       <div class="ctrl-pedals">
@@ -80,6 +90,8 @@
   <script src="js/core/weather.js"></script>
   <script src="js/core/traffic.js"></script>
   <script src="js/core/autopilot.js"></script>
+  <script src="js/core/score.js"></script>
+  <script src="js/core/parking.js"></script>
   <script src="js/core/vehicle.js"></script>
   <script src="js/core/warnings.js"></script>
   <script src="js/core/sound.js"></script>
@@ -96,6 +108,8 @@
   <script src="js/license.js"></script>
   <script src="js/rest.js"></script>
   <script src="js/setup.js"></script>
+  <script src="js/parkview.js"></script>
+  <script src="js/scorecard.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

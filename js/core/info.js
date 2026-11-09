@@ -119,6 +119,13 @@
         row('시트 통풍', vent(s.seatVent[0]) + ' / ' + vent(s.seatVent[1])) +
         row('핸들 열선', s.wheelHeat ? '켬' : '끔');
     },
+    score: function (s) {
+      var sc = s.score;
+      var last = sc.good.concat(sc.oops).slice(-2).map(function (e) { return '<div class="info-sub">' + e.label + '</div>'; }).join('');
+      return title('⭐ 운전 점수') +
+        '<div class="info-big">' + sc.points + '점</div>' +
+        (last || '<div class="info-sub">깜빡이·신호를 잘 지키면 점수가 올라가요</div>');
+    },
     road: function (s) {
       return title('도로 정보') +
         '<div class="road-name">' + s.roadName + '</div>' +
@@ -128,7 +135,7 @@
         (s.nav.on ? '' : '<div class="info-sub">내비 탭에서 목적지를 골라 보세요</div>');
     }
   };
-  var ORDER = ['trip', 'economy', 'tires', 'car', 'climate', 'road'];
+  var ORDER = ['trip', 'score', 'economy', 'tires', 'car', 'climate', 'road'];
 
   function pages(s) {
     var list = ORDER.slice();
