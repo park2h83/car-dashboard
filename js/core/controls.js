@@ -140,6 +140,7 @@
           value: function () { return Dash.sound.isMuted() ? '🔇 끔' : '🔊 켬'; } },
         { label: '🎨 테마 고르기', act: function () { app.openThemePicker(); } },
         { label: '🪪 운전면허증', act: function () { Dash.license.open(); } },
+        { label: '🧑‍🏫 운전 코치', act: function () { Dash.coach.toggle(); }, on: function () { return Dash.coach.isOn(); } },
         { label: '🚗 앞유리 화면', act: function () { Dash.windshield.toggle(); }, on: function () { return Dash.windshield.isOn(); } },
         { label: '👨‍👩‍👦 부모님 설정', value: function () { return '시간 제한'; }, act: function () { Dash.rest.openParent(); } },
         { label: '길 이벤트', act: function (s) {
@@ -283,6 +284,7 @@
   var TAB_KEY = 'dash.tab';
   var tabButtons = {};
   var panels = {};
+  var byLabel = {};   // 버튼 이름 → { el, tab } (운전 코치가 눌러야 할 버튼을 반짝일 때 쓴다)
 
   function showTab(id) {
     currentTab = id;
@@ -297,7 +299,11 @@
   function buildPanel() {
     TABS.push(settingsTab());
     var quick = document.getElementById('ctrl-quick');
-    QUICK.forEach(function (item) { quick.appendChild(makeItem(item)); });
+    QUICK.forEach(function (item) {
+      var el = makeItem(item);
+      byLabel[item.label] = { el: el, tab: null };
+      quick.appendChild(el);
+    });
 
     var tabs = document.getElementById('ctrl-tabs');
     var panelBox = document.getElementById('ctrl-panel');
@@ -313,7 +319,11 @@
       var p = document.createElement('div');
       p.className = 'ctrl-page';
       var first = synced.length;
-      t.items.forEach(function (item) { p.appendChild(makeItem(item, true)); });
+      t.items.forEach(function (item) {
+        var el = makeItem(item, true);
+        if (!byLabel[item.label]) byLabel[item.label] = { el: el, tab: t.id };
+        p.appendChild(el);
+      });
       for (var i = first; i < synced.length; i++) synced[i].tab = t.id;
       panelBox.appendChild(p);
       panels[t.id] = p;
@@ -379,6 +389,12 @@
   var fixed = {};
 
   Dash.controls = {
+    // 버튼 찾기: 이름(예: '◀', '전조등')으로. 탭 안에 있으면 그 탭 버튼도 같이 준다
+    find: function (label) {
+      var b = byLabel[label];
+      if (!b) return null;
+      return { el: b.el, tab: b.tab ? tabButtons[b.tab] : null, shown: !b.tab || b.tab === currentTab };
+    },
     // hooks: { openThemePicker(), toggleMute() } — 설정 탭·테마 버튼에서 쓴다
     init: function (s, inp, hooks) {
       state = s;

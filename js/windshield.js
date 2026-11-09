@@ -4,7 +4,7 @@
 (function (Dash) {
   'use strict';
 
-  var KEY = 'dash.view';
+  var KEY = 'dash.windshield';
   var W = 1600, H = 400;
 
   var state, app, root, scene, el = {}, on = false, last = {}, lastT = 0;
@@ -12,7 +12,7 @@
   var workMs = 0, halfRate = false, skip = false, sceneDt = 0;
 
   function load() {
-    try { return localStorage.getItem(KEY) !== 'cluster'; } catch (e) { return true; } // 처음엔 켜 둔다
+    try { return localStorage.getItem(KEY) === 'drive'; } catch (e) { return false; } // 처음엔 꺼 둔다 (운전 코치가 대신 알려 준다)
   }
   function save() {
     try { localStorage.setItem(KEY, on ? 'drive' : 'cluster'); } catch (e) { /* 무시 */ }

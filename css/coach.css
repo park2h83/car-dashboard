@@ -1,0 +1,77 @@
+/* 운전 코치 카드 (js/coach.js): 계기판 아래쪽 가운데에 뜨는 그림 카드 + 반짝이는 버튼 */
+#coach {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--controls-height) + env(safe-area-inset-bottom) + 10px);
+  z-index: 22;
+  transform: translateX(-50%);
+  width: min(600px, calc(100% - 32px));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 22px;
+  background: rgba(255, 250, 240, 0.97);
+  color: #1d2430;
+  border: 4px solid #3a8bff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  animation: coach-in 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+  pointer-events: none; /* 카드 아래 계기판·버튼을 가리지 않게 (핸들만 만질 수 있다) */
+}
+#coach[hidden] { display: none; }
+#coach.urgent { border-color: #ff3b30; }
+#coach.done { border-color: #22c55e; }
+@keyframes coach-in { from { transform: translateX(-50%) scale(0.6); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
+
+.coach-art { flex: 0 0 auto; width: 120px; height: 100px; display: flex; align-items: center; justify-content: center; }
+.coach-art-svg { width: 120px; height: 100px; }
+.coach-sign { width: 96px; height: 96px; }
+.coach-emoji { font-size: 54px; line-height: 1; }
+.coach-body { flex: 1; min-width: 0; }
+.coach-title { font-size: 25px; font-weight: 900; margin-bottom: 6px; }
+.coach-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.coach-steps li { display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 700; color: #1d2430; }
+.coach-steps li.wait { opacity: 0.4; }
+.coach-steps li.ok { color: #1a9a4a; text-decoration: line-through; text-decoration-thickness: 2px; }
+.coach-steps .num {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #3a8bff;
+  color: #fff;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.coach-steps li.ok .num { background: #22c55e; font-size: 0; }
+.coach-steps li.ok .num::after { content: '✓'; font-size: 17px; }
+
+/* 갈림길: 카드 안의 핸들 (이것만 만질 수 있다) */
+.coach-wheel { flex: 0 0 auto; width: 120px; height: 120px; pointer-events: auto; touch-action: none; margin: -14px 0; }
+.coach-wheel[hidden] { display: none; }
+.coach-wheel svg { width: 100%; height: 100%; display: block; }
+
+/* 핸들을 돌리면 그림 속 흰 차가 돈다 */
+.coach-art-svg .coach-car { transform: translate(60px, 82px); }
+.coach-art-svg.turn.left.go .coach-car { animation: coach-left 1.2s ease-in-out forwards; }
+.coach-art-svg.turn.right.go .coach-car { animation: coach-right 1.2s ease-in-out forwards; }
+@keyframes coach-left {
+  0% { transform: translate(60px, 82px) rotate(0deg); }
+  45% { transform: translate(60px, 50px) rotate(0deg); }
+  100% { transform: translate(14px, 40px) rotate(-90deg); }
+}
+@keyframes coach-right {
+  0% { transform: translate(60px, 82px) rotate(0deg); }
+  45% { transform: translate(60px, 50px) rotate(0deg); }
+  100% { transform: translate(106px, 40px) rotate(90deg); }
+}
+
+/* 눌러야 할 버튼·페달이 반짝반짝 */
+.coach-glow {
+  outline: 5px solid #ffd23f !important;
+  outline-offset: 3px;
+  animation: coach-glow 0.8s ease-in-out infinite alternate;
+}
+@keyframes coach-glow { from { outline-color: #ffd23f; } to { outline-color: rgba(255, 210, 63, 0.25); } }

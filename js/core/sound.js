@@ -231,6 +231,7 @@
     'pop': function () { noise('lowpass', 700, 0.35, 0.9, 0, 0.7); },
     'arrive': function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, 0.4, 0.2, 'triangle', i * 0.13); }); },
     'speak': function (e) { speak(e.text); },
+    'coach': function () { [659, 784, 1046].forEach(function (f, i) { tone(f, 0.25, 0.16, 'triangle', i * 0.09); }); },
     // 주행 모드 바꿀 때: 스포츠는 부릉부릉 힘차게, 에코는 부드럽게
     'mode': function (e) {
       if (e.mode === 'sport') {

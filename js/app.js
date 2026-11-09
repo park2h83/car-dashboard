@@ -119,6 +119,7 @@
   Dash.setup.init();
   Dash.wheel.init(input);
   Dash.windshield.init(state);
+  Dash.coach.init(state);
   Dash.parkview.init(state);
   Dash.scorecard.init(state);
 
@@ -148,6 +149,7 @@
   function renderToast() {
     // 주차 화면이 계기판을 덮고 있으면 테마가 그리는 안내도 가려지니 노란 알림으로
     var message = current.showsMessages && !state.parking.on ? '' : state.message;
+    if (Dash.coach.isOpen()) message = ''; // 코치 카드가 대신 알려 준다
     if (message === lastMessage) return;
     lastMessage = message;
     if (message) toast.textContent = message;
@@ -193,7 +195,7 @@
     last = now;
     // 한 곳에서 오류가 나도 나머지(화면·소리·알림)는 계속 돈다
     safely(function () { Dash.rest.update(dt); });
-    safely(function () { Dash.wheel.update(dt, state.parking.on || state.driveView); });
+    safely(function () { Dash.wheel.update(dt, state.parking.on || state.driveView || Dash.coach.wantsWheel()); });
     safely(function () { Dash.vehicle.step(state, input, dt); });
     safely(function () { current.update(state); });
     safely(function () { Dash.controls.sync(state); });
@@ -201,6 +203,7 @@
     safely(renderToast);
     safely(renderModeFlash);
     safely(function () { Dash.windshield.update(state); });
+    safely(function () { Dash.coach.update(state, dt); });
     safely(function () { Dash.parkview.update(state); });
     safely(function () { Dash.scorecard.update(state); });
     if (state.engineOn !== wakeWanted) safely(function () { keepAwake(state.engineOn); });
