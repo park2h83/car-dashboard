@@ -21,6 +21,9 @@
   var spawnTimer = 2;
   var cancelAfterChange = false; // 차선 변경이 끝나면 깜빡이를 끈다
   var blockedTimer = 0;
+  var WHEEL_TURN = 0.2;          // 핸들을 이만큼(약 90°) 돌리면 그쪽 차선으로 한 칸 (5살도 쉽게)
+  var wheelLatched = false;      // 한 칸 옮긴 뒤 핸들이 가운데로 돌아와야 다음 칸
+  var hintTimer = 0;
 
   function rand(a, b) { return a + Math.random() * (b - a); }
 
@@ -129,7 +132,53 @@
     s.blindSpot.right = s.lane < s.lanes - 1 && !laneFree(s, s.lane + 1, BLIND_BEHIND, BLIND_AHEAD);
   }
 
+  // 앞유리 화면에서 핸들로 차선 바꾸기: 돌리면 한 칸 쏙, 놓으면 차선 가운데로.
+  // 옆에 차가 있거나 공사 중이면 옮기지 않고 알려 준다. 깜빡이 없이 바꿔도 점수는 빼지 않는다.
+  function wheelLaneChange(s, dt) {
+    hintTimer = Math.max(0, hintTimer - dt);
+    var steer = s.steer;
+    if (Math.abs(steer) < WHEEL_TURN * 0.5) wheelLatched = false;
+    if (!s.driveView || s.parking.on || wheelLatched || Math.abs(steer) < WHEEL_TURN) return;
+    wheelLatched = true;
+    if (s.autopilot.on) {
+      if (hintTimer <= 0) { hintTimer = 4; U.say(s, '🤖 지금은 AI 가 운전해요. 자율주행을 끄면 핸들로 운전해요'); }
+      return;
+    }
+    var dir = steer < 0 ? -1 : 1;
+    var target = s.lane + dir;
+    if (s.speed < 2 && !Dash.roadside.laneBlocked(s, s.lane, 0, 40)) {
+      if (hintTimer <= 0) { hintTimer = 3; U.say(s, '엑셀을 밟고 달리면서 핸들을 돌려요'); }
+      return;
+    }
+    if (target < 0 || target >= s.lanes) {
+      U.emit(s, 'bump', { hard: false });
+      if (hintTimer <= 0) { hintTimer = 3; U.say(s, (dir < 0 ? '왼쪽' : '오른쪽') + '에는 차선이 없어요'); }
+      return;
+    }
+    if (Dash.roadside.laneBlocked(s, target, 0, 40)) {
+      if (hintTimer <= 0) { hintTimer = 3; U.say(s, '🚧 그 차선은 공사 중이라 못 가요'); }
+      return;
+    }
+    if (dir < 0 ? s.blindSpot.left : s.blindSpot.right) {
+      // 안전장치: 옆 차가 있으면 핸들을 돌려도 옮기지 않는다
+      U.emit(s, 'chime');
+      U.say(s, '🚗 ' + (dir < 0 ? '왼쪽' : '오른쪽') + '에 차가 있어요! 지나가면 다시 해요');
+      return;
+    }
+    var signaled = dir < 0 ? s.turnLeft : s.turnRight;
+    s.lane = target;
+    cancelAfterChange = signaled;
+    if (signaled) {
+      U.say(s, '👍 깜빡이 켜고 차선 바꾸기, 최고!');
+      U.emit(s, 'good'); // 칭찬 소리 + 운전 점수 (score.js)
+    } else if (hintTimer <= 0) {
+      hintTimer = 8;
+      U.say(s, '차선을 바꿨어요! 다음엔 깜빡이도 켜 볼까? 😊');
+    }
+  }
+
   function updateLaneChange(s, dt) {
+    wheelLaneChange(s, dt);
     var dir = s.hazard ? 0 : s.turnLeft ? -1 : s.turnRight ? 1 : 0;
     s.signalTimer = dir ? s.signalTimer + dt : 0;
     blockedTimer = Math.max(0, blockedTimer - dt);
@@ -139,9 +188,11 @@
     var myLaneBlocked = Dash.roadside.laneBlocked(s, s.lane, 0, 40);
     if (myLaneBlocked && !dir && s.speed < 1 && s.gear === 'D' && !s.autopilot.on && blockedTimer <= 0) {
       blockedTimer = 6;
-      U.say(s, '🚧 길이 막혔어요! 깜빡이를 켜서 옆 차선으로 가요');
+      U.say(s, s.driveView ? '🚧 길이 막혔어요! 핸들을 돌려 옆 차선으로 가요' : '🚧 길이 막혔어요! 깜빡이를 켜서 옆 차선으로 가요');
     }
-    if (dir && settled && s.signalTimer > SIGNAL_TO_CHANGE && (s.speed > 2 || s.autopilot.on || myLaneBlocked)) {
+    // 앞유리 화면에서는 아이가 핸들로 바꾼다 (깜빡이만으로는 자율주행일 때만)
+    var bySignal = !s.driveView || s.autopilot.on;
+    if (bySignal && dir && settled && s.signalTimer > SIGNAL_TO_CHANGE && (s.speed > 2 || s.autopilot.on || myLaneBlocked)) {
       var target = s.lane + dir;
       if (target >= 0 && target < s.lanes) {
         if (Dash.roadside.laneBlocked(s, target, 0, 40)) {

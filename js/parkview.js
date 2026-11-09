@@ -1,18 +1,13 @@
 // 주차 화면: 위에서 내려다본 주차장(내 흰 차·주차선·장애물·센서·예상 진로)과
 // 버튼판 자리에 나타나는 큰 핸들. 상태는 js/core/parking.js 가 바꾸고, 여기서는 그리기와 핸들 입력만 한다.
-// 핸들: 손가락으로 돌리고, 손을 떼면 천천히 가운데로 돌아온다. PC 에서는 ← → 키.
+// 핸들 돌리기는 js/wheel.js (앞유리 화면과 같이 쓴다).
 (function (Dash) {
   'use strict';
 
-  var WHEEL_MAX = 450;        // 핸들을 끝까지 돌리는 각도 (도)
-  var WHEEL_RETURN = 160;     // 손을 떼면 가운데로 돌아오는 빠르기 (도/초)
-  var KEY_TURN = 320;         // ← → 키로 돌리는 빠르기 (도/초)
   var PX = 1;                 // SVG 는 미터 단위 그대로 그린다
 
-  var state, input, view, steer, wheelEl, lastLot = null, shown = false, shownMode = '';
+  var state, view, steer, lastLot = null, shown = false, shownMode = '';
   var el = {};
-  var wheelDeg = 0, held = null, lastAngle = 0, keys = { left: false, right: false };
-  var lastT = 0;
 
   function f(n) { return (Math.round(n * 100) / 100).toString(); }
 
@@ -173,47 +168,12 @@
   // ---------- 핸들 ----------
 
   function steerHtml(mode) {
-    var spokes = '<path d="M-88 8 L-30 14 M88 8 L30 14 M0 34 L0 92" stroke="#3a414b" stroke-width="22" stroke-linecap="round"/>';
-    return '<div class="st-wheel"><svg viewBox="-110 -110 220 220">' +
-      '<circle r="96" fill="none" stroke="#20252c" stroke-width="22"/>' +
-      '<circle r="96" fill="none" stroke="#4a525d" stroke-width="3"/>' + spokes +
-      '<circle r="34" fill="#2a3038" stroke="#4a525d" stroke-width="3"/>' +
-      '<text y="11" text-anchor="middle" font-size="30">🚗</text>' +
-      '<rect x="-6" y="-108" width="12" height="22" rx="4" fill="#ff5a3c"/>' +
-      '</svg></div>' +
+    return '<div class="st-wheel"></div>' +
       '<div class="st-side">' +
       '  <div class="st-hint">' + (mode === 'free' ? 'R: 뒤로 가요<br>핸들을 돌려 봐요' : mode === 'ai' ? '🤖 AI 가<br>핸들을 돌려요' : '핸들을 돌리고<br>엑셀을 살살') + '</div>' +
       (mode === 'mission' ? '  <button type="button" class="st-btn ai" data-st="ai">🤖 AI 주차</button>' +
         '  <button type="button" class="st-btn" data-st="quit">여기 세우기</button>' : '') +
       '</div>';
-  }
-
-  function wheelAngle(e) {
-    var r = wheelEl.getBoundingClientRect();
-    return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
-  }
-
-  function bindWheel() {
-    wheelEl = steer.querySelector('.st-wheel');
-    wheelEl.addEventListener('pointerdown', function (e) {
-      e.preventDefault();
-      held = e.pointerId;
-      lastAngle = wheelAngle(e);
-      try { wheelEl.setPointerCapture(e.pointerId); } catch (err) { /* 무시 */ }
-    });
-    wheelEl.addEventListener('pointermove', function (e) {
-      if (e.pointerId !== held) return;
-      var a = wheelAngle(e);
-      var d = a - lastAngle;
-      if (d > 180) d -= 360;
-      if (d < -180) d += 360;
-      lastAngle = a;
-      wheelDeg = Math.max(-WHEEL_MAX, Math.min(WHEEL_MAX, wheelDeg + d));
-    });
-    var release = function (e) { if (e.pointerId === held) held = null; };
-    wheelEl.addEventListener('pointerup', release);
-    wheelEl.addEventListener('pointercancel', release);
-    wheelEl.addEventListener('lostpointercapture', release);
   }
 
   function show(on, mode) {
@@ -224,37 +184,16 @@
     if (on) {
       steer.innerHTML = steerHtml(mode);
       steer.setAttribute('data-mode', mode);
-      bindWheel();
+      Dash.wheel.bind(steer.querySelector('.st-wheel'));
     } else {
       steer.innerHTML = '';
-      held = null;
-      wheelDeg = 0;
-      input.steer = 0;
+      Dash.wheel.setOverride(null);
     }
-  }
-
-  function updateWheel(dt, p) {
-    if (p.mode === 'ai') {
-      // AI 가 돌리는 핸들을 그대로 보여 준다
-      wheelDeg = p.car.steer / Dash.parking.MAX_STEER * WHEEL_MAX;
-      held = null;
-    }
-    if (keys.left) wheelDeg -= KEY_TURN * dt;
-    if (keys.right) wheelDeg += KEY_TURN * dt;
-    if (held == null && !keys.left && !keys.right) {
-      wheelDeg = wheelDeg > 0 ? Math.max(0, wheelDeg - WHEEL_RETURN * dt) : Math.min(0, wheelDeg + WHEEL_RETURN * dt);
-    }
-    wheelDeg = Math.max(-WHEEL_MAX, Math.min(WHEEL_MAX, wheelDeg));
-    input.steer = wheelDeg / WHEEL_MAX;
-    var svg = wheelEl && wheelEl.firstChild;
-    if (svg) svg.style.transform = 'rotate(' + wheelDeg.toFixed(1) + 'deg)';
   }
 
   Dash.parkview = {
-    init: function (s, inp) {
+    init: function (s) {
       state = s;
-      input = inp;
-      input.steer = 0;
       view = document.getElementById('parkview');
       steer = document.getElementById('steer');
       // 탭 버튼판 안이 아니라서 누르는 즉시 반응한다
@@ -265,27 +204,15 @@
         if (b.getAttribute('data-st') === 'ai') Dash.parking.aiHelp(state);
         else Dash.parking.quit(state);
       });
-      window.addEventListener('keydown', function (e) {
-        if (!shown || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-        if (e.key === 'ArrowLeft') { keys.left = true; e.preventDefault(); }
-        if (e.key === 'ArrowRight') { keys.right = true; e.preventDefault(); }
-      });
-      window.addEventListener('keyup', function (e) {
-        if (e.key === 'ArrowLeft') keys.left = false;
-        if (e.key === 'ArrowRight') keys.right = false;
-      });
-      window.addEventListener('blur', function () { keys.left = keys.right = false; held = null; });
     },
 
     // 매 프레임 (app.js)
     update: function (s) {
-      var now = performance.now();
-      var dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0;
-      lastT = now;
       var p = s.parking;
       if (p.on !== shown || (p.on && p.mode !== shownMode)) show(p.on, p.mode);
       if (!p.on) return;
-      updateWheel(dt, p);
+      // AI 가 주차할 때는 AI 가 돌리는 핸들을 보여 준다
+      Dash.wheel.setOverride(p.mode === 'ai' ? p.car.steer / Dash.parking.MAX_STEER : null);
       render(s);
     }
   };

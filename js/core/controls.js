@@ -140,6 +140,7 @@
           value: function () { return Dash.sound.isMuted() ? '🔇 끔' : '🔊 켬'; } },
         { label: '🎨 테마 고르기', act: function () { app.openThemePicker(); } },
         { label: '🪪 운전면허증', act: function () { Dash.license.open(); } },
+        { label: '🚗 앞유리 화면', act: function () { Dash.windshield.toggle(); }, on: function () { return Dash.windshield.isOn(); } },
         { label: '👨‍👩‍👦 부모님 설정', value: function () { return '시간 제한'; }, act: function () { Dash.rest.openParent(); } },
         { label: '길 이벤트', act: function (s) {
             s.eventRate = { few: 'normal', normal: 'many', many: 'few' }[s.eventRate];

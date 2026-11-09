@@ -5,18 +5,19 @@
 //   var scene = Dash.scene.create({ egoColor: '#f5f7fa' });
 //   var out = scene.render(state, dt);  // { road, beam, sprites, glass } 각각 <g> 안에 넣는다
 //   (밤에는 road 위에 어둠을 덮고 그 위에 beam(전조등 불빛)을 그린다)
+//   Dash.scene.create({ firstPerson: true }) 는 운전석에서 본 앞유리 화면 (1600x560, 내 차는 그리지 않는다)
 (function (Dash) {
   'use strict';
 
   // ---- 원근 투영 (단위 m) ----
-  var CX = 800;            // 소실점 x
-  var H0 = 150;            // 지평선 y
-  var F = 600;             // 초점 거리 (클수록 확대)
-  var CAM_H = 6;           // 카메라 높이
-  var Z_EGO = 9;           // 카메라에서 내 차 뒤 범퍼까지 거리
+  var CX0 = 800;           // 소실점 x
+  var H00 = 150;           // 지평선 y
+  var F0 = 600;            // 초점 거리 (클수록 확대)
+  var CAM_H0 = 6;          // 카메라 높이
+  var Z_EGO0 = 9;          // 카메라에서 내 차 뒤 범퍼까지 거리
   var CAR_LEN = 4.6;
   var LANE_W = 3.5;
-  var Z_NEAR = 7.4;        // 화면 아래 끝
+  var Z_NEAR0 = 7.4;       // 화면 아래 끝
   var Z_FAR = 320;
   var DASH_LEN = 6;        // 차선 점선 길이·간격
   var DASH_GAP = 10;
@@ -26,19 +27,19 @@
   var SIGN_BEFORE = { light: 80, crosswalk: 0 }; // 표지판이 물건보다 얼마나 앞에 서 있는지 (기본 50m)
 
   // ---- 앞유리 (빗방울·와이퍼) ----
-  var GLASS = { x0: 470, x1: 1130, y0: 110, y1: 640 };
-  var WIPERS = [{ px: 560, py: 705, len: 360 }, { px: 840, py: 705, len: 330 }];
+  var GLASS0 = { x0: 470, x1: 1130, y0: 110, y1: 640 };
+  var WIPERS0 = [{ px: 560, py: 705, len: 360 }, { px: 840, py: 705, len: 330 }];
   var WIPE_ANGLE = 112;    // 와이퍼가 쓸고 올라가는 각도
   var MAX_DROPS = 220;
 
   var SHIRTS = ['#e74c3c', '#3a6ea5', '#2fbf71', '#ffb020', '#9b59b6', '#ff7ab6'];
 
-  var Z_SAMPLES = (function () {
+  function zSamples(near) {
     var out = [];
-    for (var z = Z_NEAR; z < Z_FAR; z *= 1.15) out.push(z);
+    for (var z = near; z < Z_FAR; z *= 1.15) out.push(z);
     out.push(Z_FAR);
     return out;
-  })();
+  }
 
   function f1(n) { return Math.round(n * 10) / 10; }
   function rand(a, b) { return a + Math.random() * (b - a); }
@@ -117,9 +118,22 @@
 
   // ---------- 장면 ----------
 
+  // 운전석 시점: 카메라가 낮고 내 차 앞 범퍼 2m 뒤에 있다
+  var FP = { CX: 800, H0: 150, F: 760, CAM_H: 1.25, Z_EGO: 0, FRONT: 2.0, W: 1600, H: 400,
+    GLASS: { x0: 0, x1: 1600, y0: 0, y1: 370 },
+    WIPERS: [{ px: 450, py: 430, len: 470 }, { px: 1000, py: 430, len: 440 }] };
+
   function create(opts) {
     opts = opts || {};
     var egoColor = opts.egoColor || '#f5f7fa';
+    var fp = !!opts.firstPerson;
+    // 시점마다 카메라 값을 따로 쓴다 (아래 함수들은 이 값들을 본다)
+    var CX = fp ? FP.CX : CX0, H0 = fp ? FP.H0 : H00, F = fp ? FP.F : F0, CAM_H = fp ? FP.CAM_H : CAM_H0;
+    var Z_EGO = fp ? FP.Z_EGO : Z_EGO0;
+    var Z_NEAR = fp ? F * CAM_H / (FP.H - H0) : Z_NEAR0;
+    var FRONT = fp ? FP.FRONT : Z_EGO + CAR_LEN; // 카메라에서 내 차 앞 범퍼까지
+    var GLASS = fp ? FP.GLASS : GLASS0, WIPERS = fp ? FP.WIPERS : WIPERS0;
+    var Z_SAMPLES = zSamples(Z_NEAR);
     var camX = 0;
     var curve = 0;
     var time = 0;
@@ -180,7 +194,7 @@
       return '<g transform="translate(' + f1(p[0]) + ' ' + f1(p[1]) + ') scale(' + f1(flip ? -k : k) + ' ' + f1(k) + ')">' + inner + '</g>';
     }
 
-    function zOf(s, d) { return Z_EGO + CAR_LEN + d; }
+    function zOf(s, d) { return FRONT + d; }
 
     // ---- 바닥: 도로, 차선, 횡단보도, 방지턱, 터널 벽 ----
     function roadSvg(s) {
@@ -227,7 +241,7 @@
       if (s.autopilot.on) {
         var l0 = s.lane * LANE_W;
         var l1 = l0 + LANE_W;
-        var front = Z_EGO + CAR_LEN + 0.5;
+        var front = FRONT + 0.5;
         var end = s.lead ? Math.max(front + 1, zOf(s, s.lead.gap) - 1) : 90;
         out += '<path class="rd-ap-lines" d="' + strip(l0 - 0.1, l0 + 0.1, samples(Z_NEAR, 140)) + strip(l1 - 0.1, l1 + 0.1, samples(Z_NEAR, 140)) + '"/>';
         out += '<path class="rd-ap-path" d="' + strip(l0 + 0.5, l1 - 0.5, samples(front, end)) + '"/>';
@@ -236,7 +250,7 @@
       // 앞차가 너무 가까우면 빨간 띠
       if ((s.fcw || s.aeb) && s.lead) {
         var fx = Math.round(s.laneX) * LANE_W;
-        out += '<path class="rd-fcw" d="' + strip(fx + 0.3, fx + LANE_W - 0.3, samples(Z_EGO + CAR_LEN, Math.max(Z_EGO + CAR_LEN + 0.5, zOf(s, s.lead.gap)))) + '"/>';
+        out += '<path class="rd-fcw" d="' + strip(fx + 0.3, fx + LANE_W - 0.3, samples(Math.max(Z_NEAR, FRONT), Math.max(Z_NEAR + 0.5, zOf(s, s.lead.gap)))) + '"/>';
       }
       // 갓길 반사봉 / 터널 천장 조명
       var posts = '';
@@ -278,7 +292,7 @@
     function beamSvg(s) {
       if (!s.lightsOn) return '';
       var ex = (s.laneX + 0.5) * LANE_W;
-      var front = Z_EGO + CAR_LEN;
+      var front = Math.max(Z_NEAR, FRONT);
       var reach = s.highBeam ? 90 : 45;
       var cls = 'rd-beam' + (s.inTunnel || s.night ? ' strong' : '') + (s.highBeam ? ' high' : '');
       // 앞으로 갈수록 퍼지는 불빛: 가까운 곳은 밝게, 먼 곳은 흐리게 두 겹으로
@@ -372,9 +386,9 @@
         });
       });
 
-      // 내 차
+      // 내 차 (운전석 시점에서는 안 보인다)
       var blink = s.blinkOn;
-      list.push({ z: Z_EGO, svg: '<g transform="rotate(' + f1((s.lane - s.laneX) * 5) + ' ' + f1(proj((s.laneX + 0.5) * LANE_W, Z_EGO)[0]) + ' ' + f1(proj(0, Z_EGO)[1]) + ')">' +
+      if (!fp) list.push({ z: Z_EGO, svg: '<g transform="rotate(' + f1((s.lane - s.laneX) * 5) + ' ' + f1(proj((s.laneX + 0.5) * LANE_W, Z_EGO)[0]) + ' ' + f1(proj(0, Z_EGO)[1]) + ')">' +
         place((s.laneX + 0.5) * LANE_W, Z_EGO, carSvg(egoColor, {
           cls: 'ego', brake: s.brake > 0.05 || s.aeb,
           blinkL: blink && (s.turnLeft || s.hazard), blinkR: blink && (s.turnRight || s.hazard),
@@ -447,12 +461,13 @@
       render: function (s, dt) {
         time += dt;
         // 카메라는 내 차를 따라가되 도로 가운데 쪽으로 조금 당겨서 모든 차선이 보이게 한다
-        camX = (s.laneX + 0.5) * LANE_W * 0.6 + s.lanes * LANE_W / 2 * 0.4;
+        // 운전석 시점: 내 차선 가운데에서 운전석(왼쪽) 쪽으로 조금
+        camX = fp ? (s.laneX + 0.5) * LANE_W - 0.35 : (s.laneX + 0.5) * LANE_W * 0.6 + s.lanes * LANE_W / 2 * 0.4;
         curve = 0.00022 * Math.sin(s.odometer * 0.9) + s.curve * 0.0012;
         return { road: roadSvg(s), beam: beamSvg(s), sprites: spritesSvg(s), glass: glassSvg(s, dt) };
       }
     };
   }
 
-  Dash.scene = { create: create, GLASS: GLASS };
+  Dash.scene = { create: create, GLASS: GLASS0, FP: FP };
 })(window.Dash = window.Dash || {});

@@ -150,6 +150,10 @@
       restSoon: false,    // 곧 쉬어야 함 (휴식 권장 경고등)
       restDue: false,     // 지금 쉬어야 함 → 차가 멈춘다
 
+      // ---- 앞유리 운전 화면 (js/windshield.js) ----
+      driveView: false,   // 위에 앞유리, 아래에 계기판
+      steer: 0,           // 핸들 (-1 왼쪽 끝 ~ 1 오른쪽 끝). 앞유리 화면에서 돌리면 차선을 한 칸씩 옮긴다
+
       // ---- 주차 (js/core/parking.js) ----
       // mode: 'mission' 도착해서 주차 미션 | 'ai' AI 가 주차 | 'free' 후진(R)할 때 둘러보기
       parking: {

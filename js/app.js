@@ -117,7 +117,9 @@
   Dash.license.init(state);
   Dash.rest.init(state, input);
   Dash.setup.init();
-  Dash.parkview.init(state, input);
+  Dash.wheel.init(input);
+  Dash.windshield.init(state);
+  Dash.parkview.init(state);
   Dash.scorecard.init(state);
 
   Dash.controls.init(state, input, {
@@ -191,12 +193,14 @@
     last = now;
     // 한 곳에서 오류가 나도 나머지(화면·소리·알림)는 계속 돈다
     safely(function () { Dash.rest.update(dt); });
+    safely(function () { Dash.wheel.update(dt, state.parking.on || state.driveView); });
     safely(function () { Dash.vehicle.step(state, input, dt); });
     safely(function () { current.update(state); });
     safely(function () { Dash.controls.sync(state); });
     safely(function () { Dash.sound.update(state); });
     safely(renderToast);
     safely(renderModeFlash);
+    safely(function () { Dash.windshield.update(state); });
     safely(function () { Dash.parkview.update(state); });
     safely(function () { Dash.scorecard.update(state); });
     if (state.engineOn !== wakeWanted) safely(function () { keepAwake(state.engineOn); });

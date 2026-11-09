@@ -93,6 +93,7 @@
     s.pedal = moveToward(s.pedal, input.accel ? 1 : 0, (input.accel ? 1.8 : 4) * dt);
     s.brakePedal = moveToward(s.brakePedal, input.brake ? 1 : 0, (input.brake ? 3 : 5) * dt);
     s.brakePressed = !!input.brake;
+    s.steer = input.steer || 0;
     s.horn = !!input.horn;
     s.washer = !!input.washer && s.washerFluid > 0;
   }

@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/controls.css">
   <link rel="stylesheet" href="css/overlays.css">
   <link rel="stylesheet" href="css/parking.css">
+  <link rel="stylesheet" href="css/windshield.css">
   <!-- 테마 스타일: 테마를 추가하면 여기에 한 줄 추가 -->
   <link rel="stylesheet" href="themes/classic/theme.css">
   <link rel="stylesheet" href="themes/digital/theme.css">
@@ -27,6 +28,9 @@
 </head>
 <body>
   <div id="app">
+    <!-- 앞유리 운전 화면 (js/windshield.js): 켜면 계기판 위에 보인다 -->
+    <div id="windshield" hidden></div>
+
     <!-- 계기판: 선택된 테마가 이 안을 그린다 -->
     <main id="cluster"></main>
 
@@ -114,6 +118,8 @@
   <script src="js/license.js"></script>
   <script src="js/rest.js"></script>
   <script src="js/setup.js"></script>
+  <script src="js/wheel.js"></script>
+  <script src="js/windshield.js"></script>
   <script src="js/parkview.js"></script>
   <script src="js/scorecard.js"></script>
   <script src="js/app.js"></script>

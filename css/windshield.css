@@ -1,0 +1,145 @@
+/* 앞유리 운전 화면 (js/windshield.js): 위에 앞유리, 그 아래 계기판(#cluster), 맨 아래 조작부 */
+#windshield {
+  --road: #3a4048;
+  --road-school: #7a2d2d;
+  --mark: #eef1f4;
+  --center: #f2c230;
+  --haze: #b9d3ea;
+  --sky1: #5aa6e6;
+  --sky2: #cfe6f7;
+  --ground: #5f8f4e;
+  position: relative;
+  flex: 0 0 31vh;
+  overflow: hidden;
+  background: #000;
+  border-bottom: 2px solid #000;
+}
+#windshield[hidden] { display: none; }
+.ws-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.sky-top { stop-color: var(--sky1); }
+.sky-bottom { stop-color: var(--sky2); }
+.haze-stop { stop-color: var(--haze); }
+.ws-hills { fill: #7fa86a; opacity: 0.8; }
+.ws-ground { fill: var(--ground); }
+.ws-dark, .ws-stars { display: none; }
+.ws-stars circle { fill: #fff; opacity: 0.8; }
+
+/* 내 차 (흰색) 보닛과 차 안 */
+.ws-hood { fill: #f4f6f8; }
+.ws-hood-line { fill: none; stroke: #d5dbe1; stroke-width: 3; }
+.ws-pillar, .ws-roof { fill: #101317; }
+.ws-mirror { fill: #1d232a; stroke: #3a424c; stroke-width: 3; }
+
+/* 도로 (js/core/scene.js 가 그리는 것들) */
+#windshield .rd-surface { fill: var(--road); }
+#windshield .rd-surface.school { fill: var(--road-school); }
+#windshield .rd-center { fill: var(--center); }
+#windshield .rd-edge, #windshield .rd-dash { fill: var(--mark); opacity: 0.9; }
+#windshield .rd-post { fill: var(--mark); opacity: 0.6; }
+#windshield .rd-ap-lines { fill: #4d98ff; }
+#windshield .rd-ap-path { fill: rgba(61, 139, 255, 0.25); }
+#windshield .rd-fcw { fill: rgba(255, 59, 48, 0.4); animation: ws-blink 0.4s steps(1) infinite; }
+#windshield .rd-zebra { fill: var(--mark); opacity: 0.9; }
+#windshield .rd-bump-y { fill: #ffcf2e; }
+#windshield .rd-bump-w { fill: #f5f5f5; }
+#windshield .rd-closed { fill: rgba(255, 106, 0, 0.25); }
+#windshield .rd-cam-pole, #windshield .pole, #windshield .st-pole { stroke: #6b7480; }
+#windshield .rd-cam-box { fill: #39404a; stroke: #ff3b30; stroke-width: 1.5; }
+#windshield .rd-tunnel-wall { fill: #3a342a; }
+#windshield .rd-tunnel-light { fill: #ffd27a; }
+#windshield .rd-beam { fill: rgba(255, 244, 200, 0.05); }
+#windshield .rd-beam.strong { fill: rgba(255, 244, 200, 0.14); }
+#windshield .rd-beam.high { fill: rgba(235, 245, 255, 0.16); }
+#windshield .shadow, #windshield .car-shadow { fill: rgba(0, 0, 0, 0.35); }
+#windshield .car-wheel { fill: #111; }
+#windshield .car-glass { fill: #1d2732; }
+#windshield .car-bodyfill, #windshield .car-cabin { stroke: rgba(0, 0, 0, 0.35); stroke-width: 0.03; }
+#windshield .car-bumper { fill: rgba(0, 0, 0, 0.25); }
+#windshield .car-tail { fill: #7a1010; }
+#windshield .car-tail.on { fill: #ff3a3a; stroke: rgba(255, 60, 60, 0.45); stroke-width: 0.08; }
+#windshield .car-blink { fill: #5a3a0c; }
+#windshield .car-blink.on { fill: #ffc040; }
+#windshield .car-reverse { fill: #fff; }
+#windshield .car-plate { fill: #e9edf2; }
+#windshield .car.lead .car-bodyfill, #windshield .car.lead .car-cabin { stroke: #3d8bff; stroke-width: 0.06; }
+#windshield .car.danger .car-bodyfill, #windshield .car.danger .car-cabin { stroke: #ff3b30; stroke-width: 0.08; }
+#windshield .car.beside .car-bodyfill, #windshield .car.beside .car-cabin { stroke: #ffb020; stroke-width: 0.07; }
+#windshield .lamp-box { fill: #111; stroke: #333; stroke-width: 1; }
+#windshield .lamp { fill: #2a2a2a; }
+#windshield .lamp.red.on { fill: #ff4a40; stroke: rgba(255, 59, 48, 0.4); stroke-width: 3; }
+#windshield .lamp.yellow.on { fill: #ffc040; stroke: rgba(255, 176, 32, 0.4); stroke-width: 3; }
+#windshield .lamp.green.on { fill: #34d870; stroke: rgba(34, 197, 94, 0.4); stroke-width: 3; }
+#windshield .st-head { fill: #9aa4b0; }
+#windshield .st-pool { fill: rgba(255, 200, 110, 0.18); }
+#windshield .st-roof { fill: #e0201b; stroke: #fff; stroke-width: 1; }
+#windshield .st-under { fill: rgba(240, 244, 250, 0.35); }
+#windshield .st-pillar { stroke: #c9ced6; }
+#windshield .st-name { fill: #fff; font-weight: 800; }
+#windshield .rain-streak { stroke: rgba(220, 230, 245, 0.45); stroke-width: 1.4; fill: none; }
+#windshield .drop { fill: rgba(210, 230, 255, 0.3); stroke: rgba(255, 255, 255, 0.6); stroke-width: 1; }
+#windshield .wiper-arm { stroke: #15181c; stroke-width: 9; stroke-linecap: round; }
+#windshield .wiper-blade { stroke: #050607; stroke-width: 14; stroke-linecap: round; }
+@keyframes ws-blink { 50% { opacity: 0.2; } }
+
+/* 비·터널·밤 */
+#windshield.wet { --road: #2c333c; --sky1: #7d8996; --sky2: #aeb7c1; --haze: #a4adb7; --ground: #4f7342; }
+#windshield.tunnel { --road: #2a2620; --sky1: #1a1712; --sky2: #2a251c; --haze: #120f0a; --ground: #1a1712; }
+#windshield.tunnel .ws-hills { display: none; }
+#windshield.night { --road: #1b2028; --mark: #c9d0d9; --sky1: #050a18; --sky2: #0d1830; --haze: #0a1020; --ground: #0c120c; }
+#windshield.night .ws-dark, #windshield.night .ws-stars { display: inline; }
+#windshield.night .ws-hills { fill: #101a14; }
+#windshield.night .ws-hood { fill: #b9c0c8; }
+#windshield.night .car-tail { fill: #d42020; }
+#windshield.night .st-head { fill: #ffe09a; }
+#windshield.off .ws-svg { opacity: 0.55; }
+
+/* 앞유리에 비치는 작은 계기 (HUD) */
+.ws-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 12px;
+  color: #7dffb0;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.ws-hud b { font-size: 34px; font-weight: 700; }
+.ws-hud small { font-size: 14px; opacity: 0.8; }
+.ws-limit {
+  margin-left: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 4px solid #e2332b;
+  background: #fff;
+  color: #111;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+#windshield.over .ws-hud b { color: #ff6a5a; }
+#windshield.night .ws-hud { color: #9dffc6; }
+
+/* 핸들: 앞유리 아래쪽 운전석 앞 (아래는 잘려 보인다). 돌리면 차선을 한 칸씩 */
+.ws-wheel {
+  position: absolute;
+  left: 30%;
+  bottom: -38%;
+  height: 92%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  touch-action: none;
+  z-index: 2;
+}
+.ws-wheel svg { width: 100%; height: 100%; display: block; }
+
+/* 앞유리 화면일 때: 계기판은 남은 자리에 통째로 줄어든다 (테마 fitStage) */
+#app.drive-view #cluster { flex: 1; }
