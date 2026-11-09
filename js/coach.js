@@ -8,6 +8,7 @@
   var U = Dash.util;
   var TURN_NOW_KM = 0.15;      // 갈림길이 이만큼 가까우면 "지금 핸들을 돌려요"
   var DONE_SHOW = 1.6;         // 다 하면 칭찬을 보여 주는 시간 (초, 최소)
+  var MAX_OPEN = 30;           // 할 일을 안 해도 급하지 않은 카드는 이만큼 지나면 닫는다 (다른 카드·안내가 막히지 않게)
   // 얼마나 자주·얼마나 오래는 부모님 설정 (js/prefs.js: coachEvery, coachStay)
 
   var state, root;
@@ -90,7 +91,7 @@
         var a = aheadOf(s, 'light', 40);
         return a && a.d > -2 && a.obj.phase === 'green' && s.speed < 1 && s.engineOn && s.gear === 'D' ? a.obj : null;
       },
-      still: function (s, o) { return s.objects.indexOf(o) >= 0; },
+      still: function (s, o) { return s.objects.indexOf(o) >= 0 && o.phase === 'green'; },
       title: function () { return '🟢 초록불! 출발해요'; },
       art: function () { return lightArt('green'); },
       steps: [{ text: '엑셀을 밟아요', done: function (s) { return s.speed > 5; }, glow: ['accel'] }],
@@ -230,7 +231,7 @@
     {
       id: 'dark',
       check: function (s) { return s.engineOn && (s.night || s.inTunnel) && s.headlights === 'off' ? { tunnel: s.inTunnel } : null; },
-      still: function (s) { return s.night || s.inTunnel; },
+      still: function (s) { return s.engineOn && (s.night || s.inTunnel); },
       title: function (s, c) { return c.tunnel ? '🚇 터널이에요! 어두워요' : '🌙 밤이에요! 어두워요'; },
       art: function (s, c) { return emoji(c.tunnel ? '🚇💡' : '🌙💡'); },
       steps: [{ text: '전조등을 켜요', done: function (s) { return s.headlights !== 'off'; }, glow: ['전조등'] }],
@@ -264,6 +265,18 @@
       praise: '주유소로 잘 찾아가요'
     },
     {
+      id: 'refuel',
+      check: function (s) { return s.road.cur.station && s.speed < 1 && s.fuel < 0.95 && !s.refueling ? { seg: s.road.cur } : null; },
+      still: function (s, c) { return s.road.cur === c.seg && s.fuel < 0.99 && s.speed < 3; },
+      title: function () { return '⛽ 주유소예요! 기름을 넣어요'; },
+      art: function () { return emoji('⛽🚗'); },
+      steps: [
+        { text: '시동을 꺼요 (ENGINE START)', done: function (s) { return !s.engineOn; }, glow: ['start'] },
+        { text: '⛽ 주유 버튼을 눌러요', done: function (s) { return s.refueling || s.fuel >= 0.99; }, glow: ['⛽ 주유'] }
+      ],
+      praise: '혼자서 주유했어요'
+    },
+    {
       id: 'arrive',
       check: function (s) { return s.parking.pending && s.speed >= 12 ? {} : null; },
       still: function (s) { return s.parking.pending && !s.parking.on; },
@@ -274,7 +287,9 @@
     },
     {
       id: 'start',
-      check: function (s) { return !s.engineOn && engineOffT > 3 && !s.refueling && s.fuel > 0 ? {} : null; },
+      check: function (s) {
+        return !s.engineOn && engineOffT > 3 && !s.refueling && s.fuel >= Dash.vehicle.LOW_FUEL && !s.road.cur.station ? {} : null;
+      },
       still: function (s) { return s.speed < 3 || !s.engineOn; },
       title: function () { return '🚗 출발해 볼까?'; },
       art: function () { return emoji('🚗✨'); },
@@ -378,6 +393,7 @@
       U.popup(state, '운전 코치', enabled() ? '켬' : '끔');
     },
     isOpen: function () { return !!card; },
+    isFinished: function () { return !!(card && card.finished); },
     // 카드에 핸들이 나와 있으면 핸들을 쓴다 (js/wheel.js)
     wantsWheel: function () { return !!(card && card.wheelEl && !card.wheelEl.hidden); },
 
@@ -411,6 +427,7 @@
         return;
       }
       var c = card, sitNow = c.sit;
+      if (!c.over && !sitNow.urgent && c.age > MAX_OPEN) c.over = true;
       if (c.over || !sitNow.still(s, c.ctx)) {
         if (!c.over) {
           c.over = true;

@@ -133,8 +133,8 @@
   position: absolute;
   left: 30%;
   bottom: -38%;
-  height: 92%;
-  aspect-ratio: 1;
+  width: 28.5vh;  /* 앞유리 높이(31vh)의 92% — aspect-ratio 없이도 정사각형 */
+  height: 28.5vh;
   transform: translateX(-50%);
   touch-action: none;
   z-index: 2;

@@ -200,8 +200,10 @@
     s.turnLeft = s.turnRight = false;
     U.emit(s, 'arrive');
     if (byAi) {
+      p.stars = 0; // AI 가 한 주차는 아이 별로 세지 않는다
       s.autopilot.parking = false;
-      Dash.autopilot.disengage(s, '주차까지 다 했어! ' + U.kidCall() + ', 도착했어 🏁');
+      if (s.autopilot.on) Dash.autopilot.disengage(s, '주차까지 다 했어! ' + U.kidCall() + ', 도착했어 🏁');
+      else U.announce(s, '🤖 AI 가 주차했어요! 다음엔 ' + U.kid() + '도 해 봐요', '주차했어요. 다음엔 같이 해 봐요');
     } else {
       var bonus = stars >= 3 ? 5 : stars === 2 ? 4 : 3;
       Dash.score.add(s, bonus, '주차를 잘했어요 ' + '⭐'.repeat(stars));
@@ -258,6 +260,7 @@
 
   function mission(s) {
     var p = s.parking, lot = p.lot;
+    if (s.restDue) return; // 쉬는 시간이라 저절로 P 가 된 건 주차 성공이 아니다
     var fit = slotFit(p.car, lot.slots[lot.target]);
     if (p.phase === 'drive' && fit.inside && s.speed < 0.5) {
       p.phase = 'inSlot';
@@ -335,7 +338,7 @@
     update: function (s, input, dt) {
       var p = s.parking;
       if (!p.on) {
-        if (p.pending && (s.roadName !== p.pendingRoad || s.autopilot.on)) p.pending = false;
+        if (p.pending && (s.roadName !== p.pendingRoad || s.autopilot.on || !s.parkingMission)) p.pending = false;
         if (p.pending && s.speed < 12) start(s, 'mission');
         else if (s.gear === 'R' && s.engineOn) start(s, 'free');
         return;

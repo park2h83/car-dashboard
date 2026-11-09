@@ -59,6 +59,7 @@ html, body {
   pointer-events: none;
   transition: opacity 0.2s, transform 0.2s;
 }
+#toast.top { bottom: auto; top: max(12px, env(safe-area-inset-top)); }
 #toast.show {
   opacity: 1;
   transform: translate(-50%, 0);

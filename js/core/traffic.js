@@ -141,7 +141,7 @@
     if (!s.driveView || s.parking.on || wheelLatched || Math.abs(steer) < WHEEL_TURN) return;
     // 갈림길 바로 앞에서는 핸들이 '돌기'용이다 (운전 코치)
     var n = s.nav;
-    if (n.on && (n.turn === 'left' || n.turn === 'right') && n.turnDist < 0.15) return;
+    if (n.on && (n.turn === 'left' || n.turn === 'right') && n.turnDist < 0.15) { wheelLatched = true; return; }
     wheelLatched = true;
     if (s.autopilot.on) {
       if (hintTimer <= 0) { hintTimer = 4; U.say(s, '🤖 지금은 AI 가 운전해요. 자율주행을 끄면 핸들로 운전해요'); }

@@ -150,7 +150,10 @@
   function renderToast() {
     // 주차 화면이 계기판을 덮고 있으면 테마가 그리는 안내도 가려지니 노란 알림으로
     var message = current.showsMessages && !state.parking.on ? '' : state.message;
-    if (Dash.coach.isOpen()) message = ''; // 코치 카드가 대신 알려 준다
+    if (Dash.coach.isFinished()) message = ''; // 칭찬은 코치 카드가 보여 준다
+    // 코치 카드나 주차 화면이 아래쪽을 쓰고 있으면 알림은 위쪽에
+    var top = Dash.coach.isOpen() || state.parking.on;
+    if (toast.classList.contains('top') !== top) toast.classList.toggle('top', top);
     if (message === lastMessage) return;
     lastMessage = message;
     if (message) toast.textContent = message;

@@ -358,6 +358,7 @@
   function releaseAll() {
     holdResets.forEach(function (f) { f(); });
     input.accel = input.brake = input.horn = input.washer = false;
+    if (Dash.wheel) Dash.wheel.reset();
   }
 
   function onKey(e, down) {
@@ -423,6 +424,7 @@
     },
 
     releaseAll: releaseAll,
+    overlayOpen: overlayOpen,
 
     // 버튼 불빛·값·페달 눌림을 현재 상태에 맞춘다 (매 프레임)
     sync: function (s) {

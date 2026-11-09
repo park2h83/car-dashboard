@@ -254,6 +254,7 @@
     if (muted || !voiceOn || document.hidden || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
     var synth = window.speechSynthesis;
     function say() {
+      if (muted || !voiceOn) return;
       try {
         utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ko-KR';

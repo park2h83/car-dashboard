@@ -73,6 +73,7 @@
       input.steer = 0;
       window.addEventListener('keydown', function (e) {
         if (!active || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+        if (Dash.controls.overlayOpen && Dash.controls.overlayOpen()) return; // 쉬는 시간·성적표 위에서는 안 돈다
         if (e.key === 'ArrowLeft') { keys.left = true; e.preventDefault(); }
         if (e.key === 'ArrowRight') { keys.right = true; e.preventDefault(); }
       });
@@ -91,6 +92,8 @@
     update: function (dt, isActive) {
       active = isActive;
       bound = bound.filter(function (el) { return el.isConnected; });
+      // 잡고 있던 핸들 그림이 화면에서 사라지면(주차 끝, 카드 닫힘 …) 손을 뗀 것으로
+      if (heldEl && !heldEl.isConnected) { held = null; heldEl = null; }
       if (!active) {
         if (deg || held != null) reset();
         return;
