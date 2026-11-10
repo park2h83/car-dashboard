@@ -42,10 +42,10 @@
       options: [[true, '켬'], [false, '끔 (그냥 도착)']] },
 
     // ---- 화면 ----
-    { tab: 'screen', key: 'driveView', label: '앞유리 운전 화면',
-      options: [[true, '켬'], [false, '끔']],
-      get: function () { return Dash.windshield.isOn(); },
-      set: function (v) { if (v !== Dash.windshield.isOn()) Dash.windshield.toggle(); } },
+    { tab: 'screen', key: 'roadView', label: '위 도로 화면',
+      options: [['game', '운전 게임 (뒤에서 본 내 차)'], ['first', '앞유리 (운전석, 핸들)'], ['off', '계기판만']],
+      get: function () { return Dash.windshield.getMode(); },
+      set: function (v) { Dash.windshield.setMode(v); } },
     { tab: 'screen', key: 'lightMode', label: '낮 / 밤',
       options: [['auto', '시계대로'], ['day', '늘 낮'], ['night', '늘 밤']],
       get: function () { return state.lightMode; }, set: function (v) { state.lightMode = v; } }

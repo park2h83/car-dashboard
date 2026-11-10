@@ -81,6 +81,7 @@
     cluster.classList.add('theme-' + theme.id);
     theme.mount(cluster);
     save(THEME_KEY, theme.id);
+    if (Dash.windshield && Dash.windshield.setTheme) Dash.windshield.setTheme(theme); // 도로가 든 테마면 위 도로를 숨긴다
   }
 
   Dash.sound.setMuted(load(MUTE_KEY) === '1');

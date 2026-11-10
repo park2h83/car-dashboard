@@ -383,6 +383,7 @@
 
     return {
       id: 'cockpit',
+      hasRoad: true, // 가운데에 도로가 있어서 위 도로 화면(js/windshield.js)은 숨긴다
       name: '계기판 + 도로',
       group: '운전 게임',
       preview: previewSvg(),

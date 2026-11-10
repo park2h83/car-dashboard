@@ -36,9 +36,21 @@
     return fl;
   }
 
+  // 'soft': 톱니파처럼 배음이 다 있지만 n번째 배음이 1/n^1.25 로 더 빨리 줄어드는 둥근 소리 (엔진음이 덜 거칠게)
+  var softWave = null;
+  function getSoftWave() {
+    if (!softWave || softWave.ctx !== ctx) {
+      var n = 24, real = new Float32Array(n + 1), imag = new Float32Array(n + 1);
+      for (var i = 1; i <= n; i++) imag[i] = 1 / Math.pow(i, 1.25);
+      softWave = { ctx: ctx, wave: ctx.createPeriodicWave(real, imag) };
+    }
+    return softWave.wave;
+  }
+
   function osc(type, freq, dest) {
     var o = ctx.createOscillator();
-    o.type = type;
+    if (type === 'soft') o.setPeriodicWave(getSoftWave());
+    else o.type = type;
     o.frequency.value = freq;
     o.connect(dest);
     o.start();
@@ -55,25 +67,28 @@
 
   // ── 엔진 소리 종류 ──────────────────────────────────────────────
   // 아이가 고르는 엔진 소리. 각 종류는 엔진 소리(engine)와 경적(horn) 만드는 법을 갖는다.
+  // 부드럽게 (사용자 요청 "엔진소리가 좀더 부드러우면"): 톱니·네모파 대신 둥근 파형(soft·triangle·sine),
+  // 공진 없는 필터(Q 1 안팎)를 두 번 걸러(poles: 2) 차 안에서 듣는 것처럼 먹먹하게, 찌그러뜨리기는 아주 살짝.
   //  engine.div    : 기본음 = rpm / div (4기통 = 30, 6기통 = 20, 1기통 4행정 = 120)
-  //  engine.parts  : 기본음의 몇 배 음을 어떤 파형으로 얼마나 섞을지
-  //  engine.filter : 걸러 내는 필터. 주파수 = base + rpm*rpm + 엑셀*thr (+ 주행 모드)
+  //  engine.parts  : 기본음의 몇 배 음을 어떤 파형으로 얼마나 섞을지 ('soft' = 둥근 톱니, getSoftWave)
+  //  engine.filter : 걸러 내는 필터. 주파수 = base + rpm*rpm + 엑셀*thr (+ 주행 모드), poles: 2 면 두 번 걸러 더 부드럽게
   //  engine.shaper : 소리를 살짝 찌그러뜨려 거칠게 (값이 클수록 거칠다)
-  //  engine.am     : 기본음 빠르기로 소리 크기를 흔든다 (톱니파를 뒤집어 '탁—' 하고 줄어드는 펄스)
+  //  engine.am     : 기본음 빠르기로 소리 크기를 흔든다 ('탁—' 하고 줄어드는 펄스, 필터 앞에 둬서 모서리는 둥글게)
   //  engine.clatter: 걸러 낸 잡음을 폭발마다 '딱딱' 끊어 디젤 노킹처럼
   //  horn.pulse    : 누르고 있으면 '빵빵' 끊어서 울린다
   var PROFILES = {
     normal: {
       name: '보통 차', emoji: '🚗',
       engine: {
-        div: 30, vol: 1,
+        div: 30, vol: 1.1,
         parts: [
-          { type: 'sawtooth', mult: 1, level: 0.5 },
-          { type: 'sawtooth', mult: 2.01, level: 0.35 },
-          { type: 'square', mult: 0.5, level: 0.25 },
-          { type: 'triangle', mult: 3, level: 0.15 }
+          { type: 'soft', mult: 1, level: 0.5 },
+          { type: 'soft', mult: 2.005, level: 0.32 },
+          { type: 'sine', mult: 0.5, level: 0.25 },
+          { type: 'triangle', mult: 3, level: 0.12 },
+          { type: 'sine', mult: 4, level: 0.07 }
         ],
-        filter: { type: 'lowpass', q: 4, base: 300, rpm: 0.25, thr: 1500 }
+        filter: { type: 'lowpass', q: 0.8, poles: 2, base: 420, rpm: 0.14, thr: 450 }
       },
       horn: { type: 'square', freqs: [415, 494], lp: 2500, q: 1, level: 0.5, vol: 0.22 }
     },
@@ -82,13 +97,14 @@
       engine: {
         div: 20, vol: 1.2,
         parts: [
-          { type: 'sawtooth', mult: 1, level: 0.42 },
-          { type: 'square', mult: 2, level: 0.26 },
-          { type: 'sawtooth', mult: 3.02, level: 0.2 },
-          { type: 'sawtooth', mult: 0.5, level: 0.22 }
+          { type: 'soft', mult: 1, level: 0.45 },
+          { type: 'soft', mult: 2, level: 0.28 },
+          { type: 'triangle', mult: 3.02, level: 0.16 },
+          { type: 'sine', mult: 0.5, level: 0.22 },
+          { type: 'sine', mult: 4, level: 0.06 }
         ],
-        shaper: 3,
-        filter: { type: 'lowpass', q: 6, base: 500, rpm: 0.4, thr: 2500 }
+        shaper: 1.2,
+        filter: { type: 'lowpass', q: 1, poles: 2, base: 520, rpm: 0.16, thr: 650 }
       },
       horn: { type: 'square', freqs: [466, 554], lp: 3000, q: 1, level: 0.5, vol: 0.22 },
       liftPop: true
@@ -96,14 +112,14 @@
     bus: {
       name: '버스', emoji: '🚌',
       engine: {
-        div: 60, vol: 1.15,
+        div: 60, vol: 1.25,
         parts: [
-          { type: 'sawtooth', mult: 1, level: 0.45 },
-          { type: 'sawtooth', mult: 2, level: 0.5 },
-          { type: 'square', mult: 3, level: 0.15 }
+          { type: 'soft', mult: 1, level: 0.45 },
+          { type: 'soft', mult: 2, level: 0.45 },
+          { type: 'triangle', mult: 3, level: 0.14 }
         ],
-        am: { mult: 1, depth: 0.35 },
-        filter: { type: 'lowpass', q: 3, base: 260, rpm: 0.12, thr: 600 }
+        am: { mult: 1, depth: 0.3 },
+        filter: { type: 'lowpass', q: 0.8, poles: 2, base: 380, rpm: 0.1, thr: 350 }
       },
       horn: { type: 'sawtooth', freqs: [311, 370], lp: 1600, q: 1, level: 0.5, vol: 0.24 },
       airBrake: true
@@ -111,29 +127,29 @@
     truck: {
       name: '트럭', emoji: '🚚',
       engine: {
-        div: 40, vol: 1.1,
+        div: 40, vol: 1.15,
         parts: [
-          { type: 'sawtooth', mult: 1, level: 0.45 },
-          { type: 'square', mult: 2, level: 0.3 },
-          { type: 'triangle', mult: 0.5, level: 0.3 }
+          { type: 'soft', mult: 1, level: 0.45 },
+          { type: 'soft', mult: 2, level: 0.25 },
+          { type: 'sine', mult: 0.5, level: 0.3 }
         ],
-        shaper: 2,
-        clatter: { mult: 1, freq: 2200, q: 2, level: 0.5 },
-        filter: { type: 'lowpass', q: 3, base: 250, rpm: 0.18, thr: 900 }
+        shaper: 1,
+        clatter: { mult: 1, freq: 1300, q: 1, lp: 1800, level: 0.2 },
+        filter: { type: 'lowpass', q: 0.8, poles: 2, base: 430, rpm: 0.1, thr: 450 }
       },
       horn: { type: 'sawtooth', freqs: [185, 233, 277], lp: 1800, q: 1.5, level: 0.4, vol: 0.32 }
     },
     retro: {
       name: '옛날 차', emoji: '🚙',
       engine: {
-        div: 120, vol: 1,
+        div: 120, vol: 1.2,
         parts: [
-          { type: 'square', mult: 8, level: 0.4 },
-          { type: 'sawtooth', mult: 12, level: 0.3 },
-          { type: 'triangle', mult: 16, level: 0.2 }
+          { type: 'triangle', mult: 8, level: 0.4 },
+          { type: 'soft', mult: 12, level: 0.25 },
+          { type: 'sine', mult: 16, level: 0.15 }
         ],
-        am: { mult: 1, depth: 0.95 },
-        filter: { type: 'lowpass', q: 2, base: 400, rpm: 0.15, thr: 800 }
+        am: { mult: 1, depth: 0.85 },
+        filter: { type: 'lowpass', q: 0.9, poles: 2, base: 420, rpm: 0.12, thr: 500 }
       },
       horn: { type: 'square', freqs: [587, 740], lp: 3000, q: 1, level: 0.45, vol: 0.2, pulse: [0.3, 0.17] }
     }
@@ -175,25 +191,33 @@
     var p = PROFILES[id].engine;
     var set = { nodes: [], sources: [], oscs: [], lfos: [], profile: id };
     var gain = track(set, gainNode(0, dest));
+    // 파형들 → (찌그러뜨리기) → (펄스) → 필터 1~2단 → 소리 크기. 펄스를 필터 앞에 둬서 '탁' 하는 모서리가 둥글어진다
+    var filters = [];
     var out = gain;
-    if (p.am) out = pulseAmp(set, set.lfos, p.am.mult, p.am.depth, gain);
-    var filter = track(set, filterNode(p.filter.type, 800, p.filter.q, out));
-    var input = filter;
+    for (var k = 0; k < (p.filter.poles || 1); k++) {
+      out = track(set, filterNode(p.filter.type, 800, p.filter.q, out));
+      filters.unshift(out);
+    }
+    if (p.am) out = pulseAmp(set, set.lfos, p.am.mult, p.am.depth, out);
+    var input = out;
     if (p.shaper) {
       var ws = track(set, ctx.createWaveShaper());
       ws.curve = shaperCurve(p.shaper);
-      ws.connect(filter);
+      ws.oversample = '2x';
+      ws.connect(out);
       input = ws;
     }
     var base = Math.max(lastRpm, 1) / p.div;
-    // 아이패드 스피커는 저음이 약해서 2·3배음을 섞어야 들린다.
+    // 아이패드 스피커는 저음이 약해서 2·3·4배음을 섞어야 들린다.
     p.parts.forEach(function (part) {
       var o = trackSource(set, osc(part.type, base * part.mult, track(set, gainNode(part.level, input))));
       set.oscs.push({ osc: o, mult: part.mult });
     });
     if (p.clatter) {
       var c = p.clatter;
-      var cl = pulseAmp(set, set.lfos, c.mult, 1, track(set, gainNode(c.level, gain)));
+      // 잡음 → 띠 필터 → 폭발마다 끊기 → 한 번 더 걸러서 '딱딱' 의 날카로운 모서리를 줄인다
+      var smooth = track(set, filterNode('lowpass', c.lp || 4000, 0.7, track(set, gainNode(c.level, gain))));
+      var cl = pulseAmp(set, set.lfos, c.mult, 1, smooth);
       var src = trackSource(set, ctx.createBufferSource());
       src.buffer = noiseBuffer;
       src.loop = true;
@@ -202,7 +226,7 @@
     }
     set.lfos.forEach(function (l) { l.osc.frequency.value = base * l.mult; });
     set.gain = gain;
-    set.filter = filter;
+    set.filters = filters;
     set.def = p;
     return set;
   }
@@ -248,8 +272,9 @@
   function engineFilterFreq(p, rpm, throttle, modeTone) {
     return Math.max(60, p.filter.base + (modeTone || 0) + rpm * p.filter.rpm + throttle * p.filter.thr);
   }
+  // 서 있을 때(공회전)는 작게 웅— (계속 울려도 시끄럽지 않게), 엑셀·rpm 에 따라 커진다
   function engineVolume(p, rpm, throttle, modeVol) {
-    return (0.18 + throttle * 0.25 + (rpm / Dash.vehicle.LIMIT_RPM) * 0.15) * (modeVol || 1) * p.vol;
+    return (0.1 + throttle * 0.2 + (rpm / Dash.vehicle.LIMIT_RPM) * 0.16) * (modeVol || 1) * p.vol;
   }
 
   // 스포츠카: 엑셀에서 발을 떼면 "타닥 탁"
@@ -306,7 +331,7 @@
       var ramp = x === 0 ? 'setValueAtTime' : 'linearRampToValueAtTime';
       set.oscs.forEach(function (o) { o.osc.frequency[ramp](base * o.mult, at); });
       set.lfos.forEach(function (l) { l.osc.frequency[ramp](base * l.mult, at); });
-      set.filter.frequency[ramp](engineFilterFreq(p, r.rpm, r.throttle, 0), at);
+      set.filters.forEach(function (f) { f.frequency[ramp](engineFilterFreq(p, r.rpm, r.throttle, 0), at); });
       if (x > 0) g.linearRampToValueAtTime(engineVolume(p, r.rpm, r.throttle, 1) * engineLevel, at);
     }
     g.setTargetAtTime(0, t0 + end, 0.05);
@@ -541,18 +566,20 @@
     lastRpm = s.rpm;
     var base = engineBase(p, s.rpm);
     // 스포츠는 엔진 소리가 더 크고 우렁차게, 에코는 조용하게
-    var modeVol = s.driveMode === 'sport' ? 1.3 : s.driveMode === 'eco' ? 0.8 : 1;
-    var modeTone = s.driveMode === 'sport' ? 700 : s.driveMode === 'eco' ? -150 : 0;
+    var modeVol = s.driveMode === 'sport' ? 1.2 : s.driveMode === 'eco' ? 0.8 : 1;
+    var modeTone = s.driveMode === 'sport' ? 300 : s.driveMode === 'eco' ? -80 : 0;
+    // 음높이는 rpm 을 바로 따라가되, 밝기·크기는 조금 천천히 바뀌게 (변속·엑셀에 '왱' 튀지 않게)
     engine.oscs.forEach(function (o) {
-      o.osc.frequency.setTargetAtTime(base * o.mult, t, 0.03);
+      o.osc.frequency.setTargetAtTime(base * o.mult, t, 0.05);
     });
     engine.lfos.forEach(function (l) {
-      l.osc.frequency.setTargetAtTime(base * l.mult, t, 0.03);
+      l.osc.frequency.setTargetAtTime(base * l.mult, t, 0.05);
     });
-    engine.filter.frequency.setTargetAtTime(engineFilterFreq(p, s.rpm, s.throttle, modeTone), t, 0.05);
+    var cutoff = engineFilterFreq(p, s.rpm, s.throttle, modeTone);
+    engine.filters.forEach(function (f) { f.frequency.setTargetAtTime(cutoff, t, 0.12); });
     var engineVol = s.engineOn ? engineVolume(p, s.rpm, s.throttle, modeVol) : 0;
     if (t < duckUntil) engineVol *= 0.35;
-    engine.gain.gain.setTargetAtTime(engineVol * engineLevel, t, s.engineOn ? 0.05 : 0.25);
+    engine.gain.gain.setTargetAtTime(engineVol * engineLevel, t, s.engineOn ? 0.1 : 0.25);
 
     // 경적 (옛날 차는 누르고 있으면 "빵빵" 끊어서)
     var h = loops.horn.def;

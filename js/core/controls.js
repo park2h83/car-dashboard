@@ -4,7 +4,8 @@
 // 버튼 항목 모양:
 //   { label: '이름' 또는 function(s), act: function(s, input),
 //     on: function(s) → 불 켜짐 여부, value: function(s) → 작은 글씨 값,
-//     hold: 'horn' (누르고 있는 동안만 input[hold] = true), cls: '추가 CSS 클래스' }
+//     hold: 'horn' (누르고 있는 동안만 input[hold] = true), cls: '추가 CSS 클래스',
+//     show: function(s) → false 면 버튼을 숨긴다 (쉬운 모드 🌧 처럼 필요할 때만 나오는 버튼) }
 //   { stepper: true, label, value, minus: function(s), plus: function(s) }  → [−] 값 [+]
 //
 // 키보드: ↑/W 엑셀, ↓/S/Space 브레이크, Enter 시동, P R N D 기어, Q/E 깜빡이, H 비상등,
@@ -248,6 +249,7 @@
       el.appendChild(val);
     }
     if (typeof item.label !== 'function') lbl.textContent = item.label;
+    if (item.show) el.hidden = !item.show(state);
     if (item.hold) bindHold(el, item.hold);
     else (tap ? bindTap : bindPress)(el, function () { item.act(state, input); });
     synced.push({ item: item, el: el, lbl: lbl, val: val, last: {} });
@@ -317,7 +319,11 @@
         value: function (s) { return s.nav.on ? s.nav.destination.replace('⛽ ', '') : '내비'; } },
       { label: '📄', act: v.infoNext, value: function (s) { return INFO_NAMES[Dash.info.currentId(s)] || '정보'; } },
       { label: '🎨', act: function () { app.openThemePicker(); }, value: words('테마') },
-      { label: '⚙', act: function () { Dash.easy.openMore(); }, value: words('더보기') }
+      { label: '⚙', act: function () { Dash.easy.openMore(); }, value: words('더보기') },
+      // 비 올 때만 나오는 와이퍼 버튼 (둘째 줄 끝, js/core/weather.js): 안 켜져 있으면 반짝반짝
+      { label: '🌧', cls: 'wiper', act: function (s) { Dash.weather.pressWiper(s); },
+        show: function () { return Dash.weather.wiperAsk(); }, on: function (s) { return s.wiper !== 'off'; },
+        value: function (s) { return s.wiper !== 'off' ? '와이퍼 켬' : '와이퍼'; } }
     ];
   }
 
@@ -483,6 +489,7 @@
         var item = entry.item;
         // 안 보이는 탭은 건너뛴다 (offsetParent 로 확인하면 매 프레임 화면 배치를 다시 계산하게 돼서 느리다)
         if (entry.tab && entry.tab !== currentTab) return;
+        if (item.show) set(entry, 'show', !!item.show(s), function (show) { entry.el.hidden = !show; });
         if (item.on) set(entry, 'on', !!item.on(s), function (on) { entry.el.classList.toggle('active', on); });
         if (item.hold) set(entry, 'on', !!input[item.hold], function (on) { entry.el.classList.toggle('active', on); });
         if (typeof item.label === 'function') set(entry, 'lbl', item.label(s), function (t) { entry.lbl.textContent = t; });

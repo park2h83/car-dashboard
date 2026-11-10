@@ -1,5 +1,8 @@
 // 날씨: 맑음 / 비 / 폭우. 빗줄기는 서서히 세지고 약해지며, 가끔 저절로 비가 오기 시작한다.
 // 와이퍼 AUTO 는 빗줄기에 맞춰 속도를 고르고, 폭우 때는 천둥·번개가 친다.
+// 쉬운 모드: 와이퍼는 저절로 켜지지 않는다. 비가 오면 큰 🌧 버튼이 반짝이며 나타나고(js/core/controls.js),
+// 아이가 누르면 와이퍼가 앞유리 빗방울을 쓴다. 한참(WIPER_HELP_AFTER) 안 누르면 앞이 보이게 대신 켜 주고,
+// 비가 그치면 버튼은 숨고 와이퍼도 잠시 뒤 꺼진다.
 (function (Dash) {
   'use strict';
 
@@ -21,6 +24,38 @@
   var prevLevel = 0;
   var prevNight = false;
   var lightsReminder = 0;
+
+  // 쉬운 모드 🌧 와이퍼 버튼
+  var WIPER_HELP_AFTER = 40;      // 이만큼(초) 안 누르면 대신 켜 준다
+  var WIPER_OFF_AFTER = 3;        // 비가 그치고 이만큼(초) 뒤 와이퍼를 끈다
+  var ask = { shown: false, waitT: 0, dryT: 0, praised: false };
+
+  // 비가 오면 버튼을 보이고(빗줄기 0.1 부터), 거의 그치면(0.05 아래) 숨긴다
+  function updateWiperAsk(s, dt) {
+    if (!ask.shown && s.rainLevel >= 0.1) {
+      ask.shown = true;
+      ask.waitT = 0;
+      ask.praised = false;
+    } else if (ask.shown && s.rainLevel < 0.05) {
+      ask.shown = false;
+      ask.dryT = 0;
+    }
+    if (!s.easy) return;
+    if (ask.shown) {
+      // 달리는 동안 오래 안 누르면 앞이 잘 보이게 대신 켠다 (혼내지 않고, 다음엔 버튼을 누르면 된다고)
+      if (s.wiper === 'off' && s.engineOn && !s.parking.on) {
+        ask.waitT += dt;
+        if (ask.waitT >= WIPER_HELP_AFTER) {
+          s.wiper = 'auto';
+          s.wiperTimer = 0;
+          U.say(s, '🌧 앞이 잘 보이게 와이퍼를 켰어요. 다음엔 🌧 버튼을 눌러 봐요');
+        }
+      }
+    } else if (s.wiper !== 'off') {
+      ask.dryT += dt;
+      if (ask.dryT >= WIPER_OFF_AFTER) s.wiper = 'off';
+    }
+  }
 
   function isNight(s) {
     if (s.lightMode === 'night') return true;
@@ -72,15 +107,46 @@
       set(s, ORDER[(ORDER.indexOf(s.weather) + 1) % ORDER.length]);
     },
 
+    // 쉬운 모드: 🌧 와이퍼 버튼이 보일 때 (비가 올 때)
+    wiperAsk: function () { return ask.shown; },
+
+    // 쉬운 모드 🌧 버튼: 켜기 ↔ 끄기. 켜면 바로 한 번 쓸어서 누른 게 눈에 보이게
+    pressWiper: function (s) {
+      if (s.wiper === 'off') {
+        s.wiper = 'auto';
+        s.wiperTimer = 0;
+        if (s.wipeT >= 1) {
+          s.wipeT = 0;
+          s.wipeSeconds = 0.9;
+          U.emit(s, 'wipe', { speed: 'low' });
+        }
+        // 칭찬: 코치 카드가 '와이퍼를 켜요'를 보여 주고 있으면 코치가 칭찬한다 (두 번 칭찬하지 않게)
+        if (ask.shown && !ask.praised && !s.autopilot.on) {
+          ask.praised = true;
+          if (!(Dash.coach && Dash.coach.currentId && Dash.coach.currentId() === 'rain')) {
+            // ('good' 이벤트는 점수표에 '잘 기다려 줬어요' 같은 정해진 이름으로 남아서, 점수는 이름을 붙여 직접 준다)
+            U.say(s, '👍 ' + U.kid() + ' 최고! 비 올 때 와이퍼를 켰어요');
+            U.emit(s, 'coach');
+            Dash.score.add(s, 3, '비 올 때 와이퍼를 켰어요', 'wiper', 30);
+          }
+        }
+      } else {
+        s.wiper = 'off';
+        U.emit(s, 'click');
+      }
+    },
+
     // AUTO 와이퍼가 지금 고르는 속도
     wiperMode: function (s) {
       if (s.wiper !== 'auto') return s.wiper;
       if (s.rainLevel < 0.08) return 'off';
-      return s.rainLevel < 0.4 ? 'int' : s.rainLevel < 0.75 ? 'low' : 'high';
+      // 쉬운 모드: 가랑비에도 쉬지 않고 쓸어서 켠 게 잘 보이게
+      return s.rainLevel < 0.4 ? (s.easy ? 'low' : 'int') : s.rainLevel < 0.75 ? 'low' : 'high';
     },
 
     update: function (s, dt) {
       updateLight(s, dt);
+      updateWiperAsk(s, dt);
       s.rainLevel = U.moveToward(s.rainLevel, LEVELS[s.weather], RAMP_PER_SEC * dt);
       s.flash = Math.max(0, (s.flash || 0) - dt);
 
@@ -99,6 +165,9 @@
         if (s.autopilot.on && s.wiper === 'off') {
           s.wiper = 'auto';
           U.announce(s, '🤖 비가 와요. 와이퍼를 켤게요');
+        } else if (s.wiper === 'off' && s.easy) {
+          // 쉬운 모드: 큰 🌧 버튼이 반짝이며 나타난다
+          U.announce(s, '🌧 비가 와요! ' + U.kidCall() + ', 와이퍼를 켜 봐!', '비가 와요! ' + U.kidCall() + ', 와이퍼를 켜 봐!');
         } else if (s.wiper === 'off') {
           U.announce(s, '🌧 비가 와요! ' + U.kidCall() + ', 와이퍼를 켜 볼까?', '비가 와요. 와이퍼를 켜 보세요');
         }

@@ -127,3 +127,38 @@ body.easy .pedal-accel { border-color: #39d353; box-shadow: inset 0 -10px 0 rgba
 body.easy #toast { font-size: 44px; padding: 8px 28px; }
 body.easy #score-pop span { font-size: 0.9em; }
 body.easy .ctrl-quick .ctrl-btn.hazard { font-size: 52px; }
+
+/* 🌧 와이퍼 버튼: 비 올 때만 '뿅' 나타나서 반짝반짝 (js/core/weather.js), 켜면 버튼 안에서도 와이퍼가 왔다 갔다 */
+body.easy .ctrl-quick .ctrl-btn[hidden] { display: none; }
+body.easy .ctrl-quick .ctrl-btn.wiper {
+  position: relative;
+  overflow: hidden;
+  border-color: #4fc3ff;
+  background: #16324a;
+  animation: wiper-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1), wiper-ask 0.7s 0.45s ease-in-out infinite alternate;
+}
+body.easy .ctrl-quick .ctrl-btn.wiper.active {
+  animation-name: wiper-pop, none; /* 반짝임만 멈춘다 (껐다 켜도 '뿅'은 다시 안 하게 첫 이름은 그대로) */
+  background: #1f5a86;
+  border-color: #9fdcff;
+  box-shadow: 0 0 14px rgba(79, 195, 255, 0.7);
+}
+body.easy .ctrl-quick .ctrl-btn.wiper.active::after {
+  content: '';
+  position: absolute;
+  left: calc(50% - 3px);
+  bottom: 4px;
+  width: 6px;
+  height: 70%;
+  border-radius: 3px;
+  background: #f4f7fb;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  transform-origin: 50% 100%;
+  animation: wiper-sweep 1.3s ease-in-out infinite;
+}
+@keyframes wiper-pop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes wiper-ask {
+  from { background: #16324a; border-color: #4fc3ff; box-shadow: 0 0 6px rgba(79, 195, 255, 0.4); }
+  to { background: #2f7fc0; border-color: #ffd23f; box-shadow: 0 0 22px rgba(255, 210, 63, 0.85); }
+}
+@keyframes wiper-sweep { 0%, 100% { transform: rotate(-70deg); } 50% { transform: rotate(70deg); } }

@@ -95,6 +95,9 @@
 .si-gear { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; background: #4fc3ff; color: #001521; font-size: 28px; font-weight: 900; }
 .si-turn { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 46px; border-radius: 10px; background: #1d232b; color: #39d353; font-size: 30px; }
 .si-emoji { font-size: 40px; line-height: 1; }
+/* 쉬운 모드 🌧 와이퍼 버튼과 같은 모양 (파란 네모 + 노란 테두리) */
+.si-wiper { display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 52px; border-radius: 12px;
+  background: #2f7fc0; border: 3px solid #ffd23f; font-size: 34px; }
 
 /* 쉬운 모드: 글씨 대신 그림 (말로 읽어 준다) */
 #coach.few-words .step-text { display: none; }

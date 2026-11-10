@@ -160,6 +160,7 @@
 
     return {
       id: id,
+      hasRoad: true, // 오른쪽에 도로가 있어서 위 도로 화면은 숨긴다
       name: name,
       group: '디지털',
       preview: previewSvg(variant),

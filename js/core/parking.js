@@ -4,6 +4,8 @@
 //  - 'ai'     : 자율주행으로 도착했거나 'AI 주차'를 누르면 AI 가 정해진 길로 주차한다
 //  - 'free'   : 아무 때나 R 을 넣으면 뒤를 볼 수 있다 (뒤 벽과 주차 센서만, 미션 없음)
 // 장애물은 적게: 벽(센서가 느끼는 것)과 목표 칸 옆 차 한 대뿐. 주차 칸은 한 줄.
+// 주차장은 넓게: 처음 자리에서 앞뒤로 몇 초는 마음껏 가도 벽이 멀다 (센서는 가까워질 때만 운다).
+// 차는 주차장에서 천천히 기어가고, 벽에 가까워지면 저절로 살살 멈춘다 (주차 보조). 그래도 닿으면 '쿵' 한 번 하고 멈춘다.
 // 주차장 좌표는 미터. x 는 오른쪽, y 는 아래쪽, 방향(h)은 라디안 (0 = 오른쪽, +는 시계 방향).
 // 주차하는 동안 도로·다른 차·길 이벤트는 멈춘다 (vehicle.step 이 건너뛴다).
 (function (Dash) {
@@ -11,8 +13,8 @@
 
   var U = Dash.util;
 
-  var LOT_W = 28, LOT_H = 13;
-  var SLOT_W = 3.0, SLOT_D = 5.2, SLOTS = 7, X0 = 6, EDGE = 0.6;
+  var LOT_W = 42, LOT_H = 16;
+  var SLOT_W = 3.0, SLOT_D = 5.2, SLOTS = 7, X0 = 11, EDGE = 0.6;
   var AISLE_Y = 9.4;
   var CAR_L = 4.5, CAR_W = 1.8, WHEELBASE = 2.7;
   var MAX_STEER = 0.6;            // 앞바퀴가 꺾이는 최대 각도 (약 35°)
@@ -20,7 +22,13 @@
   var SENSOR_RANGE = 1.5;         // 이보다 가까우면 센서가 울린다
   var SENSOR_SIDE = 0.3;          // 차 옆으로 이만큼까지 센서가 본다
   var ZONE_MID = 0.35;            // 센서 칸: 왼쪽 | 가운데(±0.35m) | 오른쪽
-  var MAX_SPEED = { D: 8, R: 6 }; // 주차장에서는 천천히
+  var MAX_SPEED = { D: 7, R: 5 }; // 주차장에서는 천천히 (km/h)
+  var CREEP = 3;                  // 엑셀을 안 밟으면 이만큼만 살살 (km/h)
+  var CREEP_DOWN = 6;             // 엑셀을 떼면 CREEP 까지 줄어드는 빠르기 (km/h/s)
+  var ASSIST_STOP = 0.18;         // 벽·차가 이만큼(m) 남으면 저절로 멈춘다
+  var ASSIST_GAIN = 6;            // 남은 거리 1m 당 낼 수 있는 속도 (km/h)
+  var ASSIST_STEP = 0.05, ASSIST_LOOK = 1.6; // 앞길을 이만큼씩, 이만큼까지 미리 가 본다 (m)
+  var FREE_GAP = [6, 8];          // 'free' 시작: 뒤 범퍼에서 뒤 벽까지 (m)
   var AI_SPEED = 1.5;             // m/s
   var CAR_COLORS = ['#e8453c', '#3a7bd5', '#f2b632', '#2fa36b', '#7b4fd6'];
   var TURN_R = WHEELBASE / Math.tan(MAX_STEER * 0.9); // AI 가 칸으로 돌아 들어가는 반지름
@@ -75,8 +83,8 @@
       // 목표 칸 조금 앞 통로에서 시작한다 (화면에 차와 초록 칸이 같이 보이게)
       at = { x: slots[target].x - TURN_R - 2.2, y: AISLE_Y, h: 0 };
     } else {
-      // 후진 둘러보기: 뒤쪽 벽에서 2~3.5m 떨어진 곳
-      at = { x: CAR_L / 2 + rand(2.0, 3.5), y: AISLE_Y, h: 0 };
+      // 후진 둘러보기: 뒤쪽 벽에서 6~8m 떨어진 곳 (몇 초 뒤로 가야 센서가 울기 시작한다)
+      at = { x: CAR_L / 2 + rand(FREE_GAP[0], FREE_GAP[1]), y: AISLE_Y, h: 0 };
     }
 
     var obstacles = [
@@ -141,12 +149,16 @@
     p.dir = 1;
     p.ai = mode === 'ai' ? { path: aiPath(p.lot), i: 0 } : null;
     p.bumpT = 0;
+    p.touching = false;
+    p.cap = CREEP;
+    p.travel = null;
+    p.assistSaid = false;
     p.wrongSaid = false;
     // 도로 쪽 일은 멈춘다
     s.autopilot.throttle = s.autopilot.brake = 0;
     s.fcw = s.aeb = false;
     s.lead = null;
-    s.speed = Math.min(s.speed, 6);
+    s.speed = Math.min(s.speed, CREEP); // 들어올 때는 살살
     if (mode === 'mission') {
       U.announce(s, '🅿️ 초록 칸에 주차해 봐요! 핸들을 돌려요', '주차 미션! 초록색 칸에 주차해 보세요');
     } else if (mode === 'ai') {
@@ -242,19 +254,57 @@
       h: car.h + v / WHEELBASE * Math.tan(car.steer) * dt
     };
     if (hits(p.lot, carBox(next))) {
-      // 쿵! 살짝 부딪히면 그 자리에 멈춘다 (차는 멀쩡해요)
+      // 쿵! 살짝 닿으면 그 자리에 멈춘다 (차는 멀쩡해요). 계속 밀어도 '쿵'은 한 번만,
+      // 반대쪽(D↔R)으로 가면 바로 빠져나온다.
       s.speed = 0;
-      if (p.bumpT <= 0) {
+      if (!p.touching && p.bumpT <= 0) {
         U.emit(s, 'bump', { hard: false });
-        U.say(s, p.dir < 0 ? '💥 쿵! 뒤에 부딪혔어요. 앞으로 조금 가요' : '💥 쿵! 앞에 부딪혔어요. 뒤로 조금 가요');
+        U.say(s, p.dir < 0 ? '💥 쿵! 뒤에 닿았어요. D 로 앞으로 가요' : '💥 쿵! 앞에 닿았어요. R 로 뒤로 가요');
         Dash.score.add(s, -1, '주차하다 살짝 부딪혔어요', 'parkbump', 4);
-        p.bumpT = 1.2;
+        p.bumpT = 1.5;
       }
+      p.touching = true;
       return;
     }
+    if (Math.abs(v) > 0.01) p.touching = false;
     car.x = next.x;
     car.y = next.y;
     car.h = next.h;
+  }
+
+  // 주차장 속도 한도 (limitSpeed 가 쓴다):
+  //  - 엑셀을 안 밟으면 CREEP 까지만 (떼면 서서히 줄어든다)
+  //  - 지금 핸들 그대로 가면 닿기까지 남은 길이 짧을수록 느리게, ASSIST_STOP 에서 멈춘다 (주차 보조)
+  //    (가는 길만 본다: 옆에 바싹 붙은 벽은 센서는 울려도, 핸들을 돌려 빠져나가는 건 막지 않는다)
+  function assistMax(p) {
+    return p.travel == null ? Infinity : Math.max(0, (p.travel - ASSIST_STOP) * ASSIST_GAIN);
+  }
+
+  // 지금 핸들 그대로 dir 쪽으로 몇 m 가면 닿는지 (ASSIST_LOOK 보다 멀면 null)
+  function freeTravel(p, dir) {
+    var c = { x: p.car.x, y: p.car.y, h: p.car.h }, turn = Math.tan(p.car.steer) / WHEELBASE;
+    for (var d = ASSIST_STEP; d <= ASSIST_LOOK; d += ASSIST_STEP) {
+      c.x += Math.cos(c.h) * ASSIST_STEP * dir;
+      c.y += Math.sin(c.h) * ASSIST_STEP * dir;
+      c.h += ASSIST_STEP * dir * turn;
+      if (hits(p.lot, carBox(c))) return d - ASSIST_STEP;
+    }
+    return null;
+  }
+
+  function updateCap(s, dt) {
+    var p = s.parking;
+    var want = s.throttle < 0.05 ? CREEP : (MAX_SPEED[s.gear] || MAX_SPEED.D);
+    p.cap = want >= p.cap ? want : Math.max(want, p.cap - CREEP_DOWN * dt);
+    // 보조가 멈춰 세웠는데 계속 밟으면 한 번 알려 준다
+    p.travel = s.gear === 'R' ? freeTravel(p, -1) : s.gear === 'D' ? freeTravel(p, 1) : null;
+    var a = assistMax(p);
+    if (a < 0.3 && s.throttle > 0.1 && !p.assistSaid && !p.touching && p.phase !== 'inSlot') {
+      p.assistSaid = true;
+      U.say(s, s.gear === 'R' ? '🛑 뒤가 가까워서 멈췄어요. D 로 앞으로 가요' : '🛑 앞이 가까워서 멈췄어요. R 로 뒤로 가요');
+    } else if (a > 3) {
+      p.assistSaid = false;
+    }
   }
 
   function mission(s, dt) {
@@ -335,8 +385,9 @@
 
     // 주차장에서는 천천히 (vehicle.step 에서 속도를 정한 뒤)
     limitSpeed: function (s) {
-      if (!s.parking.on || s.parking.mode === 'ai') return;
-      var max = MAX_SPEED[s.gear] || MAX_SPEED.D;
+      var p = s.parking;
+      if (!p.on || p.mode === 'ai' || p.phase === 'done') return;
+      var max = Math.min(MAX_SPEED[s.gear] || MAX_SPEED.D, p.cap == null ? CREEP : p.cap, assistMax(p));
       if (s.speed > max) s.speed = max;
     },
 
@@ -357,7 +408,7 @@
         return;
       }
       if (p.mode === 'ai') aiDrive(s, dt);
-      else drive(s, input, dt);
+      else { updateCap(s, dt); drive(s, input, dt); }
       updateSensors(p);
       if (p.mode === 'mission') mission(s, dt);
     }

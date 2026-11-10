@@ -185,6 +185,7 @@
 
     return {
       id: 'play',
+      hasRoad: true, // 도로가 화면 전체라 위 도로 화면은 숨긴다
       name: '운전 게임',
       group: '운전 게임',
       preview: previewSvg(),

@@ -146,3 +146,9 @@
 
 /* 길가 나무: 밤에는 어둡게 */
 #windshield.night .scn { opacity: 0.35; }
+
+/* 운전 게임 보기 (뒤에서 본 흰 차): 앞유리 장식(보닛·기둥·룸미러)·HUD·핸들은 없다. 계기판이 너무 작아지지 않게 조금 낮게 */
+#app.road-game #windshield { flex: 0 0 29vh; }
+#windshield.game .ws-hood, #windshield.game .ws-hood-line, #windshield.game .ws-pillar,
+#windshield.game .ws-roof, #windshield.game .ws-mirror, #windshield.game .ws-hud, #windshield.game .ws-wheel { display: none; }
+#windshield.game .car.ego .car-bodyfill, #windshield.game .car.ego .car-cabin { stroke: #6b7684; stroke-width: 0.03; }

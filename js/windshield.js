@@ -1,6 +1,8 @@
-// 앞유리 운전 화면: 위쪽에 운전석에서 본 도로(앞차·신호등·표지판·비·와이퍼), 그 아래에 고른 테마의 계기판.
-// 화면 아래쪽 핸들을 돌리면 차선을 한 칸씩 바꾼다 (js/wheel.js → traffic.js). 5살도 쉽게.
-// ⚙ 탭의 '🚗 앞유리 화면' 버튼으로 켜고 끈다 (localStorage 'dash.view').
+// 위 도로 화면 + 아래 테마 계기판. 세 가지 보기 (부모님 설정 → 🖥 화면 → 도로 화면, localStorage 'dash.windshield'):
+//  - 'game'  (기본) 운전 게임: 뒤에서 본 흰 내 차가 달리는 도로. 테마를 바꿔도 운전 게임은 그대로, 계기판만 바뀐다.
+//            도로가 이미 들어 있는 테마(theme.hasRoad: 계기판+도로·운전 게임·디지털)는 위 도로를 숨긴다.
+//  - 'first' 앞유리: 운전석에서 본 도로 + 화면 속 핸들을 돌리면 차선을 한 칸씩 (js/wheel.js → traffic.js)
+//  - 'off'   계기판만
 (function (Dash) {
   'use strict';
 
@@ -8,14 +10,21 @@
   var W = 1600, H = 400;
 
   var state, app, root, scene, el = {}, on = false, last = {}, lastT = 0;
+  var mode = 'game', themeHasRoad = false, sceneMode = '';
+  var MODE_NAMES = { game: '운전 게임', first: '앞유리', off: '계기판만' };
+  // 운전 게임 보기의 카메라: 뒤에서 조금 높이, 내 흰 차가 아래 가운데에 또렷하게 (1600x400 좌표, 아래쪽 기준으로 자른다)
+  var GAME_CAMERA = { zoom: 1.0, egoDist: 6.8, camH: 2.6, horizon: 172, bottom: 430, follow: 0.55,
+    glass: { x0: 0, x1: 1600, y0: 0, y1: 400 }, wipers: [{ px: 520, py: 480, len: 430 }, { px: 1080, py: 480, len: 410 }] };
   // 느린 기기: 그리는 데 오래 걸리면 두 프레임에 한 번만 그린다 (켜는 기준과 끄는 기준을 다르게)
   var workMs = 0, halfRate = false, skip = false, sceneDt = 0;
 
   function load() {
-    try { return localStorage.getItem(KEY) === 'drive'; } catch (e) { return false; } // 처음엔 꺼 둔다 (운전 코치가 대신 알려 준다)
+    var v = null;
+    try { v = localStorage.getItem(KEY); } catch (e) { /* 무시 */ }
+    return v === 'drive' ? 'first' : v === 'cluster' ? 'off' : MODE_NAMES[v] ? v : 'game'; // 처음엔 운전 게임
   }
   function save() {
-    try { localStorage.setItem(KEY, on ? 'drive' : 'cluster'); } catch (e) { /* 무시 */ }
+    try { localStorage.setItem(KEY, mode === 'first' ? 'drive' : mode === 'off' ? 'cluster' : 'game'); } catch (e) { /* 무시 */ }
   }
 
   function stars() {
@@ -26,8 +35,11 @@
 
   function build() {
     var FP = Dash.scene.FP;
+    var hz = mode === 'game' ? GAME_CAMERA.horizon : FP.H0; // 지평선: 하늘·언덕·땅을 여기에 맞춘다
+    var hd = hz - FP.H0;
+    // 운전 게임 보기는 아래(내 차)를 기준으로 자르고, 앞유리 보기는 가운데 기준
     root.innerHTML =
-      '<svg class="ws-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid slice">' +
+      '<svg class="ws-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="' + (mode === 'game' ? 'xMidYMax' : 'xMidYMid') + ' slice">' +
       '  <defs>' +
       '    <linearGradient id="ws-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="sky-top"/><stop offset="1" class="sky-bottom"/></linearGradient>' +
       '    <linearGradient id="ws-night" x1="0" y1="0" x2="0" y2="1">' +
@@ -35,13 +47,13 @@
       '    </linearGradient>' +
       '    <linearGradient id="ws-haze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="haze-stop"/><stop offset="1" class="haze-stop" stop-opacity="0"/></linearGradient>' +
       '  </defs>' +
-      '  <rect width="' + W + '" height="' + FP.H0 + '" fill="url(#ws-sky)"/>' + stars() +
-      '  <path class="ws-hills" d="M0 ' + FP.H0 + ' L0 118 Q200 80 380 112 T760 104 T1120 96 T1600 110 L1600 ' + FP.H0 + 'Z"/>' +
-      '  <rect class="ws-ground" y="' + FP.H0 + '" width="' + W + '" height="' + (H - FP.H0) + '"/>' +
+      '  <rect width="' + W + '" height="' + hz + '" fill="url(#ws-sky)"/>' + stars() +
+      '  <path class="ws-hills" transform="translate(0 ' + hd + ')" d="M0 ' + FP.H0 + ' L0 118 Q200 80 380 112 T760 104 T1120 96 T1600 110 L1600 ' + FP.H0 + 'Z"/>' +
+      '  <rect class="ws-ground" y="' + hz + '" width="' + W + '" height="' + (H - hz) + '"/>' +
       '  <g class="ws-road"></g>' +
       '  <rect class="ws-dark" width="' + W + '" height="' + H + '" fill="url(#ws-night)"/>' +
       '  <g class="ws-beam"></g><g class="ws-cars"></g>' +
-      '  <rect y="' + (FP.H0 - 6) + '" width="' + W + '" height="40" fill="url(#ws-haze)"/>' +
+      '  <rect y="' + (hz - 6) + '" width="' + W + '" height="40" fill="url(#ws-haze)"/>' +
       // 내 차 흰 보닛, 앞유리 기둥, 지붕, 룸미러
       '  <path class="ws-hood" d="M-20 ' + H + ' L-20 382 Q240 356 800 354 Q1360 356 1620 382 L1620 ' + H + 'Z"/>' +
       '  <path class="ws-hood-line" d="M600 ' + H + ' Q650 366 800 362 Q950 366 1000 ' + H + '"/>' +
@@ -78,16 +90,28 @@
     node.textContent = text;
   }
 
-  function apply(v) {
-    on = v;
-    state.driveView = v;
-    app.classList.toggle('drive-view', v);
-    root.hidden = !v;
-    if (v && !scene) {
-      scene = Dash.scene.create({ firstPerson: true, scenery: true });
+  // 지금 보기·테마에 맞춰 위 도로 화면을 보이거나 숨긴다
+  function apply() {
+    var show = mode === 'first' || (mode === 'game' && !themeHasRoad);
+    on = show;
+    state.driveView = show && mode === 'first'; // 화면 속 핸들로 차선 바꾸기는 앞유리 보기에서만
+    app.classList.toggle('drive-view', show);
+    app.classList.toggle('road-game', show && mode === 'game');
+    root.hidden = !show;
+    if (show && sceneMode !== mode) {
+      sceneMode = mode;
+      scene = mode === 'first' ? Dash.scene.create({ firstPerson: true, scenery: true })
+        : Dash.scene.create(Object.assign({ scenery: true, egoColor: '#f5f7fa' }, GAME_CAMERA));
       build();
     }
+    if (root) root.classList.toggle('game', mode === 'game');
+  }
+
+  function setMode(m) {
+    if (!MODE_NAMES[m]) return;
+    mode = m;
     save();
+    apply();
   }
 
   Dash.windshield = {
@@ -95,13 +119,23 @@
       state = s;
       app = document.getElementById('app');
       root = document.getElementById('windshield');
-      apply(load());
+      mode = load();
+      apply();
     },
 
+    MODE_NAMES: MODE_NAMES,
     isOn: function () { return on; },
+    getMode: function () { return mode; },
+    setMode: setMode,
+    // 테마가 바뀔 때 (js/app.js): 도로가 들어 있는 테마면 위 도로를 숨긴다
+    setTheme: function (theme) {
+      themeHasRoad = !!(theme && theme.hasRoad);
+      if (state) apply();
+    },
+    // ⚙ 탭 버튼: 운전 게임 → 앞유리 → 계기판만 → …
     toggle: function () {
-      apply(!on);
-      Dash.util.popup(state, '앞유리 화면', on ? '켬' : '끔');
+      setMode(mode === 'game' ? 'first' : mode === 'first' ? 'off' : 'game');
+      Dash.util.popup(state, '도로 화면', MODE_NAMES[mode]);
     },
 
     // 매 프레임 (app.js)
@@ -124,7 +158,7 @@
         if (!halfRate && workMs > 7) halfRate = true;
         else if (halfRate && workMs < 3) halfRate = false;
       }
-      var cls = 'ws' + (s.night ? ' night' : '') + (s.inTunnel ? ' tunnel' : '') + (s.rainLevel > 0.2 ? ' wet' : '') +
+      var cls = 'ws' + (mode === 'game' ? ' game' : '') + (s.night ? ' night' : '') + (s.inTunnel ? ' tunnel' : '') + (s.rainLevel > 0.2 ? ' wet' : '') +
         (!s.engineOn ? ' off' : '') + (s.overspeed ? ' over' : '');
       if (last.cls !== cls) { last.cls = cls; root.className = cls; }
       setText('speed', el.speed, String(Math.round(s.speed)));

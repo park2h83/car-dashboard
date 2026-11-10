@@ -238,11 +238,13 @@
       praise: '어두울 때 전조등을 켰어요'
     },
     {
-      id: 'rain', full: true,
+      id: 'rain',
       check: function (s) { return s.engineOn && s.rainLevel > 0.15 && !s.inTunnel && s.wiper === 'off' ? {} : null; },
       still: function (s) { return s.rainLevel > 0.05; },
       title: function () { return '🌧 비가 와요!'; },
       art: function () { return emoji('🌧🪟'); },
+      // 쉬운 모드: 비 올 때만 나오는 큰 🌧 버튼 (js/core/weather.js pressWiper)
+      easySteps: [{ text: '와이퍼를 켜 봐!', done: function (s) { return s.wiper !== 'off'; }, glow: ['🌧'] }],
       steps: [{ text: '와이퍼를 켜요', done: function (s) { return s.wiper !== 'off'; }, glow: ['와이퍼'] }],
       praise: '비 올 때 와이퍼를 켰어요'
     },
@@ -319,6 +321,7 @@
     start: '<span class="si-start">START</span>', 'gear:D': '<span class="si-gear">D</span>',
     '◀': '<span class="si-turn">◀</span>', '▶': '<span class="si-turn">▶</span>',
     wheel: '<span class="si-emoji">🎡</span>', '전조등': '<span class="si-emoji">💡</span>', '와이퍼': '<span class="si-emoji">🌧️</span>',
+    '🌧': '<span class="si-emoji si-wiper">🌧</span>',
     '안전벨트': '<span class="si-emoji">🔔</span>', '⛽ 주유소': '<span class="si-emoji">🧭</span>', '⛽ 주유': '<span class="si-emoji">⛽</span>'
   };
   function stepIcon(st, ctx) {
@@ -415,6 +418,8 @@
       U.popup(state, '운전 코치', enabled() ? '켬' : '끔');
     },
     isOpen: function () { return !!card; },
+    // 지금 할 일을 보여 주는 카드의 상황 id (칭찬이 겹치지 않게 다른 곳에서 본다)
+    currentId: function () { return card && !card.finished ? card.sit.id : null; },
     isFinished: function () { return !!(card && card.finished); },
     // 카드에 핸들이 나와 있으면 핸들을 쓴다 (js/wheel.js)
     wantsWheel: function () { return !!(card && card.wheelEl && !card.wheelEl.hidden); },
