@@ -1,0 +1,117 @@
+/* 쉬운 모드 (5살, js/easy.js): 계기판을 크게(70%), 버튼은 적고 크게. body.easy 아래에서만 */
+body.easy { --controls-height: 30vh; }
+body.easy #controls { gap: 1.4vw; padding: 1.2vh 1.4vw 1.4vh; }
+
+/* 시동 버튼: 크고 동그랗게 */
+body.easy .start-btn { width: min(22vh, 170px); height: min(22vh, 170px); font-size: 16px; border-width: 4px; }
+
+/* 기어: P R D 만 (N 은 숨김), 크게 */
+body.easy .gear-selector [data-gear="N"] { display: none; }
+body.easy .gear-selector { gap: 6px; }
+body.easy .gear-selector button { min-width: 72px; max-height: none; font-size: 30px; border-radius: 14px; }
+
+/* 가운데 큰 버튼들: 5칸 × 2줄 */
+.ctrl-quick.easy-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: stretch;
+  gap: 10px;
+  height: 100%;
+}
+body.easy .ctrl-quick.easy-grid .ctrl-btn { flex: 0 0 calc(20% - 8px); }
+body.easy .ctrl-quick .ctrl-btn {
+  height: auto;
+  min-height: 70px;
+  min-width: 0;
+  border-radius: 16px;
+  border-width: 3px;
+  font-size: 34px;  /* 그림 아이콘 */
+  font-weight: 800;
+}
+body.easy .ctrl-quick .ctrl-btn .val { font-size: 16px; font-weight: 700; color: #cfd6df; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.easy .ctrl-quick .ctrl-btn.turn { font-size: 40px; }
+body.easy .ctrl-quick .ctrl-btn.hazard { font-size: 36px; }
+body.easy .ctrl-btn.nav.active { border-color: #39d353; box-shadow: 0 0 12px rgba(57, 211, 83, 0.6); }
+
+/* 페달: 크게 */
+body.easy .pedal { font-size: 19px; border-radius: 18px; }
+body.easy .pedal-brake { width: 17vh; height: 21vh; min-width: 110px; }
+body.easy .pedal-accel { width: 11vh; height: 26vh; min-width: 76px; }
+
+/* 안내 문구도 크게 */
+body.easy #toast { font-size: 24px; padding: 12px 26px; }
+
+/* 코치 카드: 더 크게 */
+body.easy #coach { width: min(760px, calc(100% - 32px)); padding: 16px 22px; gap: 18px; border-width: 5px; }
+body.easy .coach-art, body.easy .coach-art-svg { width: 160px; height: 130px; }
+body.easy .coach-sign { width: 124px; height: 124px; }
+body.easy .coach-emoji { font-size: 60px; }
+body.easy .coach-title { font-size: 32px; }
+body.easy .coach-steps li { font-size: 28px; }
+body.easy .coach-steps .num { width: 38px; height: 38px; font-size: 22px; }
+body.easy .coach-wheel { width: 150px; height: 150px; }
+
+/* 경적: 화면에 "빵빵!" */
+#honk {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  z-index: 23;
+  padding: 10px 28px;
+  border-radius: 999px;
+  background: #ffd23f;
+  color: #1d2430;
+  font-size: 44px;
+  font-weight: 900;
+  transform: translate(-50%, 0) scale(0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s, transform 0.12s;
+}
+#honk.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+/* 큰 카드 창: 목적지 고르기·더보기 */
+#sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 66;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.7);
+}
+#sheet[hidden] { display: none; }
+.sheet-box {
+  width: min(900px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  touch-action: pan-y;
+  padding: 18px 22px 22px;
+  border-radius: 26px;
+  background: #fffaf0;
+  color: #1d2430;
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sheet-head h2 { margin: 0; font-size: 32px; }
+.sheet-close { width: 64px; height: 64px; border-radius: 50%; border: 2px solid #d8d2c4; background: #fff; font-size: 26px; color: #444; }
+.sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.sheet-card {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 20px;
+  border: 3px solid #d8d2c4;
+  background: #fff;
+  color: #1d2430;
+  font: inherit;
+}
+.sheet-card.on { border-color: #39d353; background: #eafbea; }
+.sheet-card:active { transform: scale(0.97); }
+.sheet-emoji { font-size: 60px; line-height: 1; }
+.sheet-card b { font-size: 22px; }
+.sheet-card small { font-size: 16px; color: #7a7466; }

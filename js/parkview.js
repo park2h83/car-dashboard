@@ -158,7 +158,7 @@
     set('rear', el.rear, 'class', level(p.sensor.rear));
     set('title', el.title, 'text', p.mode === 'mission' ? '주차 미션' : p.mode === 'ai' ? 'AI 주차' : '뒤를 봐요');
     var goal = p.phase === 'done' ? '🎉 주차 성공!'
-      : p.mode === 'mission' ? (p.phase === 'inSlot' ? '👍 딱 맞아요!\nP 를 눌러요' : '초록 칸에\n세워 봐요')
+      : p.mode === 'mission' ? (p.phase === 'inSlot' ? (s.easy ? '👍 딱 맞아요!\n그대로 멈춰요' : '👍 딱 맞아요!\nP 를 눌러요') : '초록 칸에\n세워 봐요')
       : p.mode === 'ai' ? '🤖 AI 가\n주차하는 중'
       : '삐삐 소리가\n빨라지면 멈춰요';
     set('goal', el.goal, 'text', goal);

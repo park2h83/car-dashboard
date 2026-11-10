@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="css/parking.css">
   <link rel="stylesheet" href="css/windshield.css">
   <link rel="stylesheet" href="css/coach.css">
+  <link rel="stylesheet" href="css/easy.css">
   <!-- 테마 스타일: 테마를 추가하면 여기에 한 줄 추가 -->
   <link rel="stylesheet" href="themes/classic/theme.css">
   <link rel="stylesheet" href="themes/digital/theme.css">
@@ -47,6 +48,10 @@
 
     <div id="score-pop" aria-live="polite"></div>
     <div id="scorecard" hidden></div>
+
+    <!-- 쉬운 모드 (js/easy.js): 목적지·더보기 큰 카드 창, 경적 말풍선 -->
+    <div id="sheet" hidden></div>
+    <div id="honk" aria-hidden="true">📯 빵빵!</div>
 
     <!-- 테마 고르기 화면 (🎨 테마 버튼으로 연다. 내용은 app.js 가 만든다) -->
     <div id="theme-picker" hidden></div>
@@ -129,6 +134,7 @@
   <script src="js/wheel.js"></script>
   <script src="js/windshield.js"></script>
   <script src="js/prefs.js"></script>
+  <script src="js/easy.js"></script>
   <script src="js/coach.js"></script>
   <script src="js/parkview.js"></script>
   <script src="js/scorecard.js"></script>

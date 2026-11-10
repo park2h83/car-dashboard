@@ -134,7 +134,7 @@
       mirrorsFolded: false,
 
       // ---- 차체 ----
-      seatbelt: false,
+      seatbelt: true,      // 아이가 하기 어려워 처음부터 맨 상태 (모든 기능 모드에서는 버튼으로 풀 수 있다)
       parkingBrake: true,
       doors: { fl: false, fr: false, rl: false, rr: false, trunk: false, hood: false },
       tires: [36, 36, 36, 36], // psi [앞왼, 앞오, 뒤왼, 뒤오]
@@ -151,6 +151,8 @@
       restDue: false,     // 지금 쉬어야 함 → 차가 멈춘다
 
       // ---- 부모님 설정에서 정하는 놀이 옵션 (js/prefs.js 가 채운다) ----
+      pendingGear: null,      // 쉬운 모드: 달리다 R·P 를 누르면 멈춘 뒤 바꿀 기어
+      easy: true,             // 쉬운 모드 (5살): 큰 버튼 몇 개, 시동 버튼 하나로 출발 (js/easy.js)
       speedCap: 220,          // 가장 빠른 속도 (km/h)
       scoreOn: true,          // 운전 점수
       parkingMission: true,   // 도착하면 주차 미션

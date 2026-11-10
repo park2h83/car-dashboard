@@ -229,7 +229,7 @@
       praise: '굽은 길을 천천히 갔어요'
     },
     {
-      id: 'dark',
+      id: 'dark', full: true, // 쉬운 모드는 전조등이 자동이라 카드가 필요 없다
       check: function (s) { return s.engineOn && (s.night || s.inTunnel) && s.headlights === 'off' ? { tunnel: s.inTunnel } : null; },
       still: function (s) { return s.engineOn && (s.night || s.inTunnel); },
       title: function (s, c) { return c.tunnel ? '🚇 터널이에요! 어두워요' : '🌙 밤이에요! 어두워요'; },
@@ -238,7 +238,7 @@
       praise: '어두울 때 전조등을 켰어요'
     },
     {
-      id: 'rain',
+      id: 'rain', full: true,
       check: function (s) { return s.engineOn && s.rainLevel > 0.15 && !s.inTunnel && s.wiper === 'off' ? {} : null; },
       still: function (s) { return s.rainLevel > 0.05; },
       title: function () { return '🌧 비가 와요!'; },
@@ -247,7 +247,7 @@
       praise: '비 올 때 와이퍼를 켰어요'
     },
     {
-      id: 'belt',
+      id: 'belt', full: true,
       check: function (s) { return s.engineOn && !s.seatbelt && s.speed > 5 ? {} : null; },
       still: function (s) { return s.engineOn; },
       title: function () { return '🔔 안전벨트를 매요!'; },
@@ -293,10 +293,14 @@
       still: function (s) { return s.speed < 3 || !s.engineOn; },
       title: function () { return '🚗 출발해 볼까?'; },
       art: function () { return emoji('🚗✨'); },
+      // 쉬운 모드: 시동 버튼 → 엑셀 (시동을 걸면 알아서 D)
+      easySteps: [
+        { text: '시동 버튼을 눌러요', done: function (s) { return s.engineOn; }, glow: ['start'] },
+        { text: '엑셀을 밟아요', done: function (s) { return s.speed > 3; }, glow: ['accel'] }
+      ],
       steps: [
         { text: '브레이크를 밟고 ENGINE START', done: function (s) { return s.engineOn; }, glow: ['brake', 'start'] },
         { text: '브레이크를 밟고 D 를 눌러요', done: function (s) { return s.engineOn && s.gear === 'D'; }, glow: ['brake', 'gear:D'] },
-        { text: '안전벨트를 매요', done: function (s) { return s.seatbelt; }, glow: ['안전벨트'] },
         { text: '엑셀을 밟아요', done: function (s) { return s.speed > 3; }, glow: ['accel'] }
       ],
       praise: '혼자서 출발했어요', cooldown: 90
@@ -309,13 +313,14 @@
   function stepGlow(st, ctx) { return typeof st.glow === 'function' ? st.glow(ctx) : (st.glow || []); }
 
   function open(sit, ctx) {
-    card = { sit: sit, ctx: ctx, done: sit.steps.map(function () { return false; }), finished: false, t: 0 };
+    var steps = (state.easy && sit.easySteps) || sit.steps;
+    card = { sit: sit, ctx: ctx, steps: steps, done: steps.map(function () { return false; }), finished: false, t: 0 };
     var s = state;
     root.innerHTML =
       '<div class="coach-art">' + sit.art(s, ctx) + '</div>' +
       '<div class="coach-body">' +
-      '  <div class="coach-title">' + sit.title(s, ctx) + '</div>' +
-      '  <ol class="coach-steps">' + sit.steps.map(function (st, i) {
+      '  <div class="coach-title">' + sit.title(s, ctx) + '<span class="coach-count"></span></div>' +
+      '  <ol class="coach-steps">' + steps.map(function (st, i) {
         return '<li data-i="' + i + '"><span class="num">' + (i + 1) + '</span>' + stepText(st, ctx) + '</li>';
       }).join('') + '</ol>' +
       '</div>' +
@@ -323,10 +328,11 @@
     root.className = sit.urgent ? 'urgent' : '';
     root.hidden = false;
     card.items = root.querySelectorAll('.coach-steps li');
+    card.counter = root.querySelector('.coach-count');
     card.wheelEl = root.querySelector('.coach-wheel');
     if (card.wheelEl) Dash.wheel.bind(card.wheelEl);
     U.emit(s, 'chime');
-    U.emit(s, 'speak', { text: sit.title(s, ctx).replace(/[^가-힣 0-9!]/g, '').trim() + '. ' + stepText(sit.steps[0], ctx) });
+    U.emit(s, 'speak', { text: sit.title(s, ctx).replace(/[^가-힣 0-9!]/g, '').trim() + '. ' + stepText(steps[0], ctx) });
   }
 
   function close() {
@@ -363,7 +369,7 @@
 
   function blocked(s) {
     return !enabled() || s.parking.on || s.autopilot.on || s.restDue ||
-      (Dash.rest && Dash.rest.isOpen()) || ['license', 'theme-picker', 'setup', 'scorecard'].some(function (id) {
+      (Dash.rest && Dash.rest.isOpen()) || ['license', 'theme-picker', 'setup', 'scorecard', 'sheet'].some(function (id) {
         var el = document.getElementById(id); return el && !el.hidden;
       });
   }
@@ -408,6 +414,7 @@
         var sit = SITUATIONS[i];
         if (card && (card.sit === sit || !sit.urgent || card.sit.urgent)) continue;
         if (cooldown[sit.id] > 0) continue;
+        if (sit.full && s.easy) continue;
         var ctx = sit.check(s);
         if (ctx && ctx.seg && seenSeg[sit.id] === ctx.seg) ctx = null;
         if (ctx) {
@@ -428,6 +435,14 @@
       }
       var c = card, sitNow = c.sit;
       if (!c.over && !sitNow.urgent && c.age > MAX_OPEN) c.over = true;
+      // 마지막 할 일을 하는 순간 상황이 끝나도(예: 엑셀 → 출발) 칭찬은 받게, 할 일부터 먼저 본다
+      if (!c.over) c.steps.forEach(function (st, j) {
+        if (!c.done[j] && (!st.when || st.when(s, c.ctx)) && st.done(s, c.ctx)) c.done[j] = true;
+      });
+      if (!c.over && c.done.every(Boolean)) {
+        root.querySelector('.coach-art-svg.turn') && root.querySelector('.coach-art-svg.turn').classList.add('go');
+        return finish(s);
+      }
       if (c.over || !sitNow.still(s, c.ctx)) {
         if (!c.over) {
           c.over = true;
@@ -437,25 +452,27 @@
         if (c.age > stay) close();
         return;
       }
-      var glow = null;
-      sitNow.steps.forEach(function (st, j) {
+      var glow = null, current = -1;
+      c.steps.forEach(function (st, j) {
         var visible = !st.when || st.when(s, c.ctx);
-        if (!c.done[j] && visible && st.done(s, c.ctx)) c.done[j] = true;
         var li = c.items[j];
         li.classList.toggle('ok', c.done[j]);
         li.classList.toggle('wait', !visible);
+        if (current < 0 && !c.done[j]) current = j;
         if (!glow && !c.done[j] && visible) glow = stepGlow(st, c.ctx);
       });
+      // 한 번에 할 일 하나만 크게 (5살): 지금 할 일만 보이고, 하면 다음 일로
+      if (c.current !== current) {
+        c.current = current;
+        for (var k = 0; k < c.items.length; k++) c.items[k].classList.toggle('current', k === current);
+        if (current > 0) U.emit(s, 'speak', { text: stepText(c.steps[current], c.ctx) });
+        if (c.counter) c.counter.textContent = c.steps.length > 1 && current >= 0 ? (current + 1) + ' / ' + c.steps.length : '';
+      }
       if (c.wheelEl) {
         var showWheel = sitNow.wheel(s, c.ctx);
         if (c.wheelEl.hidden === showWheel) c.wheelEl.hidden = !showWheel;
       }
-      if (c.done.every(Boolean)) {
-        root.querySelector('.coach-art-svg.turn') && root.querySelector('.coach-art-svg.turn').classList.add('go');
-        finish(s);
-      } else {
-        setGlow(glow || []);
-      }
+      setGlow(glow || []);
     }
   };
 })(window.Dash);

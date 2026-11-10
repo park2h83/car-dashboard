@@ -258,13 +258,19 @@
     car.h = next.h;
   }
 
-  function mission(s) {
+  function mission(s, dt) {
     var p = s.parking, lot = p.lot;
     if (s.restDue) return; // 쉬는 시간이라 저절로 P 가 된 건 주차 성공이 아니다
     var fit = slotFit(p.car, lot.slots[lot.target]);
+    p.stillT = fit.inside && s.speed < 0.5 ? (p.stillT || 0) + dt : 0;
+    // 쉬운 모드: 칸 안에 멈추면 P 를 안 눌러도 잠깐 뒤 성공
+    if (s.easy && p.stillT > 1) {
+      var easyStars = fit.side < 0.35 && fit.angle < 8 ? 3 : fit.side < 0.6 && fit.angle < 14 ? 2 : 1;
+      return success(s, easyStars, false);
+    }
     if (p.phase === 'drive' && fit.inside && s.speed < 0.5) {
       p.phase = 'inSlot';
-      U.announce(s, '👍 딱 맞아요! P 를 눌러 주차를 끝내요 🅿️', '딱 맞아요! 피를 눌러요');
+      if (!s.easy) U.announce(s, '👍 딱 맞아요! P 를 눌러 주차를 끝내요 🅿️', '딱 맞아요! 피를 눌러요');
     } else if (p.phase === 'inSlot' && !fit.inside) {
       p.phase = 'drive';
     }
@@ -352,7 +358,7 @@
       if (p.mode === 'ai') aiDrive(s, dt);
       else drive(s, input, dt);
       updateSensors(p);
-      if (p.mode === 'mission') mission(s);
+      if (p.mode === 'mission') mission(s, dt);
     }
   };
 })(window.Dash = window.Dash || {});

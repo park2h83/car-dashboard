@@ -139,13 +139,16 @@
   Dash.parkview.init(state);
   Dash.scorecard.init(state);
 
-  Dash.controls.init(state, input, {
+  var hooks = {
     openThemePicker: openThemePicker,
     toggleMute: function () {
       Dash.sound.setMuted(!Dash.sound.isMuted());
       save(MUTE_KEY, Dash.sound.isMuted() ? '1' : '0');
-    }
-  });
+    },
+    isMuted: function () { return Dash.sound.isMuted(); }
+  };
+  Dash.easy.init(state, hooks);
+  Dash.controls.init(state, input, hooks);
   useTheme(load(THEME_KEY));
 
   // 주행 모드를 바꾸면 계기판 위로 모드 이름과 색 빛이 크게 지나간다
@@ -223,6 +226,7 @@
     safely(renderModeFlash);
     safely(function () { Dash.windshield.update(state); });
     safely(function () { Dash.coach.update(state, dt); });
+    safely(function () { Dash.easy.update(state); });
     safely(function () { Dash.parkview.update(state); });
     safely(function () { Dash.scorecard.update(state); });
     if (state.engineOn !== wakeWanted) safely(function () { keepAwake(state.engineOn); });

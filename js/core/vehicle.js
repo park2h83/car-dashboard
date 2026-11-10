@@ -105,6 +105,17 @@
     var apBrake = s.pedal > 0.1 ? 0 : ap.brake; // 엑셀을 밟으면 자율주행 브레이크보다 우선
     s.brake = Math.max(s.brakePedal, apBrake, s.aeb ? 1 : 0);
     if (s.aeb) s.throttle = 0;
+    // 쉬운 모드에서 달리다 R·P 를 누르면: 멈출 때까지 브레이크, 멈추면 그 기어로
+    if (s.pendingGear) {
+      s.throttle = 0;
+      s.brake = Math.max(s.brake, 0.6);
+      if (s.speed < 0.5) {
+        s.gear = s.pendingGear;
+        s.pendingGear = null;
+        if (s.gear === 'P') s.parkingBrake = true;
+        emit(s, 'click');
+      }
+    }
     // 쉬는 시간: 엑셀이 안 듣고 천천히 멈춘다
     if (s.restDue) {
       s.throttle = 0;
@@ -341,18 +352,27 @@
       if (s.speed > 3) return say(s, '달리는 중에는 시동을 끌 수 없어요');
       s.engineOn = false;
       Dash.autopilot.disengage(s);
+      if (s.easy) { s.gear = 'P'; s.parkingBrake = true; } // 쉬운 모드: 끄면 알아서 세워 둔다
       emit(s, 'engine-off');
       return;
     }
     if (s.restDue) return say(s, '😴 지금은 쉬는 시간이에요');
+    if (s.easy) s.gear = 'P'; // 쉬운 모드: 브레이크 없이 시동 버튼 하나로
     if (s.gear !== 'P' && s.gear !== 'N') return say(s, '기어를 P 에 두고 시동을 걸어요');
-    if (!input.brake) return say(s, '브레이크를 밟고 시동 버튼을 눌러요');
+    if (!input.brake && !s.easy) return say(s, '브레이크를 밟고 시동 버튼을 눌러요');
     if (s.refueling) return say(s, '주유 중에는 시동을 걸 수 없어요');
     if (s.fuel <= 0) return say(s, '연료가 없어요. 주유하세요');
     s.engineOn = true;
     s.startTimer = 0;
     s.rpm = 1300; // 시동 직후 rpm 이 살짝 솟았다가 공회전으로 내려온다
     emit(s, 'engine-start');
+    if (s.easy) {
+      // 쉬운 모드: 시동을 걸면 바로 D, 주차 브레이크도 풀린다 → 엑셀만 밟으면 출발
+      s.gear = 'D';
+      s.autoGear = 1;
+      s.parkingBrake = false;
+      s.seatbelt = true;
+    }
     if (s.faults.engine) say(s, '엔진 경고등이 켜졌어요. 정비가 필요해요');
     else if (s.nav.resume && s.fuel > LOW_FUEL) Dash.road.resumeAfterRefuel(s);
     else if (s.fuel > LOW_FUEL && s.nav.on && s.nav.destId === 'station') {
@@ -367,8 +387,15 @@
   function shift(s, gear, input) {
     if (gear === s.gear) return;
     var reversing = gear === 'R' || s.gear === 'R';
-    if (s.speed > 3 && (gear === 'P' || reversing)) return say(s, '차를 먼저 멈춰요');
-    if (s.gear === 'P' && !input.brake) return say(s, '브레이크를 밟고 기어를 바꿔요');
+    if (s.speed > 3 && (gear === 'P' || reversing)) {
+      if (!s.easy) return say(s, '차를 먼저 멈춰요');
+      // 쉬운 모드: 차가 알아서 멈춘 다음 그 기어로 바꾼다
+      s.pendingGear = gear;
+      return say(s, gear === 'R' ? '멈추고 뒤로 갈게요' : '멈추고 세울게요');
+    }
+    s.pendingGear = null;
+    if (s.gear === 'P' && !input.brake && !s.easy) return say(s, '브레이크를 밟고 기어를 바꿔요');
+    if (s.easy && gear !== 'P') s.parkingBrake = false;
     s.gear = gear;
     if (gear === 'D') {
       // 달리는 중에 N→D 로 넣으면 속도에 맞는 단수를 고른다

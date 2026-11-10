@@ -7,6 +7,7 @@
   var KEY = 'dash.prefs';
   var state = null;
   var values = {};
+  var inited = false;
 
   var SCHEMA = [
     // ---- 운전 코치 ----
@@ -26,6 +27,8 @@
       options: [[true, '켬'], [false, '끔']] },
 
     // ---- 운전 ----
+    { tab: 'drive', key: 'easyMode', label: '조작 모드', def: true,
+      options: [[true, '쉬운 모드 (5살)'], [false, '모든 기능']] },
     { tab: 'drive', key: 'maxSpeed', label: '가장 빠른 속도', def: 220,
       options: [[60, '60 km/h'], [100, '100 km/h'], [220, '제한 없음']] },
     { tab: 'drive', key: 'eventRate', label: '길 이벤트 (신호등·동물 …)',
@@ -75,6 +78,10 @@
   // 설정 값을 앱 곳곳에 반영한다
   function apply() {
     if (!state) return;
+    var easy = get('easyMode');
+    if (inited && easy !== state.easy) { location.reload(); return; } // 조작부를 새로 만든다
+    state.easy = easy;
+    document.body.classList.toggle('easy', easy);
     state.speedCap = get('maxSpeed');
     state.scoreOn = get('scoreOn');
     state.parkingMission = get('parkingMission');
@@ -108,6 +115,7 @@
         }
       } catch (e) { /* 처음이면 기본값 */ }
       apply();
+      inited = true;
     }
   };
 })(window.Dash);

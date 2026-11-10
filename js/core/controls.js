@@ -299,7 +299,43 @@
     try { localStorage.setItem(TAB_KEY, id); } catch (e) { /* 무시 */ }
   }
 
+  // 계기판 가운데 정보 화면 이름 (js/core/info.js 의 페이지 id)
+  var INFO_NAMES = { autopilot: 'AI 운전', nav: '길 안내', trip: '주행', score: '운전 점수', economy: '연비',
+    tires: '타이어 공기압', car: '차 상태', climate: '공조', road: '도로' };
+
+  // 쉬운 모드(5살): 눌렀을 때 화면에서 바로 보이는 큰 버튼 몇 개만 (부모님 설정에서 '모든 기능'으로 바꿀 수 있다)
+  function easyItems() {
+    // 큰 그림 아이콘 + 아래 작은 글씨
+    function words(t) { return function () { return t; }; }
+    return [
+      QUICK[0], QUICK[1], QUICK[2],
+      { label: '📯', cls: 'horn', hold: 'horn', value: words('경적') },
+      { label: '🤖', cls: 'ap', act: v.toggleAutopilot, on: function (s) { return s.autopilot.on; },
+        value: function (s) { return s.autopilot.on ? 'AI 운전 중' : '자율주행'; } },
+      { label: '🧭', cls: 'nav', act: function () { Dash.easy.openNav(); }, on: function (s) { return s.nav.on; },
+        value: function (s) { return s.nav.on ? s.nav.destination.replace('⛽ ', '') : '내비'; } },
+      { label: '📄', act: v.infoNext, value: function (s) { return INFO_NAMES[Dash.info.currentId(s)] || '정보'; } },
+      { label: '🎨', act: function () { app.openThemePicker(); }, value: words('테마') },
+      { label: '⚙', act: function () { Dash.easy.openMore(); }, value: words('더보기') }
+    ];
+  }
+
+  function buildEasy() {
+    var quick = document.getElementById('ctrl-quick');
+    quick.classList.add('easy-grid');
+    easyItems().forEach(function (item) {
+      var el = makeItem(item);
+      byLabel[item.label] = { el: el, tab: null };
+      quick.appendChild(el);
+    });
+    // 운전 코치가 찾는 이름: 주유소는 내비 버튼에서 고른다
+    byLabel['⛽ 주유소'] = byLabel['🧭'];
+    document.getElementById('ctrl-tabs').hidden = true;
+    document.getElementById('ctrl-panel').hidden = true;
+  }
+
   function buildPanel() {
+    if (state.easy) return buildEasy();
     TABS.push(settingsTab());
     var quick = document.getElementById('ctrl-quick');
     QUICK.forEach(function (item) {
@@ -355,7 +391,7 @@
   var wasOverlayOpen = false;
   function overlayOpen() {
     return (Dash.rest && Dash.rest.isOpen()) ||
-      ['license', 'theme-picker', 'setup', 'scorecard'].some(function (id) { var el = document.getElementById(id); return el && !el.hidden; });
+      ['license', 'theme-picker', 'setup', 'scorecard', 'sheet'].some(function (id) { var el = document.getElementById(id); return el && !el.hidden; });
   }
 
   function releaseAll() {

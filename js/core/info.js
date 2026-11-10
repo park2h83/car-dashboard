@@ -138,7 +138,7 @@
   var ORDER = ['trip', 'score', 'economy', 'tires', 'car', 'climate', 'road'];
 
   function pages(s) {
-    var list = ORDER.slice();
+    var list = ORDER.filter(function (id) { return !(s.easy && id === 'climate'); }); // 쉬운 모드엔 공조가 없다
     if (s.nav.on) list.unshift('nav');
     if (s.autopilot.on) list.unshift('autopilot');
     return list;
@@ -149,7 +149,7 @@
       return title('주유 중') +
         '<div class="info-big">' + Math.round(s.fuel * 100) + '%</div>' + bar(s.fuel, 'big');
     }
-    return title('시동 꺼짐') + '<div class="off-hint">브레이크를 밟고<br>시동 버튼을 눌러요</div>';
+    return title('시동 꺼짐') + '<div class="off-hint">' + (s.easy ? '시동 버튼을<br>눌러요' : '브레이크를 밟고<br>시동 버튼을 눌러요') + '</div>';
   }
 
   Dash.info = {
