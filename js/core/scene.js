@@ -326,14 +326,17 @@
       var front = Math.max(Z_NEAR, FRONT);
       var reach = s.highBeam ? 90 : 45;
       var cls = 'rd-beam' + (s.inTunnel || s.night ? ' strong' : '') + (s.highBeam ? ' high' : '');
-      // 앞으로 갈수록 퍼지는 불빛: 가까운 곳은 밝게, 먼 곳은 흐리게 두 겹으로
+      // 앞으로 갈수록 조금 퍼지는 불빛 (끝은 둥글게): 여러 겹을 겹쳐 가까울수록 밝고 멀수록 흐리게
       function cone(len, spread) {
-        return pathOf([proj(ex - 0.9, front), proj(ex + 0.9, front),
-          proj(ex + spread, front + len), proj(ex - spread, front + len)]);
+        var a = proj(ex - 0.8, front), b = proj(ex + 0.8, front);
+        var c = proj(ex + spread, front + len), d = proj(ex - spread, front + len);
+        var tip = proj(ex, front + len * 1.25);
+        return 'M' + f1(a[0]) + ' ' + f1(a[1]) + 'L' + f1(b[0]) + ' ' + f1(b[1]) + 'L' + f1(c[0]) + ' ' + f1(c[1]) +
+          'Q' + f1(tip[0]) + ' ' + f1(tip[1]) + ' ' + f1(d[0]) + ' ' + f1(d[1]) + 'Z';
       }
-      var spread = s.highBeam ? 12 : 8;
-      return [1, 0.7, 0.45, 0.25].map(function (k) {
-        return '<path class="' + cls + '" d="' + cone(reach * k, spread * k) + '"/>';
+      var spread = s.highBeam ? 4.5 : 2.4; // 차선 하나 남짓
+      return [1, 0.82, 0.66, 0.5, 0.36, 0.24].map(function (k) {
+        return '<path class="' + cls + '" d="' + cone(reach * k, spread * (0.6 + 0.4 * k)) + '"/>';
       }).join('');
     }
 

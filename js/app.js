@@ -149,10 +149,10 @@
   };
   Dash.easy.init(state, hooks);
   Dash.controls.init(state, input, hooks);
-  // 쉬운 모드에는 차가 달리는 '운전 게임' 화면을 한 번 보여 준다 (그 뒤엔 고른 테마를 기억)
-  if (state.easy && load('dash.playIntro') !== '1' && Dash.themes.get('play')) {
-    save('dash.playIntro', '1');
-    useTheme('play');
+  // 쉬운 모드에는 '계기판 + 도로' 화면을 한 번 보여 준다 (아이가 가장 좋아하는 바늘 계기 + 달리는 차, 그 뒤엔 고른 테마를 기억)
+  if (state.easy && load('dash.cockpitIntro') !== '1' && Dash.themes.get('cockpit')) {
+    save('dash.cockpitIntro', '1');
+    useTheme('cockpit');
   } else {
     useTheme(load(THEME_KEY));
   }

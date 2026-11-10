@@ -194,7 +194,8 @@
     s.fuel = Math.max(0, s.fuel - liters * GAME_DRAIN / FUEL_TANK_L);
     s.instantEconomy = lph > 0 ? Math.min(30, s.speed / lph) : 0;
     var lPerKm = s.trip > 0.5 && s.tripFuel > 0 ? s.tripFuel / s.trip : 1 / 14;
-    s.range = s.fuel * FUEL_TANK_L / GAME_DRAIN / lPerKm;
+    // 갈 수 있는 거리는 진짜 차처럼 (게임에서는 기름이 빨리 줄지만, 계기판에는 실제 연비로 보여 준다)
+    s.range = s.fuel * FUEL_TANK_L / lPerKm;
     s.fuelLiters = s.fuel * FUEL_TANK_L;
     if (s.engineOn && s.fuel <= 0) {
       s.engineOn = false;
