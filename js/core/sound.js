@@ -501,26 +501,32 @@
 
   // 내비 음성 안내 (아이패드 Safari 는 한국어 음성을 기본으로 갖고 있다)
   var speakTimer = 0;
-  var utterance = null; // Safari 는 말하는 도중 이 객체가 지워지면 말이 끊겨서 붙잡아 둔다
+  var speakScheduled = false; // 앞 말을 끊고 잠깐 뒤에 말하기로 한 게 있으면 (그 사이 이어 말하기가 끼어들지 않게)
+  var utterances = []; // Safari 는 말하는 도중 이 객체가 지워지면 말이 끊겨서, 다 말할 때까지 붙잡아 둔다
   // queue: 앞 말(코치·도착 안내)을 끊지 않고 뒤에 이어서 말한다 (화면 알림을 읽어 주는 말)
   function speak(text, queue) {
     if (muted || !voiceOn || document.hidden || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
     var synth = window.speechSynthesis;
     function say() {
+      speakScheduled = false;
       if (muted || !voiceOn) return;
       try {
-        utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ko-KR';
-        utterance.rate = 1.05;
-        synth.speak(utterance);
+        var u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ko-KR';
+        u.rate = 1.05;
+        u.onend = u.onerror = function () { utterances = utterances.filter(function (x) { return x !== u; }); };
+        utterances.push(u);
+        if (utterances.length > 4) utterances.shift();
+        synth.speak(u);
       } catch (e) { /* 음성 합성 미지원 */ }
     }
-    if (queue && synth.pending) return;   // 이미 기다리는 말이 있으면 쌓지 않는다
+    if (queue && (synth.pending || speakScheduled)) return;   // 이미 기다리는 말이 있으면 쌓지 않는다
     if (queue && synth.speaking) { say(); return; }
     clearTimeout(speakTimer);
     // 앞 말을 끊고 바로 새 말을 시키면 Safari 가 새 말까지 버릴 때가 있어 조금 쉬었다 말한다
     if (synth.speaking || synth.pending) {
       synth.cancel();
+      speakScheduled = true;
       speakTimer = setTimeout(say, 120);
     } else {
       say();

@@ -362,7 +362,7 @@
     if (s.engineOn) s.startTimer += dt;
     if (s.messageTimer > 0) {
       s.messageTimer -= dt;
-      if (s.messageTimer <= 0) s.message = '';
+      if (s.messageTimer <= 0) s.message = s.messageFull = '';
     }
     if (s.popup.timer > 0) s.popup.timer -= dt;
   }
@@ -696,7 +696,10 @@
     repairAll: repairAll,
 
     // 내비
-    startNav: function (s, id) { Dash.road.startNav(s, id); },
+    startNav: function (s, id) {
+      if (s.follow.on) return U.say(s, '🚗 아빠 차 따라가기 중이에요'); // 가상의 길 안내는 진짜 길과 맞지 않는다
+      Dash.road.startNav(s, id);
+    },
     stopNav: function (s) { Dash.road.stopNav(s); }
   };
 })(window.Dash = window.Dash || {});

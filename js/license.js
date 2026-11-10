@@ -51,6 +51,8 @@
 
   function kid() { return Dash.util.kid(); }
   function sound(type) { if (state) Dash.util.emit(state, type); }
+  // 아이가 아직 글씨를 못 읽어서 화면마다 할 일을 말로 알려 준다
+  function talk(text) { if (state) Dash.util.emit(state, 'speak', { text: text }); }
   function shuffle(list) {
     var a = list.slice();
     for (var i = a.length - 1; i > 0; i--) {
@@ -87,6 +89,7 @@
       '<h2>🪪 ' + kid() + '의 운전면허 따기!</h2>' +
       '<ol class="lic-steps"><li>📝 필기시험: 표지판 문제 ' + QUIZ_COUNT + '개</li><li>📷 사진 찍기</li><li>🎉 면허증 받기</li></ol>' +
       '<div class="lic-actions"><button type="button" class="lic-btn primary" data-go="quiz">시작하기</button></div>');
+    talk('운전면허증을 만들어요. 문제를 풀고, 사진을 찍으면 면허증이 나와요. 시작하기를 눌러요');
   }
 
   // ---- 필기시험 ----
@@ -159,10 +162,12 @@
       '<p>' + QUIZ_COUNT + '문제 중 <b>' + passedScore + '개</b>를 한 번에 맞혔어요 ' + stars(passedScore) + '</p>' +
       '<p>이제 면허증에 붙일 사진을 찍어요 📷</p>' +
       '<div class="lic-actions"><button type="button" class="lic-btn primary" data-go="photo">사진 찍으러 가기</button></div>');
+    talk('합격! ' + Dash.util.kidCall() + ', 시험에 붙었어요. 이제 사진을 찍으러 가요');
   }
 
+  // 5살이라 후하게: 3개 이상 한 번에 맞히면 별 3개, 아니어도 2개
   function stars(n) {
-    var count = n >= 5 ? 3 : n >= 3 ? 2 : 1;
+    var count = n >= 3 ? 3 : 2;
     return new Array(count + 1).join('⭐');
   }
 
@@ -176,6 +181,7 @@
       '  <label class="lic-btn">🖼 앨범에서 고르기<input type="file" accept="image/*" hidden data-photo></label>' +
       '</div>' +
       '<p class="lic-note">사진은 이 아이패드 안에만 저장되고 다른 곳으로 보내지 않아요.</p>');
+    talk('사진 찍기를 누르고 웃어요! 김치!');
   }
 
   function loadPhoto(file) {
@@ -219,6 +225,7 @@
   }
 
   function adjustScreen() {
+    talk('얼굴을 점선 안에 맞추고 파란 버튼을 눌러요');
     show(
       '<h2>✂️ 얼굴을 점선 안에 맞춰요</h2>' +
       '<div class="lic-adjust"><canvas class="lic-crop" width="' + PHOTO_W + '" height="' + PHOTO_H + '"></canvas>' +
@@ -413,6 +420,7 @@
       '</div>');
     // 저장할 그림을 미리 만들어 둔다 (아이패드는 버튼을 누른 그 순간에만 공유 메뉴를 열어 준다)
     var canvas = root.querySelector('.lic-card');
+    if (fresh) talk('축하해요! ' + kid() + '의 운전면허증이 나왔어요');
     cardBlob = null;
     drawCard(canvas, data, function () {
       if (canvas.toBlob) canvas.toBlob(function (b) { cardBlob = b; }, 'image/png');

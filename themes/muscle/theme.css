@@ -1,0 +1,204 @@
+/* 미국 머슬카 느낌 테마. 모든 규칙은 .theme-muscle 아래에 둔다.
+   .ms-stage 안의 좌표는 1600x840 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다. */
+.theme-muscle .ms {
+  --orange: #ff7a00;
+  --warm: #ffe2b8;
+  --glow: rgba(255, 122, 0, 0.75);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #0d0b0a;
+  color: var(--warm);
+  font-family: "Futura", "Avenir Next Condensed", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+/* 바탕: 검은 엔진 돌림 무늬(가는 원 무늬) 패널 + 따뜻한 빛 */
+.theme-muscle .ms-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(255, 110, 20, 0.12), rgba(0, 0, 0, 0) 70%),
+    repeating-radial-gradient(circle at 50% 40%, #1a1715 0 2px, #121010 2px 5px);
+  transition: opacity 0.6s;
+}
+.theme-muscle .ms.off .ms-bg { opacity: 0.6; }
+
+.theme-muscle .ms-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 840px;
+  transform-origin: 0 0;
+}
+.theme-muscle .ms-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* ---- 원통 계기 ---- */
+.theme-muscle .ms-shadow { fill: rgba(0, 0, 0, 0.6); }
+.theme-muscle .ms-backlight { opacity: 1; transition: opacity 0.6s; }
+.theme-muscle .ms.off .ms-backlight { opacity: 0; }
+.theme-muscle .ms-redband { fill: none; stroke: #e0261b; stroke-width: 16; }
+
+.theme-muscle .ms-scale .tick-major { stroke: var(--warm); stroke-width: 6; }
+.theme-muscle .ms-scale .tick-minor { stroke: var(--warm); stroke-width: 2.5; }
+.theme-muscle .ms-scale .tick-major.hot,
+.theme-muscle .ms-scale .tick-minor.hot { stroke: #ff3b2a; }
+.theme-muscle .ms-scale .tick-label { fill: #fff3e0; font-weight: 700; }
+.theme-muscle .ms-scale .tick-label.hot { fill: #ff3b2a; }
+.theme-muscle .ms-spd .tick-label { font-size: 34px; }
+.theme-muscle .ms-tach .tick-label { font-size: 64px; }
+/* 따뜻한 조명: 같은 눈금을 주황으로 번지게 한 겹 더 */
+.theme-muscle .ms-glowcopy .tick-major,
+.theme-muscle .ms-glowcopy .tick-minor { stroke: var(--orange); stroke-width: 8; }
+.theme-muscle .ms-glowcopy .tick-label { fill: var(--orange); font-weight: 700; }
+.theme-muscle .ms-spd .ms-glowcopy .tick-label { font-size: 34px; }
+.theme-muscle .ms-tach .ms-glowcopy .tick-label { font-size: 64px; }
+.theme-muscle .ms-glowcopy { opacity: 0.7; transition: opacity 0.6s; }
+.theme-muscle .ms.night .ms-glowcopy { opacity: 1; }
+.theme-muscle .ms.off .ms-glowcopy { opacity: 0; }
+.theme-muscle .ms.off .ms-scale { opacity: 0.45; }
+
+/* 주황 바늘 */
+.theme-muscle .ms-needle-glow { fill: var(--orange); opacity: 0.35; }
+.theme-muscle .ms-needle-body { fill: #ff8a1a; }
+.theme-muscle .ms.off .ms-needle-glow { opacity: 0; }
+.theme-muscle .ms-cap-in { fill: #151515; }
+
+/* 디지털 창 */
+.theme-muscle .ms-win { fill: #050403; stroke: #3a3530; stroke-width: 3; }
+.theme-muscle .ms-digits { fill: var(--orange); font-size: 74px; font-weight: 800; letter-spacing: 2px; }
+.theme-muscle .ms-digits.over { fill: #ff3b2a; }
+.theme-muscle .ms-gear { fill: var(--orange); font-size: 92px; font-weight: 900; }
+.theme-muscle .ms-gear.rev { fill: #ff3b2a; }
+.theme-muscle .ms-gearno { fill: var(--warm); font-size: 36px; font-weight: 800; }
+.theme-muscle .ms.off .ms-digits,
+.theme-muscle .ms.off .ms-gear { opacity: 0.35; }
+.theme-muscle .ms.redline .ms-redband { animation: ms-pulse 0.2s linear infinite alternate; }
+@keyframes ms-pulse { from { opacity: 0.4; } to { opacity: 1; } }
+
+/* ---- 보조 계기 ---- */
+.theme-muscle .ms-aux-tick { stroke: var(--warm); stroke-width: 4; }
+.theme-muscle .ms-aux-zone { fill: none; stroke: #e0261b; stroke-width: 10; }
+.theme-muscle .ms-aux-icon { color: var(--orange); }
+.theme-muscle .ms.off .ms-aux-icon { color: #6b5a48; }
+
+/* ---- 깜빡이 ---- */
+.theme-muscle .ms-turn { position: absolute; top: 24px; width: 178px; height: 106px; color: #13301b; }
+.theme-muscle .ms-turn-left { left: 612px; }
+.theme-muscle .ms-turn-right { left: 810px; }
+.theme-muscle .ms-turn svg { width: 100%; height: 100%; display: block; }
+.theme-muscle .ms-turn path { fill: currentColor; stroke: #2b2b2b; stroke-width: 2; }
+.theme-muscle .ms-turn.on { color: #33ff66; filter: drop-shadow(0 0 14px #33ff66) drop-shadow(0 0 28px rgba(51, 255, 102, 0.6)); }
+
+/* ---- 경고등 ---- */
+.theme-muscle .ms-grid { position: absolute; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 8px; }
+.theme-muscle .ms-top { left: 650px; top: 138px; width: 300px; height: 112px; }
+.theme-muscle .ms-grid-l { left: 24px; top: 676px; width: 300px; height: 150px; }
+.theme-muscle .ms-grid-r { left: 1276px; top: 676px; width: 300px; height: 150px; }
+.theme-muscle .ms-ind { width: 50px; height: 50px; color: #fff; opacity: 0.08; flex: none; }
+.theme-muscle .ms-top .ms-ind { width: 48px; height: 48px; }
+.theme-muscle .ms-ind svg { width: 100%; height: 100%; display: block; }
+.theme-muscle .ms-ind.on { opacity: 1; }
+.theme-muscle .ms-ind.on.red { color: #ff3b30; filter: drop-shadow(0 0 6px #ff3b30); }
+.theme-muscle .ms-ind.on.amber { color: #ffb020; filter: drop-shadow(0 0 6px #ffb020); }
+.theme-muscle .ms-ind.on.green { color: #33ff66; filter: drop-shadow(0 0 6px #33ff66); }
+.theme-muscle .ms-ind.on.blue { color: #3d8bff; filter: drop-shadow(0 0 6px #3d8bff); }
+.theme-muscle .ms-ind.on.white { color: #f3f5f8; }
+
+.theme-muscle .ms-limit {
+  width: 58px;
+  height: 58px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 7px solid #e5241b;
+  background: #fff;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 900;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.theme-muscle .ms-limit.show { opacity: 1; }
+.theme-muscle .ms-limit.over { animation: ms-pulse 0.3s linear infinite alternate; }
+
+/* ---- 가운데 정보창 (크롬 테두리) ---- */
+.theme-muscle .ms-info {
+  position: absolute;
+  left: 650px;
+  top: 262px;
+  width: 300px;
+  height: 380px;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 22px;
+  border: 7px solid #c9ced4;
+  box-shadow: inset 0 0 0 2px #555, 0 6px 16px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(255, 122, 0, 0.12);
+  background: radial-gradient(ellipse at 50% 30%, #1b1715, #050404);
+  font-size: 22px;
+  overflow: hidden;
+}
+.theme-muscle .ms-page { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 8px; overflow: hidden; }
+
+.theme-muscle .ms-info .info-title { font-size: 18px; font-weight: 700; color: var(--orange); text-align: center; }
+.theme-muscle .ms-info .info-title.icon { font-size: 44px; }
+.theme-muscle .ms-info .info-tiles { gap: 8px; }
+.theme-muscle .ms-info .info-tile { background: #1c1714; border: 2px solid #3c332c; border-radius: 12px; padding: 6px 8px; min-width: 76px; }
+.theme-muscle .ms-info .info-tile i { font-size: 30px; }
+.theme-muscle .ms-info .info-tile b { font-size: 44px; font-weight: 800; color: var(--orange); }
+.theme-muscle .ms-info .info-tile small { font-size: 17px; color: var(--warm); opacity: 0.8; }
+.theme-muscle .ms-info .info-tile.hot b,
+.theme-muscle .ms-info .info-tile.low b { color: #ff3b2a; }
+.theme-muscle .ms-info .info-big { font-size: 110px; font-weight: 800; text-align: center; color: var(--orange); line-height: 1; }
+.theme-muscle .ms-info .info-row { display: flex; justify-content: space-between; font-size: 16px; color: #b8a690; }
+.theme-muscle .ms-info .info-row b { color: var(--warm); }
+.theme-muscle .ms-info .info-sub,
+.theme-muscle .ms-info .info-label { font-size: 14px; color: #b8a690; text-align: center; }
+.theme-muscle .ms-info .info-bar { height: 14px; border-radius: 7px; background: #241e1a; overflow: hidden; }
+.theme-muscle .ms-info .info-bar i { display: block; height: 100%; background: var(--orange); }
+.theme-muscle .ms-info .info-bar.big { height: 22px; border-radius: 11px; }
+.theme-muscle .ms-info .info-bar.low i { background: #ff3b2a; }
+.theme-muscle .ms-info .info-car { height: 250px; align-self: center; overflow: visible; }
+.theme-muscle .ms-info .car-body { fill: #f6f4f1; stroke: #c9ced4; stroke-width: 2; }
+.theme-muscle .ms-info .car-glass { fill: #2a2420; }
+.theme-muscle .ms-info .tire { fill: #3a3430; }
+.theme-muscle .ms-info .tire.bad { fill: #ffb020; }
+.theme-muscle .ms-info .tire-psi { fill: var(--warm); font-size: 22px; font-weight: 800; }
+.theme-muscle .ms-info .tire-psi.bad { fill: #ffb020; }
+.theme-muscle .ms-info .door { fill: none; stroke: #8a7d70; stroke-width: 3; stroke-linecap: round; }
+.theme-muscle .ms-info .door.open { stroke: #ff3b2a; stroke-width: 5; }
+.theme-muscle .ms-info .nav-arrow {
+  width: 160px;
+  height: 160px;
+  align-self: center;
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 11;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.theme-muscle .ms-info .nav-dist { font-size: 52px; font-weight: 800; text-align: center; color: var(--warm); }
+.theme-muscle .ms-info .nav-word { font-size: 17px; text-align: center; color: var(--orange); }
+.theme-muscle .ms-info .off-hint { font-size: 46px; text-align: center; line-height: 1.4; }
+.theme-muscle .ms-info .ap-state { font-size: 20px; font-weight: 700; text-align: center; color: #6fb1ff; }
+.theme-muscle .ms-info .road-name { font-size: 19px; font-weight: 700; text-align: center; }
+.theme-muscle .ms-info .clim-temps { display: flex; justify-content: space-around; font-size: 32px; font-weight: 800; }
+
+.theme-muscle .ms-popup {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(5, 4, 3, 0.95);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.theme-muscle .ms-popup.show { opacity: 1; }
+.theme-muscle .ms-popup .t { font-size: 19px; color: var(--warm); }
+.theme-muscle .ms-popup .v { font-size: 38px; font-weight: 800; color: var(--orange); text-align: center; }

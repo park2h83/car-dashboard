@@ -1,0 +1,175 @@
+/* 일본 스포츠카 느낌 테마. 모든 규칙은 .jd 아래에 둔다.
+   .jd-stage 안의 좌표는 1600x840 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다. */
+.jd {
+  --hot: #ff1f1f;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 34% 60% at 50% 52%, rgba(255, 30, 30, 0.1), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.018) 0 6px, transparent 6px 12px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.018) 0 6px, transparent 6px 12px),
+    linear-gradient(#08080a, #000 55%, #0a0a0c);
+  font-family: "Avenir Next Condensed", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  color: #fff;
+}
+.jd-flash { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, rgba(255, 20, 20, 0.35), rgba(255, 20, 20, 0.08) 70%); opacity: 0; pointer-events: none; }
+.jd.shift .jd-flash { opacity: 1; }
+
+.jd-stage { position: absolute; left: 0; top: 0; width: 1600px; height: 840px; transform-origin: 0 0; }
+.jd-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* ---- 큰 RPM 계기 ---- */
+.jd-rim { fill: none; stroke: #c8141a; stroke-width: 3; }
+.jd.off .jd-rim { stroke: #3a1012; }
+#jd-glowring { opacity: 0; transition: opacity 0.15s; }
+.jd.redline #jd-glowring { opacity: 1; }
+.jd-seg { fill: none; stroke: #1b1c20; stroke-width: 18; }
+.jd-seg.hot { stroke: #3a0d10; }
+.jd-seg.on { stroke: #f4f4f4; }
+.jd-seg.hot.on { stroke: var(--hot); }
+.jd[data-mode="sport"] .jd-seg.on:not(.hot) { stroke: #ffd0c8; }
+.jd.ap .jd-seg.on:not(.hot) { stroke: #6fd0ff; }
+.jd-redzone { fill: none; stroke: #b80f14; stroke-width: 26; }
+.jd-redzone-glow { fill: none; stroke: rgba(255, 30, 30, 0.25); stroke-width: 54; }
+.jd.redline .jd-redzone { stroke: #ff2a2a; animation: jd-pulse 0.18s infinite alternate; }
+.jd .tick-major { stroke: #fafafa; stroke-width: 6; }
+.jd .tick-minor { stroke: #c9c9c9; stroke-width: 2.5; }
+.jd .tick-major.hot, .jd .tick-minor.hot { stroke: #ff3030; }
+.jd .tick-label { fill: #fafafa; font-size: 70px; font-weight: 800; font-style: italic; }
+.jd .tick-label.hot { fill: #ff3030; }
+.jd .small .tick-label { font-size: 40px; }
+.jd .small .tick-major { stroke-width: 4.5; }
+.jd .small .tick-minor { stroke-width: 2; }
+.jd-scale { transition: opacity 0.6s; }
+.jd.off .jd-scale { opacity: 0.35; }
+
+.jd-speed { fill: #fff; font-size: 150px; font-weight: 800; font-style: italic; font-variant-numeric: tabular-nums; letter-spacing: -4px; }
+.jd-speed.over { fill: #ff4040; }
+.jd-kmh { fill: #9a9a9a; font-size: 30px; font-weight: 700; font-style: italic; }
+.jd.off .jd-kmh { opacity: 0.3; }
+
+.jd-needle path { fill: #ff2020; }
+.jd-needle path.glow { fill: rgba(255, 40, 40, 0.28); }
+.jd.off .jd-needle path { fill: #8a8a8a; }
+.jd.off .jd-needle path.glow { fill: none; }
+.jd-needle.small path { fill: #fafafa; }
+
+/* 터보 부스트 */
+.jd-vac { fill: none; stroke: #2a2c31; stroke-width: 12; }
+.jd-bst { fill: none; stroke: #3a0d10; stroke-width: 12; }
+.jd-bfill { fill: none; stroke: var(--hot); stroke-width: 12; }
+.jd-turbo { color: #8d8d8d; }
+
+/* ---- 시프트 라이트 ---- */
+.jd-leds {
+  position: absolute;
+  left: 520px;
+  width: 560px;
+  top: 4px;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.jd-leds i { width: 28px; height: 28px; border-radius: 50%; background: #1a1b1e; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8); }
+.jd-leds i.g.on { background: #2bff5a; box-shadow: 0 0 14px #2bff5a; }
+.jd-leds i.y.on { background: #ffd21f; box-shadow: 0 0 14px #ffd21f; }
+.jd-leds i.r.on { background: #ff2020; box-shadow: 0 0 14px #ff2020; }
+.jd-leds i.flash { background: #ff2a2a; box-shadow: 0 0 22px #ff2a2a, 0 0 4px #fff inset; }
+.jd.ap .jd-leds i.flash { background: #4fb8ff; box-shadow: 0 0 22px #4fb8ff; }
+
+/* ---- 깜빡이 ---- */
+.jd-turn { position: absolute; top: 20px; width: 124px; height: 124px; fill: #17201a; }
+.jd-turn svg { width: 100%; height: 100%; display: block; }
+.jd-turn.left { left: 30px; }
+.jd-turn.right { right: 30px; }
+.jd-turn.on { fill: #2bff5a; filter: drop-shadow(0 0 18px rgba(43, 255, 90, 0.95)); }
+
+/* ---- 오른쪽: 기어 · 연료 · 냉각수 ---- */
+.jd-gearbox {
+  position: absolute;
+  left: 1240px;
+  top: 160px;
+  width: 290px;
+  height: 320px;
+  box-sizing: border-box;
+  border: 4px solid #2a2c31;
+  border-left: 10px solid var(--hot);
+  border-radius: 10px 40px 10px 40px;
+  background: linear-gradient(135deg, #141518, #050506);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: skewX(-6deg);
+}
+.jd-gear { font-size: 220px; line-height: 220px; height: 220px; font-weight: 900; font-style: italic; color: #fff; }
+.jd-gear.rev { color: #ff4040; }
+.jd-prnd { display: flex; gap: 18px; font-size: 40px; font-weight: 800; font-style: italic; color: #34363b; }
+.jd-prnd span.on { color: var(--hot); }
+
+.jd-bars { position: absolute; left: 1230px; top: 506px; width: 320px; display: flex; flex-direction: column; gap: 18px; }
+.jd-bar { display: flex; align-items: center; gap: 12px; }
+.jd-bar-icon { width: 48px; height: 48px; color: #bdbdbd; flex: 0 0 auto; }
+.jd-bar-icon svg { width: 100%; height: 100%; display: block; }
+.jd-cells { flex: 1; display: flex; gap: 5px; transform: skewX(-14deg); }
+.jd-cells i { flex: 1; height: 40px; background: #1b1c20; }
+.jd-cells i.on { background: #f4f4f4; }
+.jd-bar.temp .jd-cells i:nth-child(n+10) { background: #3a0d10; }
+.jd-bar.temp .jd-cells i.on:nth-child(n+10) { background: var(--hot); }
+.jd-bar.fuel .jd-cells i:nth-child(-n+2) { background: #3a0d10; }
+.jd-bar.fuel .jd-cells i.on:nth-child(-n+2) { background: var(--hot); }
+.jd-cells i.on.low { background: #ffb020 !important; }
+
+/* ---- 경고등 ---- */
+.jd-warns { position: absolute; display: flex; flex-wrap: wrap; gap: 10px; }
+.jd-warns.left { left: 40px; top: 636px; width: 400px; }
+.jd-warns.right { left: 1222px; top: 676px; width: 350px; gap: 6px; }
+.jd-ind { width: 52px; height: 52px; color: #fff; opacity: 0.08; }
+.jd-warns.right .jd-ind { width: 44px; height: 44px; }
+.jd-ind svg { width: 100%; height: 100%; display: block; }
+.jd-ind.on { opacity: 1; }
+.jd-ind.on.red { color: #ff3030; }
+.jd-ind.on.amber { color: #ffb020; }
+.jd-ind.on.green { color: #2bff5a; }
+.jd-ind.on.blue { color: #3d8bff; }
+.jd-ind.on.white { color: #fff; }
+
+.jd-limit {
+  position: absolute;
+  left: 1086px;
+  top: 664px;
+  width: 96px;
+  height: 96px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 11px solid #e0201b;
+  background: #fff;
+  color: #111;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  font-weight: 900;
+}
+.jd-limit.show { display: flex; }
+
+.jd-popup {
+  position: absolute;
+  left: 620px;
+  width: 360px;
+  top: 250px;
+  padding: 14px;
+  box-sizing: border-box;
+  border-radius: 14px;
+  background: rgba(10, 10, 12, 0.95);
+  border: 3px solid var(--hot);
+  text-align: center;
+  display: none;
+}
+.jd-popup.show { display: block; }
+.jd-popup .t { font-size: 24px; color: #bbb; }
+.jd-popup .v { font-size: 50px; font-weight: 800; }
+
+@keyframes jd-pulse { to { opacity: 0.5; } }

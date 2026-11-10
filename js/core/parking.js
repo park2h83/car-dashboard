@@ -344,7 +344,8 @@
     update: function (s, input, dt) {
       var p = s.parking;
       if (!p.on) {
-        if (p.pending && (s.roadName !== p.pendingRoad || s.autopilot.on || !s.parkingMission)) p.pending = false;
+        if (p.pending && (s.roadName !== p.pendingRoad || s.autopilot.on || !s.parkingMission || s.follow.on)) p.pending = false;
+        if (s.follow.on) return; // 아빠 차 따라가기 중에는 주차 화면을 열지 않는다 (진짜 차가 움직이니까)
         if (p.pending && s.speed < 12) start(s, 'mission');
         else if (s.gear === 'R' && s.engineOn) start(s, 'free');
         return;

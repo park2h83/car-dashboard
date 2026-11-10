@@ -3,6 +3,8 @@
 // 바늘 계기는 classic 테마, 도로 화면은 play 테마(js/core/scene.js)를 그대로 가져다 쓴다.
 // 도로 화면 아래에는 진짜 차의 가운데 화면처럼 정보창(Dash.info: 주행·엔진·타이어 공기압·차량 상태 …)이 있다.
 // 1600x840 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다.
+// 작은 글씨(단위·길 이름·시계·쪽 번호)는 없다: 바늘·큰 숫자·그림·색으로만 보여 준다.
+// 바늘 뒤에는 바늘을 따라 빛나는 띠(진짜 계기처럼)가 차오른다.
 (function (Dash) {
   'use strict';
 
@@ -54,7 +56,9 @@
   var TOP_RIGHT = ['autopilot', 'laneAssist', 'rest', 'fcw', 'esc', 'escOff', 'tpms',
     'engine', 'oil', 'battery', 'coolant', 'fuel', 'washer'];
 
-  var MODE_NAMES = { eco: '🍃 에코', comfort: '😊 보통', sport: '🔥 스포츠' };
+  var MODE_ICONS = { eco: '🍃', comfort: '😊', sport: '🔥' };
+  var GLOW_R = R - 8;        // 바늘을 따라 차오르는 빛 띠의 반지름
+  var GLOW_LEN = GLOW_R * (A1 - A0) * Math.PI / 180;
 
   var ARROW_LEFT = '<svg viewBox="0 0 100 100"><path d="M8 50 50 10v22h42v36H50v22z"/></svg>';
   var ARROW_RIGHT = '<svg viewBox="0 0 100 100"><path d="M92 50 50 10v22H8v36h42v22z"/></svg>';
@@ -97,6 +101,9 @@
       '<linearGradient id="ck-glare" x1="0" y1="0" x2="0" y2="1">' +
       '  <stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>' +
       '</linearGradient>' +
+      '<radialGradient id="ck-halo">' +
+      '  <stop offset="0" class="ck-halo0" stop-opacity="0.5"/><stop offset="1" class="ck-halo0" stop-opacity="0"/>' +
+      '</radialGradient>' +
       '<clipPath id="ck-clip"><rect x="' + p.x + '" y="' + p.y + '" width="' + p.w + '" height="' + p.h + '" rx="' + p.r + '"/></clipPath>' +
       '</defs>';
   }
@@ -155,8 +162,18 @@
     return '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 46) + '" fill="url(#ck-shade)"/>' +
       '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 18) + '" fill="url(#ck-bezel)"/>' +
       '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 7) + '" fill="#030405"/>' +
+      '<circle class="ck-bezel-glow" cx="' + x + '" cy="' + y + '" r="' + (R + 26) + '"/>' +
       '<circle cx="' + x + '" cy="' + y + '" r="' + R + '" fill="url(#ck-face)"/>' +
+      '<circle class="ck-halo" cx="' + x + '" cy="' + (y + 40) + '" r="' + (R * 0.62) + '" fill="url(#ck-halo)"/>' +
       '<path class="ck-ring" d="' + G.arc(x, y, R - 5, A0, A1) + '"/>';
+  }
+
+  // 바늘을 따라 차오르는 빛 띠 (넓고 흐린 띠 + 가늘고 밝은 띠). stroke-dasharray 로 길이만 바꾼다
+  function glowTrail(c, id) {
+    var d = G.arc(c.cx, c.cy, GLOW_R, A0, A1);
+    var dash = '0 ' + Math.ceil(GLOW_LEN + 2);
+    return '<path class="ck-trail-wide" id="ck-trailw-' + id + '" d="' + d + '" stroke-dasharray="' + dash + '"/>' +
+      '<path class="ck-trail" id="ck-trail-' + id + '" d="' + d + '" stroke-dasharray="' + dash + '"/>';
   }
 
   function scale(c, o) {
@@ -202,20 +219,20 @@
     return out + '</g>';
   }
 
-  // 오일 온도: 왼쪽 아래 구석의 작은 계기 + '오일 92°C'
+  // 오일 온도: 왼쪽 아래 구석의 작은 계기 (글씨 대신 오일 그림)
   function oilDial() {
     var o = OIL_POS;
     return '<circle class="ck-oil-face" cx="' + o.px + '" cy="' + (o.py - 4) + '" r="' + (o.r + 12) + '"/>' +
       miniDial('oil', o.px, o.py, o.r, o.a, OIL, null) +
-      '<text class="ck-oil-txt" id="ck-oil-txt" x="' + o.px + '" y="' + (o.py + 34) + '" text-anchor="middle">오일</text>';
+      '<svg class="ck-corner-icon" id="ck-oil-icon" x="' + (o.px - 18) + '" y="' + (o.py + 12) + '" width="36" height="36" viewBox="0 0 24 24">' + Dash.icons.list.oil + '</svg>';
   }
 
-  // 연료: 오른쪽 아래 구석의 바늘 계기 (E ½ F) + '37 L'
+  // 연료: 오른쪽 아래 구석의 바늘 계기 (E ½ F) + 주유기 그림
   function fuelDial() {
     var o = FUEL_POS;
     return '<circle class="ck-oil-face" cx="' + o.px + '" cy="' + (o.py - 4) + '" r="' + (o.r + 12) + '"/>' +
       miniDial('fuel', o.px, o.py, o.r, o.a, FUEL, null) +
-      '<text class="ck-oil-txt" id="ck-fuel-l" x="' + o.px + '" y="' + (o.py + 34) + '" text-anchor="middle">⛽</text>';
+      '<svg class="ck-corner-icon" id="ck-fuel-icon" x="' + (o.px - 18) + '" y="' + (o.py + 12) + '" width="36" height="36" viewBox="0 0 24 24">' + Dash.icons.list.fuel + '</svg>';
   }
 
   function needleAndHub(c, id) {
@@ -228,9 +245,11 @@
     var c = LEFT;
     return dialBase(c) +
       zoneArc(c, TACH, TACH.hotFrom, TACH.max, 'ck-zone-red', 14) +
+      glowTrail(c, 'left') +
       scale(c, TACH) +
-      '<text class="ck-unit" x="' + c.cx + '" y="' + (c.cy - 88) + '" text-anchor="middle">x1000 r/min</text>' +
-      '<text class="ck-dial-mode" id="ck-mode" x="' + c.cx + '" y="' + (c.cy + 84) + '" text-anchor="middle"></text>' +
+      // 가운데 큰 기어 글자 (진짜 차처럼 RPM 계기 안에) + 주행 모드 그림
+      '<text class="ck-dial-mode" id="ck-mode" x="' + c.cx + '" y="' + (c.cy - 92) + '" text-anchor="middle" dominant-baseline="central"></text>' +
+      '<text class="ck-dial-gear" id="ck-dgear" x="' + c.cx + '" y="' + (c.cy + 100) + '" text-anchor="middle">P</text>' +
       miniDial('temp', c.cx, c.cy + MINI_DY, MINI_R, MINI_A, COOLANT, 'coolant') +
       needleAndHub(c, 'left');
   }
@@ -238,8 +257,8 @@
   function rightDial() {
     var c = RIGHT;
     return dialBase(c) +
+      glowTrail(c, 'right') +
       scale(c, SPEED) +
-      '<text class="ck-unit" x="' + c.cx + '" y="' + (c.cy - 88) + '" text-anchor="middle">km/h</text>' +
       '<text class="ck-digital" id="ck-digital" x="' + c.cx + '" y="' + (c.cy + 104) + '" text-anchor="middle">0</text>' +
       miniDial('volt', c.cx, c.cy + MINI_DY, MINI_R, MINI_A, VOLT, 'battery') +
       // 속도 눈금 바깥의 표시: 제한속도(주황), 자율주행 목표 속도(파랑)
@@ -326,15 +345,13 @@
       return '<span class="ck-ind" data-ind="' + id + '">' + Dash.icons.svg(id) + '</span>';
     }
 
+    // 아래 가운데: 내비가 켜져 있으면 큰 화살표 + 남은 거리 숫자만. 아니면 주행 모드 그림 (글씨 없음)
     function navHtml(s) {
       if (!s.engineOn) return '';
-      if (!s.nav.on) return s.roadName ? '<div class="ck-road-name">🛣 ' + s.roadName + '</div>' : '';
+      if (!s.nav.on) return '<span class="ck-mode-badge">' + (s.autopilot.on ? '🤖' : MODE_ICONS[s.driveMode] || '') + '</span>';
       var n = s.nav;
-      var word = Dash.road.TURN_WORDS[n.turn] || '직진';
-      return Dash.info.arrowSvg(n.turn) +
-        '<div class="ck-nav-txt"><b>' + Dash.info.fmtDist(n.turnDist) + '</b>' +
-        '<span>' + word + (n.turn !== 'arrive' && n.nextRoad ? ' → ' + n.nextRoad : '') + '</span></div>' +
-        '<em>🏁 ' + n.destination + '</em>';
+      return Dash.info.arrowSvg(n.turn) + '<b class="ck-nav-dist">' + Dash.info.fmtDist(n.turnDist) + '</b>' +
+        (n.turn === 'arrive' ? '<span class="ck-nav-flag">🏁</span>' : '');
     }
 
     function signHtml(s) {
@@ -351,12 +368,18 @@
       }).join('') + '</div><span>' + Math.round(l.dist) + 'm</span>';
     }
 
+    // 자율주행: 쉬운 모드는 🤖 + 목표 속도 숫자만
     function apHtml(s) {
       if (!s.autopilot.on) return '';
       var a = s.autopilot;
-      return '🤖 AI가 운전해요' + (a.parking ? ' · 주차 중' : a.target ? ' · ' + a.target + ' km/h' : '') +
-        (a.reason && !a.parking ? '<small>' + a.reason + '</small>' : '');
+      if (s.easy) return '🤖 ' + (a.parking ? '🅿️' : a.target ? '<b>' + a.target + '</b>' : '');
+      return '🤖 AI가 운전해요' + (a.parking ? ' · 주차 중' : a.target ? ' · ' + a.target + ' km/h' : '');
     }
+
+    // 시동 꺼짐 카드: 글씨 대신 반짝이는 시동 버튼 그림 (모든 기능 모드에서만 글씨도)
+    var START_BTN = '<svg class="ck-startbtn" viewBox="0 0 120 120">' +
+      '<circle cx="60" cy="60" r="54" class="ring"/><circle cx="60" cy="60" r="42" class="face"/>' +
+      '<path d="M44 44a22 22 0 1 0 32 0" class="pw"/><path d="M60 34v24" class="pw"/></svg>';
 
     return {
       id: 'cockpit',
@@ -390,13 +413,13 @@
           // 아래: 기어 · 내비 · 연료
           '    <div class="ck-gears"><span data-g="P">P</span><span data-g="R">R</span><span data-g="N">N</span><span data-g="D">D</span><b></b></div>' +
           '    <div class="ck-nav"></div>' +
-          '    <div class="ck-fuel"><span class="ck-fuel-icon">⛽</span><span class="ck-fuel-bars">' + new Array(FUEL_BARS + 1).join('<i></i>') + '</span><b class="ck-fuel-txt"></b></div>' +
-          '    <div class="ck-clock"></div>' +
+          '    <div class="ck-fuel"><span class="ck-fuel-icon">⛽</span><span class="ck-fuel-bars">' + new Array(FUEL_BARS + 1).join('<i></i>') + '</span></div>' +
           // 가운데 아래: 정보창 (📄 정보 버튼으로 넘긴다)
           '    <div class="ck-info"><div class="ck-info-page"></div><div class="ck-info-dots"></div></div>' +
           '    <div class="ck-popup"><div class="t"></div><div class="v"></div></div>' +
           // 시동 꺼짐
-          '    <div class="ck-offcard"><b>🔑 시동 버튼을 눌러요</b><span>브레이크를 꾹 밟고 눌러요</span></div>' +
+          '    <div class="ck-offcard">' + START_BTN + '<span class="ck-off-hand">👆</span>' +
+          '<div class="ck-off-txt"><b>시동 버튼을 눌러요</b><span>브레이크를 꾹 밟고 눌러요</span></div></div>' +
           '  </div>' +
           '</div>';
 
@@ -411,16 +434,19 @@
         el.needleLeft = svg.querySelector('#ck-needle-left');
         el.needleRight = svg.querySelector('#ck-needle-right');
         el.mode = svg.querySelector('#ck-mode');
+        el.dgear = svg.querySelector('#ck-dgear');
+        el.trailL = svg.querySelector('#ck-trail-left');
+        el.trailLW = svg.querySelector('#ck-trailw-left');
+        el.trailR = svg.querySelector('#ck-trail-right');
+        el.trailRW = svg.querySelector('#ck-trailw-right');
         el.digital = svg.querySelector('#ck-digital');
         el.tempNeedle = svg.querySelector('#ck-mneedle-temp');
         el.fuelNeedle = svg.querySelector('#ck-mneedle-fuel');
         el.voltNeedle = svg.querySelector('#ck-mneedle-volt');
-        el.fuelL = svg.querySelector('#ck-fuel-l');
         el.fuelBars = root.querySelectorAll('.ck-fuel-bars i');
         el.oilNeedle = svg.querySelector('#ck-mneedle-oil');
-        el.oilTxt = svg.querySelector('#ck-oil-txt');
-        el.fuelTxt = q('.ck-fuel-txt');
-        el.clock = q('.ck-clock');
+        el.oilIcon = svg.querySelector('#ck-oil-icon');
+        el.fuelIcon = svg.querySelector('#ck-fuel-icon');
         el.limitMark = svg.querySelector('#ck-limit-mark');
         el.apMark = svg.querySelector('#ck-ap-mark');
         el.turnL = q('.ck-turn.left');
@@ -441,7 +467,7 @@
         el.popup = q('.ck-popup');
         el.popupT = q('.ck-popup .t');
         el.popupV = q('.ck-popup .v');
-        el.offHint = q('.ck-offcard span');
+        el.offTxt = q('.ck-off-txt');
         el.info = q('.ck-info');
         el.infoPage = q('.ck-info-page');
         el.infoDots = q('.ck-info-dots');
@@ -513,14 +539,24 @@
         }
         rotate('nl', el.needleLeft, shown.left, TACH, LEFT);
         rotate('nr', el.needleRight, shown.right, SPEED, RIGHT);
+        // 바늘을 따라 차오르는 빛 띠
+        var tl = (s.engineOn ? Math.max(0, Math.min(1, shown.left / TACH.max)) * GLOW_LEN : 0).toFixed(0);
+        var tr = (s.engineOn ? Math.max(0, Math.min(1, shown.right / SPEED.max)) * GLOW_LEN : 0).toFixed(0);
+        var gap = ' ' + Math.ceil(GLOW_LEN + 2);
+        setAttr('trl', el.trailL, 'stroke-dasharray', tl + gap);
+        setAttr('trlw', el.trailLW, 'stroke-dasharray', tl + gap);
+        setAttr('trr', el.trailR, 'stroke-dasharray', tr + gap);
+        setAttr('trrw', el.trailRW, 'stroke-dasharray', tr + gap);
+        setCls('redline', ck, 'redline', s.engineOn && s.rpm >= TACH.hotFrom * 1000);
 
         setText('digital', el.digital, String(Math.round(s.speed)));
         setAttr('digitalCls', el.digital, 'class', 'ck-digital' + (s.overspeed && s.engineOn ? ' over' : ''));
-        setText('modeTxt', el.mode, s.autopilot.on ? '🤖 자율주행' : MODE_NAMES[s.driveMode] || '');
+        setText('modeTxt', el.mode, s.autopilot.on ? '🤖' : MODE_ICONS[s.driveMode] || '');
+        setText('dgear', el.dgear, s.gear === 'D' && s.engineOn ? 'D' + s.autoGear : s.gear);
+        setAttr('dgearCls', el.dgear, 'class', 'ck-dial-gear g-' + s.gear);
 
         // ---- 작은 계기: 냉각수 · 연료 · 오일 (시동을 끄면 맨 아래로, 켜면 천천히 올라온다) ----
         var on = s.engineOn;
-        var liters = s.fuelLiters != null ? s.fuelLiters : s.fuel * 50;
         var oilT = s.oilTemp != null ? s.oilTemp : s.coolantTemp;
         var km = Math.min(1, dt * 3);
         shown.temp += ((on ? s.coolantTemp : COOLANT.min) - shown.temp) * km;
@@ -534,18 +570,14 @@
         if (s.faults && s.faults.battery && on) volt = 12.0;
         shown.volt += (volt - shown.volt) * km;
         miniRotate('mv', el.voltNeedle, shown.volt, VOLT, RIGHT.cx, RIGHT.cy + md, MINI_A);
-        setText('fuelL', el.fuelL, on || s.refueling ? Math.round(liters) + ' L' : '⛽');
         var bars = Math.ceil(shown.fuel * FUEL_BARS - 0.001);
         for (var bi = 0; bi < el.fuelBars.length; bi++) {
           var bc = bi < bars ? (bars <= 2 ? 'low' : 'on') : '';
           if (el.fuelBars[bi].className !== bc) el.fuelBars[bi].className = bc;
         }
         miniRotate('mo', el.oilNeedle, shown.oil, OIL, OIL_POS.px, OIL_POS.py, OIL_POS.a);
-        setText('oilTxt', el.oilTxt, on ? '오일 ' + Math.round(oilT) + '°C' : '오일');
-        setAttr('oilCls', el.oilTxt, 'class', 'ck-oil-txt' + (on && oilT >= OIL.hotFrom ? ' hot' : ''));
-        setText('fuelTxt', el.fuelTxt, Math.round(s.range || 0) + ' km');
-        var d = new Date();
-        setText('clock', el.clock, Dash.info.pad(d.getHours()) + ':' + Dash.info.pad(d.getMinutes()) + '\n' + s.outsideTemp + '°C');
+        setAttr('oilCls', el.oilIcon, 'class', 'ck-corner-icon' + (on && oilT >= OIL.hotFrom ? ' hot' : ''));
+        setAttr('fuelCls', el.fuelIcon, 'class', 'ck-corner-icon' + (s.fuel < Dash.vehicle.LOW_FUEL ? ' low' : ''));
 
         // 제한속도 표지판과 눈금 표시
         setText('limit', el.limitText, String(s.speedLimit));
@@ -585,7 +617,7 @@
         }
         setText('gearN', el.gearNum, s.gear === 'D' && s.engineOn ? String(s.autoGear) : '');
 
-        // ---- 내비 (없으면 지금 길 이름) ----
+        // ---- 내비 (없으면 주행 모드 그림) ----
         var nav = navHtml(s);
         setHtml('nav', el.nav, nav);
         setCls('navOn', el.nav, 'guide', s.engineOn && s.nav.on);
@@ -614,7 +646,6 @@
             var n = list.length;
             var idx = list.indexOf(pageId);
             for (var i = 0; i < n; i++) dots += '<i' + (i === idx ? ' class="on"' : '') + '></i>';
-            dots += '<b>' + (idx + 1) + '/' + n + '</b>';
           }
           setHtml('dots', el.infoDots, dots);
         }
@@ -627,8 +658,8 @@
           setText('popV', el.popupV, String(s.popup.value));
         }
 
-        // 쉬운 모드(브레이크 없이 시동)에서는 브레이크 안내를 뺀다
-        setCls('easy', el.offHint, 'hide', !!s.easy);
+        // 쉬운 모드에서는 글씨 없이 시동 버튼 그림만
+        setCls('easy', ck, 'easy', !!s.easy);
       },
 
       unmount: function (container) {

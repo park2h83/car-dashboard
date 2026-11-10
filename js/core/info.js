@@ -146,8 +146,51 @@
   };
   var ORDER = ['trip', 'score', 'engine', 'economy', 'tires', 'car', 'climate', 'road'];
 
+  // ---- 쉬운 모드: 글씨를 못 읽는 아이용 — 그림과 큰 숫자만 (작은 글자 줄은 없다) ----
+  // 타일: <div class="info-tiles"><div class="info-tile [hot|low]"><i>그림</i><b>숫자</b><small>단위</small></div>…</div>
+  function tile(icon, num, unit, cls) {
+    return '<div class="info-tile' + (cls ? ' ' + cls : '') + '"><i>' + icon + '</i><b>' + num + '</b><small>' + (unit || '') + '</small></div>';
+  }
+  function tiles(list) { return '<div class="info-tiles">' + list.join('') + '</div>'; }
+  function iconTitle(icon) { return '<div class="info-title icon">' + icon + '</div>'; }
+
+  var EASY = {
+    nav: function (s) {
+      var n = s.nav;
+      return iconTitle('🧭') + arrowSvg(n.turn) + '<div class="nav-dist">' + fmtDist(n.turnDist) + '</div>';
+    },
+    autopilot: function (s) {
+      return iconTitle('🤖') + tiles([tile('🎯', s.autopilot.target, 'km/h'), tile('🛣️', (s.lane + 1) + '/' + s.lanes, '')]);
+    },
+    tires: function (s) { return PAGES.tires(s).replace(/<div class="info-title">[^<]*<\/div>/, iconTitle('🛞')); },
+    engine: function (s) {
+      var volt = s.startTimer < 0.6 ? 10.8 : 13.9 + Math.min(0.4, s.rpm / 12000);
+      return iconTitle('🔧') + tiles([
+        tile('🌡️', Math.round(s.coolantTemp), '°C', s.coolantTemp >= 110 ? 'hot' : ''),
+        tile('🛢️', Math.round(s.oilTemp), '°C', s.oilTemp >= 125 ? 'hot' : ''),
+        tile('🔋', (s.faults.battery ? 12.0 : volt).toFixed(1), 'V', s.faults.battery ? 'low' : '')
+      ]);
+    },
+    fuel: function (s) {
+      var low = s.fuel < Dash.vehicle.LOW_FUEL ? 'low' : '';
+      return iconTitle('⛽') + tiles([tile('⛽', Math.round(s.fuelLiters), 'L', low), tile('🏁', Math.round(s.range), 'km', low)]) + bar(s.fuel, 'big' + (low ? ' low' : ''));
+    },
+    score: function (s) {
+      return iconTitle('⭐') + '<div class="info-big">' + s.score.points + '</div>' +
+        (Dash.progress && Dash.progress.stars ? tiles([tile('⭐', Dash.progress.stars(), ''), tile(Dash.progress.level().emoji, '', '')]) : '');
+    },
+    car: function (s) { return PAGES.car(s).replace(/<div class="info-title">[^<]*<\/div>/, iconTitle('🚗')).replace(/<div class="info-sub">[^<]*<\/div>/, ''); }
+  };
+  var EASY_ORDER = ['tires', 'engine', 'fuel', 'score', 'car'];
+
   function pages(s) {
-    var list = ORDER.filter(function (id) { return !(s.easy && id === 'climate'); }); // 쉬운 모드엔 공조가 없다
+    if (s.easy) {
+      var e = EASY_ORDER.slice();
+      if (s.nav.on) e.unshift('nav');
+      if (s.autopilot.on) e.unshift('autopilot');
+      return e;
+    }
+    var list = ORDER.slice();
     if (s.nav.on) list.unshift('nav');
     if (s.autopilot.on) list.unshift('autopilot');
     return list;
@@ -155,13 +198,18 @@
 
   function offScreen(s) {
     if (s.refueling) {
+      if (s.easy) return iconTitle('⛽') + '<div class="info-big">' + Math.round(s.fuel * 100) + '%</div>' + bar(s.fuel, 'big');
       return title('주유 중') +
         '<div class="info-big">' + Math.round(s.fuel * 100) + '%</div>' + bar(s.fuel, 'big');
     }
+    if (s.easy) return iconTitle('🔑') + '<div class="off-hint">' + '🔴 ➜ 🚗' + '</div>';
     return title('시동 꺼짐') + '<div class="off-hint">' + (s.easy ? '시동 버튼을<br>눌러요' : '브레이크를 밟고<br>시동 버튼을 눌러요') + '</div>';
   }
 
+  function render(s, id) { return (s.easy && EASY[id] ? EASY[id] : PAGES[id])(s); }
+
   Dash.info = {
+    EASY: EASY,
     PAGES: PAGES,
     TURN_ARROWS: TURN_ARROWS,
     arrowSvg: arrowSvg,
@@ -178,9 +226,9 @@
 
     current: function (s) {
       var id = Dash.info.currentId(s);
-      return id ? PAGES[id](s) : offScreen(s);
+      return id ? render(s, id) : offScreen(s);
     },
 
-    render: function (s, id) { return PAGES[id](s); }
+    render: function (s, id) { return render(s, id); }
   };
 })(window.Dash = window.Dash || {});

@@ -1,7 +1,8 @@
 /* 계기판 + 도로 테마. 이 테마 전용 루트 클래스 .ck 아래에만 규칙을 둔다.
    .ck-stage 안의 좌표는 1600x840 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
    왼쪽 RPM 계기 중심 (268, 408), 오른쪽 속도 계기 중심 (1332, 408), 반지름 236.
-   가운데 위 도로 화면 x 498~1102, y 92~438, 지평선 y = 196. 가운데 아래 정보창 x 532~1068, y 450~746. */
+   가운데 위 도로 화면 x 498~1102, y 92~438, 지평선 y = 196. 가운데 아래 정보창 x 532~1068, y 450~746.
+   작은 글씨는 두지 않는다 (아이는 숫자·그림·색만 읽는다). */
 .ck {
   --accent: #4fc3ff;
   --face0: #1b2027;
@@ -55,11 +56,25 @@
 .ck .tick-label.hot { fill: #ff4a40; }
 .ck[data-mode="sport"] .tick-label { fill: #ffe0dc; font-style: italic; }
 .ck .ck-zone-red { fill: none; stroke: #c0141a; opacity: 0.9; }
-.ck .ck-unit { fill: #8b95a1; font-size: 19px; font-weight: 600; }
-.ck .ck-dial-mode { fill: var(--accent); font-size: 30px; font-weight: 800; }
-.ck .ck-digital { fill: #fff; font-size: 80px; font-weight: 800; letter-spacing: -2px; }
+.ck .ck-dial-mode { font-size: 50px; }
+.ck .ck-digital { fill: #fff; font-size: 104px; font-weight: 900; letter-spacing: -3px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 6px; paint-order: stroke; }
 .ck[data-mode="sport"] .ck-digital { font-style: italic; }
-.ck .ck-digital.over { fill: #ff4a40; }
+.ck .ck-digital.over { fill: #ff4a40; stroke: #ff3b30; stroke-opacity: 0.5; animation: ck-blink 0.6s steps(1) infinite; }
+/* RPM 계기 가운데의 큰 기어 글자 */
+.ck .ck-dial-gear { fill: #fff; font-size: 104px; font-weight: 900; letter-spacing: -3px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 6px; paint-order: stroke; }
+.ck .ck-dial-gear.g-D { fill: var(--accent); stroke: #fff; stroke-opacity: 0.18; }
+.ck .ck-dial-gear.g-P { fill: #ff5a4f; stroke: #ff3b30; }
+.ck .ck-dial-gear.g-R { fill: #ffb020; stroke: #ffb020; }
+.ck .ck-dial-gear.g-N { fill: #e8ecf1; }
+.ck[data-mode="sport"] .ck-dial-gear { font-style: italic; }
+/* 계기 바깥 빛나는 테두리, 계기 안쪽 은은한 빛 */
+.ck .ck-bezel-glow { fill: none; stroke: var(--accent); stroke-width: 4; opacity: 0.55; }
+.ck .ck-halo0 { stop-color: var(--accent); }
+/* 바늘을 따라 차오르는 빛 띠 */
+.ck .ck-trail-wide { fill: none; stroke: var(--accent); stroke-width: 24; opacity: 0.22; }
+.ck .ck-trail { fill: none; stroke: var(--accent); stroke-width: 9; opacity: 0.95; }
+.ck.redline #ck-trail-left, .ck.redline #ck-trailw-left { stroke: #ff3b30; }
+.ck.redline .ck-zone-red { animation: ck-blink 0.25s steps(1) infinite; }
 /* 빛나는 느낌은 반투명 테두리로 (흐림 필터는 바늘이 움직일 때마다 다시 그려서 느리다) */
 .ck .ck-needle path { fill: #ff4a1c; stroke: rgba(255, 90, 40, 0.35); stroke-width: 8; stroke-linejoin: round; paint-order: stroke; }
 .ck .ck-limit-mark { fill: #ffb020; }
@@ -75,8 +90,9 @@
 .ck .ck-mneedle path { fill: #ff6a2c; stroke: rgba(255, 90, 40, 0.3); stroke-width: 4; stroke-linejoin: round; paint-order: stroke; }
 .ck .ck-mini-hub { fill: #2a3038; stroke: #000; stroke-width: 2; }
 .ck .ck-oil-face { fill: #0b0e12; stroke: #59616c; stroke-width: 3; }
-.ck .ck-oil-txt { fill: #e8ecf1; font-size: 22px; font-weight: 800; }
-.ck .ck-oil-txt.hot { fill: #ff4a40; }
+.ck .ck-corner-icon { color: #c9d0d8; }
+.ck .ck-corner-icon.hot { color: #ff4a40; }
+.ck .ck-corner-icon.low { color: #ffb020; }
 
 /* ---------- 가운데 도로 화면 ---------- */
 .ck .ck-frame { fill: none; stroke: #2a323d; stroke-width: 4; }
@@ -213,14 +229,15 @@
 /* ---------- 위: 깜빡이 화살표 · 경고등 ---------- */
 .ck-turn {
   position: absolute;
-  top: 4px;
-  width: 136px;
-  height: 136px;
+  top: 16px;
+  width: 128px;
+  height: 128px;
   padding: 8px;
   border-radius: 50%;
 }
-.ck-turn.left { left: 6px; }
-.ck-turn.right { right: 6px; }
+/* 빛나는 테두리(9px)까지 화면 안에 들어오게 가장자리에서 조금 띄운다 */
+.ck-turn.left { left: 18px; }
+.ck-turn.right { right: 18px; }
 .ck-turn svg { display: block; width: 100%; height: 100%; fill: rgba(255, 255, 255, 0.13); }
 .ck-turn.armed svg { fill: rgba(34, 197, 94, 0.3); }
 .ck-turn.on { background: rgba(10, 40, 20, 0.7); box-shadow: 0 0 0 9px rgba(46, 232, 106, 0.45), 0 0 46px 12px rgba(46, 232, 106, 0.55); }
@@ -265,7 +282,7 @@
 .ck-light:empty, .ck-next:empty { display: none; }
 .ck-next svg { width: 80px; height: 80px; }
 .ck-light span, .ck-next span {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 800;
   padding: 1px 10px;
   border-radius: 999px;
@@ -308,7 +325,7 @@
   padding: 2px 12px;
   border-radius: 999px;
   background: var(--panel);
-  font-size: 22px;
+  font-size: 30px;
   font-weight: 800;
   color: #ffb020;
   white-space: nowrap;
@@ -356,7 +373,7 @@
   white-space: nowrap;
 }
 .ck-ap.show { display: block; }
-.ck-ap small { display: block; font-size: 21px; font-weight: 600; color: #cfe0ff; }
+.ck-ap b { font-size: 44px; font-weight: 900; vertical-align: -3px; }
 
 /* ---------- 아래: 기어 · 내비 · 연료 ---------- */
 .ck-gears {
@@ -399,13 +416,24 @@
   gap: 12px;
   overflow: hidden;
 }
-.ck-nav.guide { border-radius: 22px; background: var(--panel); border: 2px solid var(--accent); }
-.ck-nav .nav-arrow { flex: 0 0 auto; width: 70px; height: 70px; fill: none; stroke: #fff; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; }
-.ck-nav-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.05; }
-.ck-nav-txt b { font-size: 44px; font-weight: 800; white-space: nowrap; }
-.ck-nav-txt span { font-size: 22px; font-weight: 700; color: #ffe066; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ck-nav em { font-style: normal; font-size: 22px; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-.ck-road-name { font-size: 30px; font-weight: 800; color: #c9d2dc; white-space: nowrap; }
+.ck-nav.guide { left: 600px; width: 400px; border-radius: 26px; background: var(--panel); border: 3px solid var(--accent); box-shadow: 0 0 18px -2px var(--accent); }
+.ck-nav .nav-arrow { flex: 0 0 auto; width: 72px; height: 72px; fill: none; stroke: #fff; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; }
+.ck-nav-dist { font-size: 58px; font-weight: 900; white-space: nowrap; line-height: 1; }
+.ck-nav-flag { font-size: 50px; line-height: 1; }
+/* 내비가 꺼져 있을 때: 주행 모드 그림 (🍃 😊 🔥 🤖) */
+.ck-mode-badge {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 46px;
+  line-height: 1;
+  background: var(--panel);
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 20px -2px var(--accent);
+}
 
 .ck-fuel {
   position: absolute;
@@ -416,35 +444,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 12px;
+  gap: 12px;
+  padding: 0 16px;
   box-sizing: border-box;
   border-radius: 22px;
   background: var(--panel);
   border: 2px solid #232a33;
 }
-.ck-fuel-icon { font-size: 30px; line-height: 1; }
-.ck-fuel-txt { font-size: 28px; font-weight: 800; white-space: nowrap; }
-/* 연료 막대 게이지: 칸이 줄어드는 게 보이게 (2칸 이하면 주황) */
-.ck-fuel-bars { display: flex; gap: 3px; align-items: flex-end; height: 44px; }
-.ck-fuel-bars i { width: 9px; height: 100%; border-radius: 3px; background: #252c35; }
+.ck-fuel-icon { font-size: 36px; line-height: 1; }
+/* 연료 막대 게이지: 칸이 줄어드는 게 보이게 (2칸 이하면 주황). 칸이 오른쪽으로 갈수록 높아진다 */
+.ck-fuel-bars { display: flex; gap: 5px; align-items: flex-end; height: 52px; }
+.ck-fuel-bars i { width: 17px; height: 100%; border-radius: 4px; background: #252c35; }
+.ck-fuel-bars i:nth-child(1) { height: 46%; }
+.ck-fuel-bars i:nth-child(2) { height: 52%; }
+.ck-fuel-bars i:nth-child(3) { height: 58%; }
+.ck-fuel-bars i:nth-child(4) { height: 64%; }
+.ck-fuel-bars i:nth-child(5) { height: 70%; }
+.ck-fuel-bars i:nth-child(6) { height: 76%; }
+.ck-fuel-bars i:nth-child(7) { height: 82%; }
+.ck-fuel-bars i:nth-child(8) { height: 88%; }
+.ck-fuel-bars i:nth-child(9) { height: 94%; }
 .ck-fuel-bars i.on { background: linear-gradient(#e9f6ff, #8fd3ff); box-shadow: 0 0 6px rgba(143, 211, 255, 0.6); }
 .ck-fuel-bars i.low { background: #ffa000; box-shadow: 0 0 6px rgba(255, 160, 0, 0.7); }
 .ck-fuel.low { border-color: #ffa000; }
 .ck-fuel.low .ck-fuel-txt { color: #ffb020; }
-
-/* 오른쪽 아래 구석: 시계 · 바깥 온도 */
-.ck-clock {
-  position: absolute;
-  right: 14px;
-  top: 600px;
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.25;
-  text-align: right;
-  color: var(--muted);
-  white-space: pre;
-}
 
 /* 설정 팝업 */
 .ck-popup {
@@ -465,30 +488,47 @@
 .ck-popup .v { font-size: 54px; font-weight: 800; }
 
 /* ---------- 시동 꺼짐: 계기 조명이 꺼지고 화면이 흐려진다 ---------- */
-.ck .ck-ring, .ck [class^="tick"], .ck .ck-zone-red, .ck .ck-unit, .ck .ck-dial-mode,
-.ck .ck-digital, .ck .ck-mini-label { transition: opacity 0.6s; }
-.ck.off .ck-ring, .ck.off [class^="tick"], .ck.off .ck-zone-red, .ck.off .ck-unit, .ck.off .ck-dial-mode,
-.ck.off .ck-digital, .ck.off .ck-mini-label, .ck.off .ck-mini-tick, .ck.off .ck-oil-txt { opacity: 0.12; }
+.ck .ck-ring, .ck [class^="tick"], .ck .ck-zone-red, .ck .ck-dial-mode, .ck .ck-dial-gear, .ck .ck-bezel-glow,
+.ck .ck-digital, .ck .ck-mini-label, .ck .ck-corner-icon { transition: opacity 0.6s; }
+.ck.off .ck-ring, .ck.off [class^="tick"], .ck.off .ck-zone-red, .ck.off .ck-dial-mode, .ck.off .ck-dial-gear,
+.ck.off .ck-digital, .ck.off .ck-mini-label, .ck.off .ck-mini-tick, .ck.off .ck-corner-icon { opacity: 0.12; }
+.ck .ck-halo { transition: opacity 0.6s; }
+.ck.off .ck-bezel-glow, .ck.off .ck-halo { opacity: 0; }
 .ck.off .ck-world { opacity: 0.4; }
 .ck.off .ck-limit, .ck.off .ck-gears, .ck.off .ck-fuel { opacity: 0.35; }
 .ck-offcard {
   position: absolute;
   left: 548px;
-  top: 500px;
+  top: 470px;
   width: 504px;
-  padding: 24px 18px;
+  min-height: 250px;
+  padding: 18px;
   box-sizing: border-box;
   border-radius: 28px;
   background: var(--panel);
   border: 5px solid #ffcf33;
   text-align: center;
   display: none;
-  animation: ck-pulse 1.4s ease-in-out infinite;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.ck-offcard b { display: block; font-size: 46px; font-weight: 900; white-space: nowrap; }
-.ck-offcard span { display: block; margin-top: 8px; font-size: 30px; font-weight: 700; color: #ffe066; }
-.ck-offcard span.hide { display: none; }
-.ck.off .ck-offcard { display: block; }
+/* 반짝이는 시동 버튼 그림 + 누르는 손가락 */
+.ck-startbtn { width: 170px; height: 170px; animation: ck-pulse 1.2s ease-in-out infinite; }
+.ck-startbtn .ring { fill: #1a1206; stroke: #ff9a1f; stroke-width: 8; }
+.ck-startbtn .face { fill: #2a2f36; stroke: #0b0d10; stroke-width: 3; }
+.ck-startbtn .pw { fill: none; stroke: #ffb020; stroke-width: 8; stroke-linecap: round; }
+.ck-off-hand { position: absolute; left: 300px; top: 130px; font-size: 76px; line-height: 1; animation: ck-tap 1.2s ease-in-out infinite; }
+@keyframes ck-tap {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-14px, -14px); }
+}
+.ck-off-txt b { display: block; font-size: 40px; font-weight: 900; white-space: nowrap; }
+.ck-off-txt span { display: block; margin-top: 4px; font-size: 28px; font-weight: 700; color: #ffe066; }
+.ck.easy .ck-off-txt { display: none; }
+.ck:not(.easy) .ck-off-hand { top: 70px; }
+.ck:not(.easy) .ck-startbtn { width: 120px; height: 120px; }
+.ck.off .ck-offcard { display: flex; }
 .ck.off.info-on .ck-offcard { display: none; } /* 주유 중엔 정보창에 '주유 중' 막대가 보인다 */
 .ck.off .ck-cloud { animation-play-state: paused; }
 @keyframes ck-pulse {
@@ -534,7 +574,6 @@
 }
 .ck-info-dots i { width: 10px; height: 10px; border-radius: 5px; background: #3a444f; }
 .ck-info-dots i.on { width: 26px; background: var(--accent); }
-.ck-info-dots b { margin-left: 8px; font-size: 18px; font-weight: 700; color: var(--muted); }
 .ck.off .ck-info { box-shadow: 0 0 0 4px #030405, 0 0 0 6px #2a323d; }
 
 .ck .info-title {
@@ -579,3 +618,49 @@
 .ck .tire-psi.bad { fill: #ffb020; }
 .ck .door { fill: none; stroke: #6b7684; stroke-width: 3; stroke-linecap: round; }
 .ck .door.open { stroke: #ff3b30; stroke-width: 4.5; }
+
+/* 쉬운 모드 정보창: 큰 그림 제목 + 큰 숫자 타일 */
+.ck .info-title.icon {
+  align-self: center;
+  font-size: 46px;
+  line-height: 1;
+  padding: 2px 0 6px;
+  border-bottom: 0;
+  color: #fff;
+  overflow: visible;
+}
+.ck .info-tiles { display: flex; justify-content: center; align-items: stretch; gap: 14px; flex-wrap: nowrap; }
+.ck .info-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px 8px;
+  border-radius: 22px;
+  background: linear-gradient(#18212c, #0b1017);
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 16px -4px var(--accent), inset 0 0 18px rgba(0, 0, 0, 0.6);
+}
+.ck .info-tile i { font-style: normal; font-size: 40px; line-height: 1.1; }
+.ck .info-tile b { font-size: 60px; font-weight: 900; line-height: 1; letter-spacing: -2px; color: #fff; white-space: nowrap; }
+.ck .info-tile b:empty { display: none; }
+.ck .info-tile small { font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1.1; }
+.ck .info-tile small:empty { display: none; }
+.ck .info-tile.hot, .ck .info-tile.low { border-color: #ff8a3d; box-shadow: 0 0 18px -2px #ff8a3d; }
+.ck .info-tile.hot b, .ck .info-tile.low b { color: #ff8a3d; }
+.ck .info-tile.hot small, .ck .info-tile.low small { color: #ff8a3d; }
+.ck .info-bar.big.low i { background: #ffa000; }
+.ck .info-title.icon ~ .info-big { font-size: 96px; text-shadow: 0 0 22px rgba(57, 211, 83, 0.5); padding: 0; }
+.ck .info-title.icon ~ .nav-arrow { width: 110px; height: 110px; }
+.ck .info-title.icon ~ .nav-dist { font-size: 64px; font-weight: 900; }
+.ck .info-title.icon ~ .info-bar.big { margin-top: 12px; height: 26px; border-radius: 13px; }
+.ck .info-title.icon ~ .off-hint { margin-top: 18px; font-size: 64px; color: #fff; }
+/* 점수 쪽: 큰 점수 아래 타일은 한 줄로 작게 */
+.ck .info-title.icon ~ .info-big + .info-tiles .info-tile { flex-direction: row; gap: 8px; padding: 4px 14px; max-width: 170px; }
+.ck .info-title.icon ~ .info-big + .info-tiles .info-tile i { font-size: 34px; }
+.ck .info-title.icon ~ .info-big + .info-tiles .info-tile b { font-size: 44px; }
+.ck .ck-info[data-page="score"] .info-title.icon ~ .info-big { font-size: 84px; }
+.ck-info[data-page="car"] .info-car { height: 184px; }

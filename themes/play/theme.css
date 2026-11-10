@@ -235,9 +235,9 @@
 .pg-nav.show { display: flex; }
 .pg-nav .nav-arrow { flex: 0 0 auto; width: 112px; height: 112px; fill: none; stroke: #fff; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; }
 .pg-nav-txt { display: flex; flex-direction: column; min-width: 0; }
-.pg-nav-txt b { font-size: 56px; font-weight: 800; line-height: 1.05; }
-.pg-nav-txt span { font-size: 28px; font-weight: 700; color: #ffe066; word-break: keep-all; }
-.pg-nav-txt em { font-style: normal; font-size: 22px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-nav-txt b { font-size: 76px; font-weight: 900; line-height: 1; white-space: nowrap; }
+.pg-nav-flag { font-size: 70px; line-height: 1; }
+.pg-nav { border: 4px solid var(--accent); box-shadow: 0 0 22px -4px var(--accent); }
 
 /* 위 오른쪽: 신호등·표지판·제한속도 */
 .pg-signs {
@@ -323,12 +323,12 @@
   white-space: nowrap;
 }
 .pg-ap.show { display: block; }
-.pg-ap small { display: block; font-size: 22px; font-weight: 600; color: #cfe0ff; }
+.pg-ap b { font-size: 46px; font-weight: 900; vertical-align: -3px; }
 
 /* 깜빡이 화살표: 늘 흐리게 자리를 보여 주고, 켜지면 초록으로 깜빡인다 */
 .pg-turn {
   position: absolute;
-  top: 236px;
+  top: 150px;
   width: 150px;
   height: 150px;
   padding: 18px;
@@ -338,8 +338,8 @@
 .pg-turn.right { right: 24px; }
 .pg-turn svg { display: block; width: 100%; height: 100%; fill: rgba(255, 255, 255, 0.22); }
 .pg-turn.armed svg { fill: rgba(34, 197, 94, 0.35); }
-.pg-turn.on { background: rgba(10, 40, 20, 0.6); box-shadow: 0 0 0 8px rgba(46, 232, 106, 0.4); }
-.pg-turn.on svg { fill: #2ee86a; }
+.pg-turn.on { background: rgba(10, 40, 20, 0.6); box-shadow: 0 0 0 9px rgba(46, 232, 106, 0.45), 0 0 50px 14px rgba(46, 232, 106, 0.55); }
+.pg-turn.on svg { fill: #2ee86a; filter: drop-shadow(0 0 10px #2ee86a); }
 .pg.hazard .pg-turn.on { box-shadow: 0 0 0 8px rgba(255, 59, 48, 0.5); }
 
 /* 아래 왼쪽: 속도·기어 */
@@ -351,32 +351,39 @@
   align-items: flex-end;
   gap: 14px;
 }
+/* 진짜 같은 속도 바늘 계기: 은색 테두리, 빛나는 띠가 바늘을 따라 차오른다 */
 .pg-speed {
-  min-width: 270px;
-  padding: 8px 26px 12px;
-  border: 5px solid var(--accent);
-  text-align: center;
-  line-height: 1;
+  width: 370px;
+  height: 370px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 4px var(--accent), 0 0 34px 2px var(--accent), 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.4s;
 }
-.pg-speed b { display: block; font-size: 140px; font-weight: 800; letter-spacing: -4px; }
-.pg-speed b.over { color: #ff5a4f; }
-.pg-speed small { font-size: 28px; font-weight: 700; color: var(--muted); }
-.pg[data-mode="sport"] .pg-speed b { font-style: italic; }
-.pg-mode {
-  display: inline-block;
-  padding: 4px 16px;
-  margin-bottom: 4px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #08101a;
-  font-size: 22px;
-  font-weight: 800;
-}
-.pg.ap .pg-mode { visibility: hidden; }
+.pg-dial { display: block; width: 100%; height: 100%; overflow: visible; }
+.pg .pg-face0 { stop-color: #1b2430; }
+.pg[data-mode="eco"] .pg-face0 { stop-color: #12301d; }
+.pg[data-mode="sport"] .pg-face0 { stop-color: #3a1214; }
+.pg.ap .pg-face0 { stop-color: #10264a; }
+.pg-dial .pg-ring { fill: none; stroke: var(--accent); stroke-width: 4; opacity: 0.9; }
+.pg-dial .pg-trail-wide { fill: none; stroke: var(--accent); stroke-width: 20; opacity: 0.25; }
+.pg-dial .pg-trail { fill: none; stroke: var(--accent); stroke-width: 8; }
+.pg-dial .tick-major { stroke: #f2f4f7; stroke-width: 4; }
+.pg-dial .tick-minor { stroke: #9aa4b0; stroke-width: 2; }
+.pg-dial .tick-label { fill: #f4f6f9; font-size: 30px; font-weight: 800; }
+.pg-dial .pg-needle path { fill: #ff4a1c; stroke: rgba(255, 90, 40, 0.4); stroke-width: 7; stroke-linejoin: round; paint-order: stroke; }
+.pg-dial .pg-limit-mark path { fill: #ffb020; }
+.pg-dial .pg-dial-mode { font-size: 46px; }
+.pg-dial .pg-dial-speed { fill: #fff; font-size: 84px; font-weight: 900; letter-spacing: -3px; stroke: var(--accent); stroke-opacity: 0.4; stroke-width: 6px; paint-order: stroke; }
+.pg-dial .pg-dial-speed.over { fill: #ff5a4f; stroke: #ff3b30; animation: pg-blink 0.6s steps(1) infinite; }
+.pg[data-mode="sport"] .pg-dial-speed { font-style: italic; }
+.pg.off .pg-speed { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.pg.off .pg-dial .tick-label, .pg.off .pg-dial [class^="tick"], .pg.off .pg-ring, .pg.off .pg-dial-speed, .pg.off .pg-dial-mode { opacity: 0.15; }
 .pg-gear {
   position: relative;
-  width: 130px;
-  height: 130px;
+  width: 140px;
+  height: 140px;
+  box-shadow: 0 0 22px -4px var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -458,19 +465,31 @@
 .pg-offcard {
   position: absolute;
   left: 50%;
-  top: 240px;
-  margin-left: -340px;
-  width: 680px;
-  padding: 26px 30px;
+  top: 200px;
+  margin-left: -300px;
+  width: 600px;
+  padding: 22px 30px;
+  box-sizing: border-box;
   border: 5px solid #ffcf33;
   text-align: center;
   display: none;
-  animation: pg-pulse 1.4s ease-in-out infinite;
+  flex-direction: column;
+  align-items: center;
 }
-.pg-offcard b { display: block; font-size: 60px; font-weight: 900; }
-.pg-offcard span { display: block; margin-top: 8px; font-size: 32px; font-weight: 700; color: #ffe066; }
-.pg-offcard span.hide { display: none; }
-.pg.off .pg-offcard { display: block; }
+/* 반짝이는 시동 버튼 그림 + 누르는 손가락 */
+.pg-startbtn { width: 200px; height: 200px; animation: pg-pulse 1.2s ease-in-out infinite; }
+.pg-startbtn .ring { fill: #1a1206; stroke: #ff9a1f; stroke-width: 8; }
+.pg-startbtn .face { fill: #2a2f36; stroke: #0b0d10; stroke-width: 3; }
+.pg-startbtn .pw { fill: none; stroke: #ffb020; stroke-width: 8; stroke-linecap: round; }
+.pg-off-hand { position: absolute; left: 340px; top: 150px; font-size: 90px; line-height: 1; animation: pg-tap 1.2s ease-in-out infinite; }
+@keyframes pg-tap {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-16px, -16px); }
+}
+.pg-off-txt b { display: block; font-size: 54px; font-weight: 900; }
+.pg-off-txt span { display: block; margin-top: 6px; font-size: 32px; font-weight: 700; color: #ffe066; }
+.pg.easy .pg-off-txt { display: none; }
+.pg.off .pg-offcard { display: flex; }
 .pg.off .pg-world { opacity: 0.4; }
 .pg.off .pg-drive, .pg.off .pg-right, .pg.off .pg-signs, .pg.off .pg-turn { opacity: 0.45; }
 .pg.off .pg-turn.on, .pg.off .pg-turn.armed { opacity: 1; }

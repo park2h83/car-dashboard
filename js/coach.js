@@ -335,7 +335,8 @@
       '<div class="coach-body">' +
       '  <div class="coach-title">' + (s.easy ? U.shortText(sit.title(s, ctx)) : sit.title(s, ctx)) + '<span class="coach-count"></span></div>' +
       '  <ol class="coach-steps">' + steps.map(function (st, i) {
-        return '<li data-i="' + i + '"><span class="num">' + (i + 1) + '</span>' + stepIcon(st, ctx) + '<span class="step-text">' + stepText(st, ctx) + '</span></li>';
+        var icon = stepIcon(st, ctx);
+        return '<li data-i="' + i + '"' + (icon ? '' : ' class="no-icon"') + '><span class="num">' + (i + 1) + '</span>' + icon + '<span class="step-text">' + stepText(st, ctx) + '</span></li>';
       }).join('') + '</ol>' +
       '</div>' +
       (sit.wheel ? '<div class="coach-wheel" hidden></div>' : '');

@@ -1,6 +1,7 @@
 // 와이드 스크린 테마: 요즘 차처럼 유리 화면 하나가 길게 이어진다.
-// 왼쪽 입체 링 = 속도, 오른쪽 입체 링 = 엔진 힘(RPM)·기어, 가운데 = 위에서 내려다본 길(내 흰색 차와 주변 차들),
-// 위·아래 가장자리에 주행 모드 색을 따라가는 은은한 무드등 줄.
+// 왼쪽 큰 입체 링 = 속도(안쪽 아래에 연료 칸 막대), 오른쪽 큰 입체 링 = 엔진 힘(RPM)·기어(안쪽 아래에 엔진 온도 칸 막대),
+// 가운데 = 위에서 내려다본 길(내 흰색 차와 주변 차들) + 그 아래 정보 화면,
+// 위·아래 가장자리에 주행 모드 색을 따라 흐르는 무드등 줄. 작은 글씨(주행거리·도로 이름·설명)는 두지 않는다.
 // 1600x820 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다.
 (function (Dash) {
   'use strict';
@@ -9,35 +10,39 @@
   var H = 820;
 
   // ---- 링 계기 ----
-  var RING_R = 186;
-  var RING_W = 32;
-  var SPEED_C = { cx: 290, cy: 300 };
-  var POWER_C = { cx: 1310, cy: 300 };
+  var RING_R = 232;
+  var RING_W = 44;
+  var SPEED_C = { cx: 322, cy: 444 };
+  var POWER_C = { cx: 1278, cy: 444 };
   var A0 = -135;
   var A1 = 135;
   var SWEEP_SECONDS = 1.5;
-  var SPEED = { min: 0, max: 240, major: 40, minor: 20, labelEvery: 40 };
+  var SPEED = { min: 0, max: 240, major: 20, minor: 10, labelEvery: 40 };
   var TACH = { min: 0, max: 8, major: 1, minor: 0.5, labelEvery: 1, hotFrom: 6.5 };
+  // 링 안쪽 아래의 작은 칸 막대 (연료·온도)
+  var MINI = { dy: 178, r: 84, a0: -55, a1: 55, segs: 10 };
 
   // ---- 가운데 길 (위에서 본 모습) ----
-  var VIEW = { x: 548, y: 206, w: 504, h: 530 };
-  var EGO_Y = 410;           // 길 화면 안에서 내 차 가운데 높이
-  var K = 4.0;               // m → px (앞뒤)
-  var LANE_PX = 94;          // 차선 한 칸 너비
+  var VIEW = { x: 612, y: 118, w: 376, h: 404 };
+  var EGO_Y = 300;           // 길 화면 안에서 내 차 가운데 높이
+  var K = 3.6;               // m → px (앞뒤)
+  var LANE_PX = 90;          // 차선 한 칸 너비
   var DASH = 64;             // 차선 점선 한 주기 (px)
-  var EGO_W = 46;
-  var EGO_L = 84;
-  var CAR_W = 42;
-  var CAR_L = 76;
+  var EGO_W = 44;
+  var EGO_L = 80;
+  var CAR_W = 40;
+  var CAR_L = 72;
   var MAX_CARS = 8;
   var EGO_COLOR = '#f7f8fa'; // 내 차는 흰색
 
   var TOP_LEFT = ['lowBeam', 'highBeam', 'fogFront', 'fogRear'];
   var TOP_RIGHT = ['rest', 'frost', 'blindSpot', 'laneAssist', 'autopilot'];
-  var BOTTOM = ['parkingBrake', 'brake', 'abs', 'seatbelt', 'airbag', 'door', 'battery', 'oil',
-    'coolant', 'fcw', 'engine', 'esc', 'escOff', 'tpms', 'fuel', 'washer'];
+  var BOTTOM_LEFT = ['parkingBrake', 'brake', 'abs', 'seatbelt', 'airbag', 'door', 'battery', 'oil'];
+  var BOTTOM_RIGHT = ['coolant', 'fcw', 'engine', 'esc', 'escOff', 'tpms', 'fuel', 'washer'];
 
-  var MODE_NAMES = { eco: '🍃 에코', comfort: '✨ 편안하게', sport: '🔥 스포츠' };
+  var MODE_ICONS = { eco: '🍃', comfort: '😊', sport: '🔥' };
+  var ARROW_L = '<svg viewBox="0 0 100 100"><path d="M6 50 50 10v22h44v36H50v22z"/></svg>';
+  var ARROW_R = '<svg viewBox="0 0 100 100"><path d="M94 50 50 10v22H6v36h44v22z"/></svg>';
 
   var G = Dash.gauge;
   var r2 = G.round;
@@ -56,7 +61,7 @@
       '  <stop offset="0" stop-color="#eef2f6"/><stop offset="0.3" stop-color="#5d6672"/><stop offset="0.55" stop-color="#d7dde4"/>' +
       '  <stop offset="0.8" stop-color="#3b424b"/><stop offset="1" stop-color="#b9c1ca"/>' +
       '</linearGradient>' +
-      '<radialGradient id="wd-disc" cx="50%" cy="40%" r="60%">' +
+      '<radialGradient id="wd-disc" cx="50%" cy="45%" r="60%">' +
       '  <stop offset="0" class="wd-disc-a"/><stop offset="1" stop-color="#05070b" stop-opacity="0"/>' +
       '</radialGradient>' +
       '<linearGradient id="wd-gloss" x1="0" y1="0" x2="0" y2="1">' +
@@ -66,6 +71,20 @@
       '  <stop offset="0" stop-color="#ffffff"/><stop offset="0.5" class="wd-stop-c"/><stop offset="1" class="wd-stop-a"/>' +
       '</radialGradient>' +
       '</defs>';
+  }
+
+  function miniArc(c, id, icon, kind) {
+    var mx = c.cx;
+    var my = c.cy + MINI.dy;
+    var step = (MINI.a1 - MINI.a0) / MINI.segs;
+    var out = '<g class="wd-mini ' + kind + '" id="wd-mini-' + id + '">';
+    for (var i = 0; i < MINI.segs; i++) {
+      var a = MINI.a0 + i * step + 1;
+      var b = MINI.a0 + (i + 1) * step - 1;
+      var warn = kind === 'fuel' ? i < 2 : i >= MINI.segs - 2;
+      out += '<path class="wd-mseg' + (warn ? ' warn' : '') + '" d="' + G.arc(mx, my, MINI.r, a, b) + '"/>';
+    }
+    return out + '<svg class="wd-mini-icon" x="' + (mx - 24) + '" y="' + (my - 64) + '" width="48" height="48" viewBox="0 0 24 24">' + (Dash.icons.list[icon] || '') + '</svg></g>';
   }
 
   function ring(c, cfg, id, inner) {
@@ -79,33 +98,33 @@
       var a = G.angleFor(cfg.hotFrom, cfg.min, cfg.max, A0, A1);
       out += '<path class="wd-hot" d="' + G.arc(c.cx, c.cy, RING_R + RING_W / 2 - 4, a, A1) + '"/>';
     }
-    out += '<path class="wd-fill" id="wd-fill-' + id + '" pathLength="1000" d="' + full + '"/>' +
-      '<path class="wd-gloss" d="' + G.arc(c.cx, c.cy, RING_R - 8, -110, 110) + '"/>' +
-      '<g class="wd-ticks">' + G.ticks({
+    out += '<path class="wd-fill-glow" id="wd-glow-' + id + '" pathLength="1000" d="' + full + '"/>' +
+      '<path class="wd-fill" id="wd-fill-' + id + '" pathLength="1000" d="' + full + '"/>' +
+      '<path class="wd-gloss" d="' + G.arc(c.cx, c.cy, RING_R - 10, -110, 110) + '"/>' +
+      '<g class="wd-ticks' + (cfg.max > 100 ? ' speed' : '') + '">' + G.ticks({
         cx: c.cx, cy: c.cy, r: RING_R - RING_W / 2 - 8, min: cfg.min, max: cfg.max, a0: A0, a1: A1,
-        major: cfg.major, minor: cfg.minor, labelEvery: cfg.labelEvery, labelR: RING_R - 62,
-        majorLen: 14, minorLen: 7, hotFrom: cfg.hotFrom
+        major: cfg.major, minor: cfg.minor, labelEvery: cfg.labelEvery, labelR: RING_R - (cfg.max > 100 ? 84 : 72),
+        majorLen: 18, minorLen: 9, hotFrom: cfg.hotFrom
       }) + '</g>' +
-      '<g id="wd-bead-' + id + '"><circle class="wd-bead" cx="' + c.cx + '" cy="' + (c.cy - RING_R) + '" r="' + (RING_W / 2 + 3) + '" fill="url(#wd-bead)"/></g>' +
+      '<g id="wd-bead-' + id + '"><circle class="wd-bead-halo" cx="' + c.cx + '" cy="' + (c.cy - RING_R) + '" r="' + (RING_W / 2 + 18) + '"/>' +
+      '<circle class="wd-bead" cx="' + c.cx + '" cy="' + (c.cy - RING_R) + '" r="' + (RING_W / 2 + 4) + '" fill="url(#wd-bead)"/></g>' +
       inner + '</g>';
     return out;
   }
 
   function speedInner() {
     var c = SPEED_C;
-    return '<text class="wd-speed" id="wd-speed" x="' + c.cx + '" y="' + (c.cy + 36) + '" text-anchor="middle">0</text>' +
-      '<text class="wd-unit" x="' + c.cx + '" y="' + (c.cy + 84) + '" text-anchor="middle">km/h</text>' +
-      '<text class="wd-ring-name" x="' + c.cx + '" y="' + (c.cy + 152) + '" text-anchor="middle">속도</text>' +
-      '<g id="wd-limit-mark"><path class="wd-limit-mark" d="M' + c.cx + ' ' + (c.cy - RING_R - RING_W / 2 - 2) + 'l-10 -16h20z"/></g>' +
-      '<g id="wd-ap-mark"><path class="wd-ap-mark" d="M' + c.cx + ' ' + (c.cy - RING_R + RING_W / 2 + 4) + 'l-9 14h18z"/></g>';
+    return '<text class="wd-speed" id="wd-speed" x="' + c.cx + '" y="' + (c.cy + 46) + '" text-anchor="middle">0</text>' +
+      miniArc(c, 'fuel', 'fuel', 'fuel') +
+      '<g id="wd-limit-mark"><path class="wd-limit-mark" d="M' + c.cx + ' ' + (c.cy - RING_R - RING_W / 2 - 2) + 'l-13 -20h26z"/></g>' +
+      '<g id="wd-ap-mark"><path class="wd-ap-mark" d="M' + c.cx + ' ' + (c.cy - RING_R + RING_W / 2 + 4) + 'l-11 17h22z"/></g>';
   }
 
   function powerInner() {
     var c = POWER_C;
-    return '<text class="wd-ring-name" x="' + c.cx + '" y="' + (c.cy + 152) + '" text-anchor="middle">엔진 힘 x1000</text>' +
-      '<text class="wd-gear" id="wd-gear" x="' + (c.cx - 8) + '" y="' + (c.cy + 44) + '" text-anchor="middle">P</text>' +
-      '<text class="wd-gearnum" id="wd-gearnum" x="' + (c.cx + 44) + '" y="' + (c.cy + 40) + '"></text>' +
-      '<text class="wd-rpm" id="wd-rpm" x="' + c.cx + '" y="' + (c.cy + 92) + '" text-anchor="middle">0 rpm</text>';
+    return '<text class="wd-gear" id="wd-gear" x="' + (c.cx - 10) + '" y="' + (c.cy + 50) + '" text-anchor="middle">P</text>' +
+      '<text class="wd-gearnum" id="wd-gearnum" x="' + (c.cx + 50) + '" y="' + (c.cy + 4) + '"></text>' +
+      miniArc(c, 'temp', 'coolant', 'temp');
   }
 
   // ---------- 길 그리기 ----------
@@ -177,14 +196,14 @@
 
   // ---------- 테마 ----------
 
-  var root, el = {}, warnIcons = {}, unfit, carNodes = [];
+  var root, el = {}, warnIcons = {}, unfit, carNodes = [], msegs = {};
   var lastHtml = {}, lastText = {};
-  var shown = { speed: 0, power: 0 };
+  var shown = { speed: 0, power: 0, fuel: 0, temp: 0 };
   var lastFrame = 0;
   var lanesKey = '';
 
-  function iconSlot(id, cls) {
-    return '<span class="wd-ind ' + (cls || '') + '" data-ind="' + id + '" data-extra="' + (cls || '') + '">' + Dash.icons.svg(id) + '</span>';
+  function iconSlot(id) {
+    return '<span class="wd-ind" data-ind="' + id + '">' + Dash.icons.svg(id) + '</span>';
   }
 
   function setHtml(key, node, html) {
@@ -209,28 +228,20 @@
     if (node[k] !== on) { node[k] = on; node.classList.toggle(name, on); }
   }
 
-  function setStyle(node, name, value) {
-    var k = '_s_' + name;
-    if (node[k] !== value) { node[k] = value; node.style[name] = value; }
-  }
-
   function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
 
   function setRing(id, value, cfg, c) {
     var t = Math.max(0, Math.min(1, (value - cfg.min) / (cfg.max - cfg.min)));
-    setAttr(el['fill_' + id], 'stroke-dashoffset', String(Math.round(1000 - t * 1000)));
+    var off = String(Math.round(1000 - t * 1000));
+    setAttr(el['fill_' + id], 'stroke-dashoffset', off);
+    setAttr(el['glow_' + id], 'stroke-dashoffset', off);
     setAttr(el['bead_' + id], 'transform', 'rotate(' + r2(A0 + (A1 - A0) * t) + ' ' + c.cx + ' ' + c.cy + ')');
   }
 
-  function topHtml(s) {
-    if (!s.engineOn) return '<div class="wd-road-name">👋 ' + Dash.util.kidCall() + ' 안녕! 시동 버튼을 눌러요</div>';
-    if (s.nav.on) {
-      var n = s.nav;
-      return '<div class="wd-nav">' + Dash.info.arrowSvg(n.turn) +
-        '<div><b>' + Dash.info.fmtDist(n.turnDist) + ' · ' + (Dash.road.TURN_WORDS[n.turn] || '') + '</b><span>' +
-        (n.turn !== 'arrive' && n.nextRoad ? n.nextRoad + ' · ' : '') + '🏁 ' + n.destination + ' ' + n.remaining.toFixed(1) + 'km</span></div></div>';
-    }
-    return '<div class="wd-road-name">' + Dash.info.arrowSvg('straight') + '<div><b>' + s.roadName + '</b><span>' + s.lanes + '차선 · 내비 없이 달려요</span></div></div>';
+  function setMini(id, ratio) {
+    var lit = Math.round(Math.max(0, Math.min(1, ratio)) * MINI.segs);
+    var list = msegs[id];
+    for (var i = 0; i < list.length; i++) setClass(list[i], 'on', i < lit);
   }
 
   function lightHtml(s) {
@@ -238,23 +249,29 @@
     if (!l) return '';
     return '<div class="wd-lamps">' + ['red', 'yellow', 'green'].map(function (c) {
       return '<i class="' + c + (l.phase === c ? ' on' : '') + '"></i>';
-    }).join('') + '</div><span>' + Math.round(l.dist) + 'm</span>';
+    }).join('') + '</div>';
   }
 
   function signHtml(s) {
     var n = s.engineOn && s.nextSign;
-    return n ? Dash.signs.svg(n.type) + '<span>' + Math.round(n.dist / 10) * 10 + 'm</span>' : '';
+    return n ? Dash.signs.svg(n.type) : '';
   }
 
-  function statusHtml(s) {
+  function topHtml(s) {
+    if (s.engineOn && s.nav.on) {
+      return '<div class="wd-nav">' + Dash.info.arrowSvg(s.nav.turn) + '<b>' + Dash.info.fmtDist(s.nav.turnDist) + '</b></div>';
+    }
+    var d = new Date();
+    return '<div class="wd-clock">' + Dash.info.pad(d.getHours()) + ':' + Dash.info.pad(d.getMinutes()) + '</div>';
+  }
+
+  function dotsHtml(s) {
     if (!s.engineOn) return '';
-    if (s.fcw || s.aeb) return '<span class="st-over">⚠ 앞 차 충돌 주의!</span>';
-    if (s.overspeed) return '<span class="st-over">⚠ 과속! 제한 ' + s.speedLimit + '</span>';
-    if (s.autopilot.on) return '<span class="st-ap">🤖 AI 운전 · ' + s.autopilot.reason + '</span>';
-    if (s.nav.on && s.nav.destId === 'station') return '<span class="st-warn">⛽ 주유소로 가는 중</span>';
-    if (s.inTunnel) return '<span class="st-info">🚇 터널</span>';
-    if (s.rainLevel > 0.05) return '<span class="st-info">' + (s.weather === 'storm' ? '⛈' : '🌧') + ' 와이퍼 ' + Dash.vehicle.WIPER_NAMES[s.wiper] + '</span>';
-    return '';
+    var list = Dash.info.pages(s);
+    var cur = ((s.infoPage % list.length) + list.length) % list.length;
+    var out = '';
+    for (var i = 0; i < list.length; i++) out += '<i' + (i === cur ? ' class="on"' : '') + '></i>';
+    return out;
   }
 
   function updateRoad(s) {
@@ -311,16 +328,17 @@
     name: '와이드 스크린',
     group: '실제 차 느낌',
     preview: '<svg viewBox="0 0 160 90"><rect width="160" height="90" rx="8" fill="#060a10"/>' +
-      '<rect x="20" y="3" width="120" height="3" rx="1.5" fill="#36b8ff"/><rect x="20" y="84" width="120" height="3" rx="1.5" fill="#36b8ff"/>' +
-      '<path d="M18 62A22 22 0 1 1 50 62" fill="none" stroke="#1a222c" stroke-width="7" stroke-linecap="round"/>' +
-      '<path d="M18 62A22 22 0 0 1 46 26" fill="none" stroke="#36b8ff" stroke-width="7" stroke-linecap="round"/>' +
-      '<path d="M110 62A22 22 0 1 1 142 62" fill="none" stroke="#1a222c" stroke-width="7" stroke-linecap="round"/>' +
-      '<path d="M110 62A22 22 0 0 1 118 28" fill="none" stroke="#36b8ff" stroke-width="7" stroke-linecap="round"/>' +
-      '<text x="34" y="50" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial">88</text>' +
-      '<text x="126" y="50" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial">D</text>' +
-      '<rect x="62" y="14" width="36" height="64" rx="5" fill="#1b222b"/>' +
-      '<path d="M74 14v64M86 14v64" stroke="#fff" stroke-opacity="0.5" stroke-dasharray="4 4"/>' +
-      '<rect x="75" y="54" width="10" height="16" rx="3" fill="#f7f8fa"/><rect x="87" y="24" width="9" height="14" rx="3" fill="#a83232"/></svg>',
+      '<rect x="20" y="2" width="120" height="3" rx="1.5" fill="#36b8ff"/><rect x="20" y="85" width="120" height="3" rx="1.5" fill="#36b8ff"/>' +
+      '<path d="M14 70A27 27 0 1 1 54 70" fill="none" stroke="#1a222c" stroke-width="8" stroke-linecap="round"/>' +
+      '<path d="M14 70A27 27 0 0 1 48 28" fill="none" stroke="#36b8ff" stroke-width="8" stroke-linecap="round"/>' +
+      '<path d="M106 70A27 27 0 1 1 146 70" fill="none" stroke="#1a222c" stroke-width="8" stroke-linecap="round"/>' +
+      '<path d="M106 70A27 27 0 0 1 114 30" fill="none" stroke="#36b8ff" stroke-width="8" stroke-linecap="round"/>' +
+      '<text x="34" y="56" font-size="15" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial">88</text>' +
+      '<text x="126" y="56" font-size="15" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial">D</text>' +
+      '<rect x="64" y="12" width="32" height="44" rx="5" fill="#1b222b"/>' +
+      '<path d="M75 12v44M85 12v44" stroke="#fff" stroke-opacity="0.5" stroke-dasharray="4 4"/>' +
+      '<rect x="76" y="40" width="9" height="13" rx="3" fill="#f7f8fa"/><rect x="87" y="18" width="8" height="12" rx="3" fill="#a83232"/>' +
+      '<rect x="64" y="60" width="32" height="22" rx="4" fill="#111922" stroke="#36b8ff" stroke-width="1"/></svg>',
     showsMessages: true,
 
     mount: function (container) {
@@ -332,34 +350,28 @@
         '  <div class="wd-stage">' +
         '    <div class="wd-glass"></div>' +
         '    <div class="wd-amb top"><i></i></div><div class="wd-amb bottom"><i></i></div>' +
+        '    <div class="wd-ringglow speed"></div><div class="wd-ringglow power"></div>' +
         '    <svg class="wd-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + ringDefs() +
         '      ' + ring(SPEED_C, SPEED, 'speed', speedInner()) + ring(POWER_C, TACH, 'power', powerInner()) +
         '    </svg>' +
-        '    <div class="wd-group wd-top-left">' + TOP_LEFT.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
-        '    <div class="wd-group wd-top-right">' + TOP_RIGHT.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
-        '    ' + iconSlot('turnLeft', 'wd-turn wd-turn-left') + iconSlot('turnRight', 'wd-turn wd-turn-right') +
-        '    <div class="wd-clock"><b class="clock"></b><span class="mode"></span></div>' +
-        '    <div class="wd-head">' +
-        '      <div class="wd-limit"><span></span></div>' +
-        '      <div class="wd-top"></div>' +
-        '      <div class="wd-sign"></div>' +
-        '    </div>' +
+        '    <div class="wd-group wd-top-left">' + TOP_LEFT.map(iconSlot).join('') + '</div>' +
+        '    <div class="wd-group wd-top-right">' + TOP_RIGHT.map(iconSlot).join('') + '</div>' +
+        '    <div class="wd-group wd-bottom-left">' + BOTTOM_LEFT.map(iconSlot).join('') + '</div>' +
+        '    <div class="wd-group wd-bottom-right">' + BOTTOM_RIGHT.map(iconSlot).join('') + '</div>' +
+        '    <div class="wd-arrow wd-arrow-l">' + ARROW_L + '</div>' +
+        '    <div class="wd-arrow wd-arrow-r">' + ARROW_R + '</div>' +
+        '    <div class="wd-limit"><span></span></div>' +
+        '    <div class="wd-badge"></div>' +
+        '    <div class="wd-top"></div>' +
         '    <div class="wd-road">' + roadSvg() +
         '      <div class="wd-light"></div>' +
-        '      <div class="wd-camera">📷 <b></b></div>' +
-        '      <div class="wd-ai-chip">🤖 AI 운전 중</div>' +
-        '      <div class="wd-off"><b>🔑</b><span></span></div>' +
-        '      <div class="wd-popup"><div class="t"></div><div class="v"></div></div>' +
+        '      <div class="wd-sign"></div>' +
+        '      <div class="wd-camera">📷</div>' +
+        '      <div class="wd-off"><b>🔑</b></div>' +
+        '      <div class="wd-popup"><div class="v"></div></div>' +
         '      <div class="wd-msg"></div>' +
         '    </div>' +
-        '    <div class="wd-left">' +
-        '      <div class="wd-gears"><span data-g="P">P</span><span data-g="R">R</span><span data-g="N">N</span><span data-g="D">D</span><em class="wd-mode"></em></div>' +
-        '      <div class="wd-gauge"><span class="wd-gicon">' + Dash.icons.svg('fuel') + '</span><div class="wd-gbar fuel"><i></i></div><em class="fuel-txt"></em></div>' +
-        '      <div class="wd-gauge"><span class="wd-gicon">' + Dash.icons.svg('coolant') + '</span><div class="wd-gbar temp"><i></i></div><em class="temp-txt"></em></div>' +
-        '      <div class="wd-foot"><span class="odo"></span><span class="trip"></span></div>' +
-        '    </div>' +
-        '    <div class="wd-right"><div class="wd-page"></div><div class="wd-status"></div></div>' +
-        '    <div class="wd-group wd-bottom">' + BOTTOM.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
+        '    <div class="wd-info"><div class="wd-page"></div><div class="wd-dots"></div></div>' +
         '  </div>' +
         '</div>';
 
@@ -367,13 +379,18 @@
       el.wd = q('.wd');
       ['speed', 'power'].forEach(function (id) {
         el['fill_' + id] = q('#wd-fill-' + id);
+        el['glow_' + id] = q('#wd-glow-' + id);
         el['bead_' + id] = q('#wd-bead-' + id);
         el['fill_' + id].setAttribute('stroke-dasharray', '1000 1000');
+        el['glow_' + id].setAttribute('stroke-dasharray', '1000 1000');
       });
+      msegs = {
+        fuel: Array.prototype.slice.call(root.querySelectorAll('#wd-mini-fuel .wd-mseg')),
+        temp: Array.prototype.slice.call(root.querySelectorAll('#wd-mini-temp .wd-mseg'))
+      };
       el.speed = q('#wd-speed');
       el.gear = q('#wd-gear');
       el.gearNum = q('#wd-gearnum');
-      el.rpm = q('#wd-rpm');
       el.limitMark = q('#wd-limit-mark');
       el.apMark = q('#wd-ap-mark');
       el.lanes = q('#wd-lanes');
@@ -383,30 +400,20 @@
       q('#wd-cars').innerHTML = carsHtml;
       carNodes = Array.prototype.slice.call(root.querySelectorAll('#wd-cars .wd-car'));
       carNodes.forEach(function (n) { n._hidden = true; n._body = n.querySelector('.wd-car-body'); });
-      el.clock = q('.wd-clock .clock');
-      el.modeTop = q('.wd-clock .mode');
+      el.arrowL = q('.wd-arrow-l');
+      el.arrowR = q('.wd-arrow-r');
       el.limit = q('.wd-limit');
       el.limitText = q('.wd-limit span');
+      el.badge = q('.wd-badge');
       el.top = q('.wd-top');
       el.sign = q('.wd-sign');
       el.light = q('.wd-light');
       el.camera = q('.wd-camera');
-      el.cameraText = q('.wd-camera b');
-      el.offText = q('.wd-off span');
       el.popup = q('.wd-popup');
-      el.popupT = q('.wd-popup .t');
       el.popupV = q('.wd-popup .v');
       el.msg = q('.wd-msg');
-      el.gears = root.querySelectorAll('.wd-gears span');
-      el.mode = q('.wd-mode');
-      el.fuel = q('.wd-gbar.fuel i');
-      el.fuelTxt = q('.fuel-txt');
-      el.temp = q('.wd-gbar.temp i');
-      el.tempTxt = q('.temp-txt');
-      el.odo = q('.wd-foot .odo');
-      el.trip = q('.wd-foot .trip');
       el.page = q('.wd-page');
-      el.status = q('.wd-status');
+      el.dots = q('.wd-dots');
       warnIcons = {};
       Array.prototype.forEach.call(root.querySelectorAll('[data-ind]'), function (n) {
         warnIcons[n.getAttribute('data-ind')] = n;
@@ -414,7 +421,7 @@
       lastHtml = {};
       lastText = {};
       lanesKey = '';
-      shown = { speed: 0, power: 0 };
+      shown = { speed: 0, power: 0, fuel: 0, temp: 0 };
       lastFrame = 0;
       unfit = Dash.themes.fitStage(root, q('.wd-stage'), W, H);
     },
@@ -423,33 +430,43 @@
       var nowMs = performance.now();
       var dt = lastFrame ? Math.min(0.1, (nowMs - lastFrame) / 1000) : 0;
       lastFrame = nowMs;
+      var on = s.engineOn;
 
-      setClass(el.wd, 'off', !s.engineOn);
+      setClass(el.wd, 'off', !on);
       setClass(el.wd, 'ap', s.autopilot.on);
       setClass(el.wd, 'night', s.night);
       setClass(el.wd, 'warn', s.fcw || s.aeb);
       if (el.wd._mode !== s.driveMode) { el.wd._mode = s.driveMode; el.wd.setAttribute('data-mode', s.driveMode); }
 
-      // 링: 시동 직후엔 끝까지 찼다가 돌아온다
-      var sp = s.speed;
-      var pw = s.rpm / 1000;
-      if (s.engineOn && s.startTimer < SWEEP_SECONDS) {
+      // 링·칸 막대: 시동 직후엔 끝까지 찼다가 돌아온다
+      var sp = on ? s.speed : 0;
+      var pw = on ? s.rpm / 1000 : 0;
+      var fu = on || s.refueling ? s.fuel : 0;
+      var tp = on ? (s.coolantTemp - 50) / 80 : 0;
+      if (on && s.startTimer < SWEEP_SECONDS) {
         var half = SWEEP_SECONDS / 2;
         var k = s.startTimer < half ? ease(s.startTimer / half) : 1 - ease((s.startTimer - half) / half);
         shown.speed = Math.max(sp, SPEED.max * k);
         shown.power = Math.max(pw, TACH.max * k);
+        shown.fuel = Math.max(fu, k);
+        shown.temp = Math.max(tp, k);
       } else {
         shown.speed += (sp - shown.speed) * Math.min(1, dt * 12);
         shown.power += (pw - shown.power) * Math.min(1, dt * 12);
+        shown.fuel += (fu - shown.fuel) * Math.min(1, dt * 4);
+        shown.temp += (tp - shown.temp) * Math.min(1, dt * 4);
       }
       setRing('speed', shown.speed, SPEED, SPEED_C);
       setRing('power', shown.power, TACH, POWER_C);
+      setMini('fuel', shown.fuel);
+      setMini('temp', shown.temp);
+      setClass(el.wd, 'lowfuel', s.fuel < Dash.vehicle.LOW_FUEL);
+      setClass(el.wd, 'hot', s.coolantTemp > Dash.vehicle.OVERHEAT_TEMP);
+      setClass(el.wd, 'redline', on && shown.power >= TACH.hotFrom);
       setText('speed', el.speed, String(Math.round(s.speed)));
       setClass(el.speed, 'over', s.overspeed);
       setText('gear', el.gear, s.gear);
-      setText('gearNum', el.gearNum, s.gear === 'D' && s.engineOn ? String(s.autoGear) : '');
-      setText('rpm', el.rpm, (Math.round(s.rpm / 50) * 50).toLocaleString('ko-KR') + ' rpm');
-      setClass(el.rpm, 'hot', s.rpm > TACH.hotFrom * 1000);
+      setText('gearNum', el.gearNum, s.gear === 'D' && on ? String(s.autoGear) : '');
 
       var la = G.angleFor(s.speedLimit, SPEED.min, SPEED.max, A0, A1);
       setAttr(el.limitMark, 'transform', 'rotate(' + r2(la) + ' ' + SPEED_C.cx + ' ' + SPEED_C.cy + ')');
@@ -459,56 +476,37 @@
         setAttr(el.apMark, 'transform', 'rotate(' + r2(aa) + ' ' + SPEED_C.cx + ' ' + SPEED_C.cy + ')');
       }
 
-      // 가운데: 위 안내 줄 + 길
+      // 깜빡이: 크게 빛난다
+      setClass(el.arrowL, 'on', s.blinkOn && (s.turnLeft || s.hazard));
+      setClass(el.arrowR, 'on', s.blinkOn && (s.turnRight || s.hazard));
+
+      // 위: 제한속도·모드 그림·내비(없으면 큰 시계)
       setText('limit', el.limitText, String(s.speedLimit));
       setClass(el.limit, 'over', s.overspeed);
+      setText('badge', el.badge, s.autopilot.on ? '🤖' : MODE_ICONS[s.driveMode] || '');
       setHtml('top', el.top, topHtml(s));
+
+      // 가운데: 길
       setHtml('sign', el.sign, signHtml(s));
       setHtml('light', el.light, lightHtml(s));
-      var cam = s.engineOn && s.camera != null && s.camera < 0.6;
-      setClass(el.camera, 'show', cam);
-      if (cam) setText('cam', el.cameraText, Math.round(s.camera * 1000 / 10) * 10 + 'm');
-      setText('offText', el.offText, s.refueling ? '⛽ 주유 중 ' + Math.round(s.fuel * 100) + '%' : Dash.util.kid() + '의 흰 차');
+      setClass(el.camera, 'show', on && s.camera != null && s.camera < 0.6);
       updateRoad(s);
 
       var pop = s.popup.timer > 0;
       setClass(el.popup, 'show', pop);
-      if (pop) {
-        setText('popT', el.popupT, s.popup.title);
-        setText('popV', el.popupV, s.popup.value);
-      }
+      if (pop) setText('popV', el.popupV, s.popup.value);
       setClass(el.msg, 'show', !!s.message);
       if (s.message) setText('msg', el.msg, s.message);
 
-      // 왼쪽 아래: 기어·연료·온도
-      for (var g = 0; g < el.gears.length; g++) {
-        setClass(el.gears[g], 'on', el.gears[g].getAttribute('data-g') === s.gear);
-      }
-      setText('mode', el.mode, s.autopilot.on ? '🤖 AI' : MODE_NAMES[s.driveMode] || '');
-      var fuelShown = s.engineOn || s.refueling ? s.fuel : 0;
-      setStyle(el.fuel, 'width', Math.round(fuelShown * 100) + '%');
-      setClass(el.fuel, 'low', s.fuel < Dash.vehicle.LOW_FUEL);
-      setText('fuelTxt', el.fuelTxt, Math.round(s.fuel * 100) + '% · ' + Math.round(s.range) + 'km');
-      var t = s.engineOn ? Math.max(0, Math.min(1, (s.coolantTemp - 50) / 80)) : 0;
-      setStyle(el.temp, 'width', Math.round(t * 100) + '%');
-      setClass(el.temp, 'hot', s.coolantTemp > Dash.vehicle.OVERHEAT_TEMP);
-      setText('tempTxt', el.tempTxt, '엔진 ' + Math.round(s.coolantTemp) + '°C');
-      setText('odo', el.odo, 'ODO ' + Math.floor(s.odometer).toLocaleString('ko-KR') + ' km');
-      setText('trip', el.trip, 'TRIP ' + s.trip.toFixed(1) + ' km');
-
-      // 오른쪽 아래: 정보창
+      // 가운데 아래: 정보창
       setHtml('page', el.page, Dash.info.current(s));
-      setHtml('status', el.status, statusHtml(s));
-
-      var d = new Date();
-      setText('clock', el.clock, Dash.info.pad(d.getHours()) + ':' + Dash.info.pad(d.getMinutes()));
-      setText('modeTop', el.modeTop, s.outsideTemp + '°C');
+      setHtml('dots', el.dots, dotsHtml(s));
 
       // 경고등
       var w = Dash.warnings.compute(s);
       for (var id in warnIcons) {
         var node = warnIcons[id];
-        var cls = 'wd-ind ' + node.getAttribute('data-extra') + (w[id].on ? ' on ' + w[id].color : '');
+        var cls = 'wd-ind' + (w[id] && w[id].on ? ' on ' + w[id].color : '');
         if (node._cls !== cls) { node._cls = cls; node.className = cls; }
       }
     },
@@ -520,6 +518,7 @@
       el = {};
       warnIcons = {};
       carNodes = [];
+      msegs = {};
       lastFrame = 0;
     }
   });

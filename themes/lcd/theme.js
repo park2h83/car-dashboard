@@ -1,12 +1,13 @@
 // 디지털 숫자 테마: 옛날 자동차의 7-세그먼트 LCD 계기판.
-// 숫자는 막대 7개(세그먼트)를 SVG 로 직접 그리고, 꺼진 막대도 진짜 LCD 처럼 희미하게 보인다.
-// 위에는 막대그래프 RPM, 가운데 큰 속도 숫자와 기어 숫자, 왼쪽 연료·온도 막대, 오른쪽 점-글자 정보창.
-// 1600x800 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다.
+// 큰 무지개 모양으로 늘어선 RPM 막대(오른쪽으로 갈수록 길어지고 끝은 빨강)가 엔진 힘만큼 켜지고,
+// 그 안에 아주 큰 7-세그먼트 속도 숫자. 오른쪽 아래 기어 숫자, 왼쪽 아래 연료·온도 칸, 왼쪽 위 점-글자 정보창.
+// 숫자 칸은 막대 7개(세그먼트)를 SVG 로 직접 그리고, 꺼진 막대도 진짜 LCD 처럼 희미하게 보인다.
+// 작은 글씨(주행거리·트립·시계·이름표)는 없다. 1600x840 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다.
 (function (Dash) {
   'use strict';
 
   var W = 1600;
-  var H = 800;
+  var H = 840;
 
   // ---- 7-세그먼트 숫자 ----
   //   a
@@ -18,32 +19,34 @@
   var SEG_MAP = {
     '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc',
     '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', ' ': '',
-    'P': 'abefg', 'r': 'eg', 'n': 'ceg', 'd': 'bcdeg', 'E': 'adefg', 'H': 'bcefg', 'C': 'adef'
+    'P': 'abefg', 'r': 'eg', 'n': 'ceg', 'd': 'bcdeg'
   };
 
-  // RPM 막대그래프
-  var RPM_BARS = 40;
+  // ---- RPM 무지개 막대 ----
+  var ARC = { cx: 800, cy: 832 };
+  var ARC_R = 500;            // 막대 안쪽 끝 반지름
+  var BAR_MIN = 34;
+  var BAR_MAX = 112;
+  var ARC_A0 = -62;
+  var ARC_A1 = 62;
+  var RPM_BARS = 36;
   var RPM_MAX = 8000;
   var RPM_RED = 6500;
-  var BAR_X0 = 60;
-  var BAR_X1 = 1540;
-  var BAR_BASE = 236;
-  var BAR_MIN_H = 26;
-  var BAR_MAX_H = 118;
+  var LABEL_R = 466;
 
-  // 연료·온도 막대
+  // 연료·온도 칸 (왼쪽 아래)
   var LEVEL_SEGS = 10;
-  var LEVEL_TOP = 304;
-  var LEVEL_SEG_H = 22;
-  var LEVEL_GAP = 5;
 
   var TEST_SECONDS = 0.8;    // 시동 직후 모든 칸이 켜지는 점검 시간
   var SWEEP_SECONDS = 1.6;   // 점검 뒤 RPM 막대가 끝까지 올라갔다 내려오는 시간
 
   var TOP_LEFT = ['lowBeam', 'highBeam', 'fogFront', 'fogRear'];
-  var TOP_RIGHT = ['rest', 'frost', 'blindSpot', 'laneAssist', 'autopilot'];
-  var BOTTOM = ['parkingBrake', 'brake', 'abs', 'seatbelt', 'airbag', 'door', 'battery', 'oil',
+  var TOP_RIGHT = ['autopilot', 'laneAssist', 'blindSpot', 'rest', 'frost'];
+  var GRID = ['parkingBrake', 'brake', 'abs', 'seatbelt', 'airbag', 'door', 'battery', 'oil',
     'coolant', 'fcw', 'engine', 'esc', 'escOff', 'tpms', 'fuel', 'washer'];
+
+  var ARROW_LEFT = '<svg viewBox="0 0 100 100"><path d="M6 50 48 10v24h46v32H48v24z"/></svg>';
+  var ARROW_RIGHT = '<svg viewBox="0 0 100 100"><path d="M94 50 52 10v24H6v32h46v24z"/></svg>';
 
   var G = Dash.gauge;
   var r2 = G.round;
@@ -54,20 +57,18 @@
     return list.map(function (p) { return r2(p[0]) + ',' + r2(p[1]); }).join(' ');
   }
 
-  // 가로 막대 (육각형): x1~x2, 가운데 높이 y, 두께 t
   function hSeg(x1, x2, y, t) {
     var h = t / 2;
     return pts([[x1, y], [x1 + h, y - h], [x2 - h, y - h], [x2, y], [x2 - h, y + h], [x1 + h, y + h]]);
   }
 
-  // 세로 막대 (육각형)
   function vSeg(x, y1, y2, t) {
     var h = t / 2;
     return pts([[x, y1], [x + h, y1 + h], [x + h, y2 - h], [x, y2], [x - h, y2 - h], [x - h, y1 + h]]);
   }
 
-  // 숫자 한 칸. 돌려받는 SVG 안의 polygon 7개 순서는 a b c d e f g.
-  function digitSvg(x, y, w, h, t, cls) {
+  // 숫자 한 칸. polygon 7개 순서는 a b c d e f g.
+  function digitSvg(x, y, w, h, t) {
     var g = Math.max(1.5, t * 0.12);
     var L = t / 2;
     var R = w - t / 2;
@@ -81,96 +82,86 @@
       f: vSeg(L, t / 2 + g, M - g, t),
       g: hSeg(L + g, R - g, M, t)
     };
-    var out = '<g class="lc-dg ' + (cls || '') + '" transform="translate(' + x + ' ' + y + ') skewX(-7)">';
+    var out = '<g class="lc-dg" transform="translate(' + x + ' ' + y + ') skewX(-7)">';
     for (var i = 0; i < SEG_ORDER.length; i++) out += '<polygon class="s" points="' + polys[SEG_ORDER[i]] + '"/>';
     return out + '</g>';
   }
 
-  function digitsSvg(n, x, y, w, h, t, pitch, cls) {
+  function digitsSvg(n, x, y, w, h, t, pitch) {
     var out = '';
-    for (var i = 0; i < n; i++) out += digitSvg(x + i * pitch, y, w, h, t, cls);
+    for (var i = 0; i < n; i++) out += digitSvg(x + i * pitch, y, w, h, t);
     return out;
   }
 
-  function rpmBarsSvg() {
-    var out = '';
-    var pitch = (BAR_X1 - BAR_X0) / RPM_BARS;
-    var bw = pitch * 0.72;
+  // 무지개 막대: 가운데 (ARC) 에서 바깥으로 뻗은 사다리꼴, 오른쪽으로 갈수록 길다
+  function rpmArcSvg() {
+    var out = '<g id="lc-rpm">';
+    var step = (ARC_A1 - ARC_A0) / RPM_BARS;
     for (var i = 0; i < RPM_BARS; i++) {
       var k = i / (RPM_BARS - 1);
-      var h = BAR_MIN_H + (BAR_MAX_H - BAR_MIN_H) * Math.pow(k, 1.4);
-      var x = BAR_X0 + i * pitch;
+      var len = BAR_MIN + (BAR_MAX - BAR_MIN) * Math.pow(k, 1.3);
+      var a0 = ARC_A0 + i * step + step * 0.14;
+      var a1 = ARC_A0 + (i + 1) * step - step * 0.14;
+      var p0 = G.polar(ARC.cx, ARC.cy, ARC_R, a0);
+      var p1 = G.polar(ARC.cx, ARC.cy, ARC_R + len, a0);
+      var p2 = G.polar(ARC.cx, ARC.cy, ARC_R + len, a1);
+      var p3 = G.polar(ARC.cx, ARC.cy, ARC_R, a1);
       var red = (i + 1) / RPM_BARS * RPM_MAX > RPM_RED;
-      // 살짝 기울어진 막대
-      out += '<polygon class="b' + (red ? ' red' : '') + '" points="' +
-        pts([[x + 4, BAR_BASE - h], [x + bw + 4, BAR_BASE - h], [x + bw, BAR_BASE], [x, BAR_BASE]]) + '"/>';
+      out += '<polygon class="b' + (red ? ' red' : '') + '" points="' + pts([[p0.x, p0.y], [p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]]) + '"/>';
     }
-    // 눈금 숫자 (0~8)
+    out += '</g>';
+    // 바깥 테두리 선과 눈금 숫자 (0~8)
+    out += '<path class="lc-arcline" d="' + G.arc(ARC.cx, ARC.cy, ARC_R - 10, ARC_A0, ARC_A1) + '"/>';
     for (var v = 0; v <= 8; v++) {
-      var lx = BAR_X0 + (BAR_X1 - BAR_X0) * v / 8;
-      out += '<text class="lc-rlabel' + (v * 1000 >= RPM_RED ? ' red' : '') + '" x="' + r2(lx) + '" y="' + (BAR_BASE + 32) + '" text-anchor="middle">' + v + '</text>';
+      var a = ARC_A0 + (ARC_A1 - ARC_A0) * v / 8;
+      var lp = G.polar(ARC.cx, ARC.cy, LABEL_R - 14, a);
+      out += '<text class="lc-rlabel' + (v * 1000 >= RPM_RED ? ' red' : '') + '" x="' + r2(lp.x) + '" y="' + r2(lp.y) +
+        '" text-anchor="middle" dominant-baseline="central">' + v + '</text>';
     }
     return out;
   }
 
-  // 세로 막대 게이지 (연료·온도). 아래에서 위로 찬다.
-  function levelSvg(id, x, hotFrom) {
-    var out = '<g id="lc-' + id + '">';
+  // 가로 칸 게이지 (연료·온도): 왼쪽에서 오른쪽으로 찬다
+  function levelSvg(id, x, y, w, h, hotFrom, lowTo, icon) {
+    var gap = 7;
+    var sw = (w - gap * (LEVEL_SEGS - 1)) / LEVEL_SEGS;
+    var out = '<svg class="lc-licon" x="' + (x - 70) + '" y="' + (y + h / 2 - 28) + '" width="56" height="56" viewBox="0 0 24 24">' + Dash.icons.list[icon] + '</svg>';
+    out += '<g id="lc-' + id + '">';
     for (var i = 0; i < LEVEL_SEGS; i++) {
-      var y = LEVEL_TOP + (LEVEL_SEGS - 1 - i) * (LEVEL_SEG_H + LEVEL_GAP);
-      var cls = 'lv' + (hotFrom != null && i >= hotFrom ? ' hot' : '') + (id === 'fuel' && i < 2 ? ' low' : '');
-      out += '<polygon class="' + cls + '" points="' + pts([[x + 6, y], [x + 70, y], [x + 64, y + LEVEL_SEG_H], [x, y + LEVEL_SEG_H]]) + '"/>';
+      var sx = x + i * (sw + gap);
+      var sh = h * (0.55 + 0.45 * i / (LEVEL_SEGS - 1));
+      var cls = 'lv' + (hotFrom != null && i >= hotFrom ? ' hot' : '') + (lowTo != null && i < lowTo ? ' low' : '');
+      out += '<polygon class="' + cls + '" points="' + pts([[sx + 6, y + h - sh], [sx + sw + 6, y + h - sh], [sx + sw, y + h], [sx, y + h]]) + '"/>';
     }
     return out + '</g>';
   }
 
   function stageSvg() {
-    var levelBottom = LEVEL_TOP + LEVEL_SEGS * (LEVEL_SEG_H + LEVEL_GAP);
     return '<defs>' +
       '<radialGradient id="lc-halo" cx="50%" cy="50%" r="50%">' +
       '  <stop offset="0" class="lc-halo-a"/><stop offset="1" class="lc-halo-b"/>' +
       '</radialGradient>' +
       '</defs>' +
-      // 빛 무리 (움직이지 않는 그라데이션)
-      '<ellipse cx="560" cy="430" rx="330" ry="170" fill="url(#lc-halo)"/>' +
-      '<ellipse cx="960" cy="460" rx="140" ry="130" fill="url(#lc-halo)"/>' +
-      '<text class="lc-label" x="66" y="138">엔진 RPM ×1000</text>' +
-      '<g id="lc-rpm">' + rpmBarsSvg() + '</g>' +
-      '<path class="lc-rule" d="M40 292H1560"/>' +
-      // 연료·온도
-      levelSvg('fuel', 52, null) + levelSvg('temp', 166, 8) +
-      '<text class="lc-small" x="128" y="' + (LEVEL_TOP + 14) + '">F</text>' +
-      '<text class="lc-small" x="128" y="' + (levelBottom - 4) + '">E</text>' +
-      '<text class="lc-small" x="242" y="' + (LEVEL_TOP + 14) + '">H</text>' +
-      '<text class="lc-small" x="242" y="' + (levelBottom - 4) + '">C</text>' +
-      '<text class="lc-label mid" x="88" y="' + (levelBottom + 34) + '" text-anchor="middle">연료</text>' +
-      '<text class="lc-label mid" x="202" y="' + (levelBottom + 34) + '" text-anchor="middle">온도</text>' +
+      '<ellipse cx="800" cy="590" rx="340" ry="190" fill="url(#lc-halo)"/>' +
+      rpmArcSvg() +
       // 속도
-      '<g id="lc-speed">' + digitsSvg(3, 300, 306, 148, 250, 30, 172) + '</g>' +
-      '<text class="lc-label" x="306" y="594">속도</text>' +
-      '<text class="lc-unit" x="800" y="594" text-anchor="end">km/h</text>' +
+      '<g id="lc-speed">' + digitsSvg(3, 590, 466, 128, 224, 28, 146) + '</g>' +
+      '<text class="lc-unit" x="1000" y="738" text-anchor="end">km/h</text>' +
+      // 연료·온도
+      levelSvg('fuel', 104, 628, 250, 64, null, 2, 'fuel') +
+      levelSvg('temp', 104, 726, 250, 64, 8, null, 'coolant') +
       // 기어
-      '<rect class="lc-box" x="860" y="306" width="200" height="290" rx="14"/>' +
-      '<text class="lc-label mid" x="960" y="336" text-anchor="middle">기어</text>' +
+      '<rect class="lc-box" x="1330" y="560" width="244" height="260" rx="18"/>' +
       '<g id="lc-prnd">' + ['P', 'R', 'N', 'D'].map(function (g, i) {
-        return '<text class="lc-pr" data-g="' + g + '" x="' + (900 + i * 40) + '" y="378" text-anchor="middle">' + g + '</text>';
+        return '<text class="lc-pr" data-g="' + g + '" x="' + (1374 + i * 52) + '" y="612" text-anchor="middle">' + g + '</text>';
       }).join('') + '</g>' +
-      '<g id="lc-gear">' + digitSvg(912, 398, 100, 170, 24) + '</g>' +
-      // 아래 줄: 누적 거리·트립·시계
-      '<text class="lc-label" x="56" y="676">ODO</text>' +
-      '<g id="lc-odo">' + digitsSvg(6, 122, 636, 30, 52, 7, 38) + '</g>' +
-      '<text class="lc-small" x="356" y="688">km</text>' +
-      '<text class="lc-label" x="410" y="676">TRIP</text>' +
-      '<g id="lc-trip">' + digitsSvg(4, 488, 636, 30, 52, 7, 38) + '</g>' +
-      '<rect class="lc-dp" id="lc-trip-dp" x="597" y="682" width="7" height="7"/>' +
-      '<g id="lc-clock">' + digitsSvg(4, 1380, 636, 30, 52, 7, 38) + '</g>' +
-      '<g class="lc-colon" id="lc-colon"><rect x="1457" y="650" width="7" height="7"/><rect x="1453" y="672" width="7" height="7"/></g>';
+      '<g id="lc-gear">' + digitSvg(1404, 636, 104, 166, 24) + '</g>';
   }
 
   // ---------- 테마 ----------
 
   var root, el = {}, warnIcons = {}, unfit;
-  var digits = {};           // 이름 → [ [polygon x7], ... ]
+  var digits = {};
   var rpmBars = [], fuelSegs = [], tempSegs = [];
   var lastHtml = {}, lastText = {};
 
@@ -190,8 +181,17 @@
     if (node._cls !== cls) { node._cls = cls; node.setAttribute('class', cls); }
   }
 
-  function iconSlot(id, cls) {
-    return '<span class="lc-ind ' + (cls || '') + '" data-ind="' + id + '" data-extra="' + (cls || '') + '">' + Dash.icons.svg(id) + '</span>';
+  function toggle(node, cls, on) {
+    var k = '_t_' + cls;
+    if (node[k] !== on) { node[k] = on; node.classList.toggle(cls, on); }
+  }
+
+  function iconSlot(id) {
+    return '<span class="lc-ind" data-ind="' + id + '">' + Dash.icons.svg(id) + '</span>';
+  }
+
+  function group(ids, cls) {
+    return '<div class="lc-group ' + cls + '">' + ids.map(iconSlot).join('') + '</div>';
   }
 
   function collectDigits(groupId) {
@@ -210,11 +210,10 @@
     for (var i = 0; i < 7; i++) setClass(d[i], on.indexOf(SEG_ORDER[i]) >= 0 ? 's on' : 's');
   }
 
-  // 오른쪽 맞춤 숫자. 앞자리 0 은 꺼 둔다 (minDigits 자리까지는 0 을 보여준다).
-  function setNumber(list, value, minDigits) {
+  // 오른쪽 맞춤 숫자. 앞자리 0 은 꺼 둔다.
+  function setNumber(list, value) {
     var str = String(Math.max(0, Math.floor(value)));
     if (str.length > list.length) str = str.slice(-list.length);
-    while (str.length < (minDigits || 1)) str = '0' + str;
     for (var i = 0; i < list.length; i++) {
       var k = i - (list.length - str.length);
       setDigit(list[i], k >= 0 ? str[k] : ' ');
@@ -226,6 +225,8 @@
   }
 
   function setLevel(segs, lit) {
+    if (segs._lit === lit) return;
+    segs._lit = lit;
     for (var i = 0; i < segs.length; i++) {
       var on = i < lit;
       if (segs[i]._on !== on) {
@@ -248,25 +249,18 @@
     return n ? Dash.signs.svg(n.type) + '<span>' + Math.round(n.dist / 10) * 10 + 'm</span>' : '';
   }
 
-  function topHtml(s) {
-    if (!s.engineOn) return '';
-    if (s.nav.on) {
-      var n = s.nav;
-      return '<div class="lc-nav">' + Dash.info.arrowSvg(n.turn) +
-        '<b>' + Dash.info.fmtDist(n.turnDist) + '</b><span>' + (Dash.road.TURN_WORDS[n.turn] || '') +
-        (n.turn !== 'arrive' && n.nextRoad ? ' → ' + n.nextRoad : ' · ' + n.destination) + '</span></div>';
-    }
-    return '<div class="lc-road">' + s.roadName + ' · ' + s.lanes + '차선</div>';
+  function navHtml(s) {
+    if (!s.engineOn || !s.nav.on) return '';
+    return Dash.info.arrowSvg(s.nav.turn) + '<b>' + Dash.info.fmtDist(s.nav.turnDist) + '</b>';
   }
 
-  function statusHtml(s) {
+  function pageDots(s) {
     if (!s.engineOn) return '';
-    if (s.fcw || s.aeb) return '<span class="st-over">⚠ 앞 차 충돌 주의!</span>';
-    if (s.overspeed) return '<span class="st-over">⚠ 과속! 제한 ' + s.speedLimit + '</span>';
-    if (s.nav.on && s.nav.destId === 'station') return '<span class="st-warn">⛽ 주유소로 가는 중</span>';
-    if (s.inTunnel) return '<span class="st-info">🚇 터널</span>';
-    if (s.rainLevel > 0.05) return '<span class="st-info">' + (s.weather === 'storm' ? '⛈' : '🌧') + ' 와이퍼 ' + Dash.vehicle.WIPER_NAMES[s.wiper] + '</span>';
-    return '';
+    var list = Dash.info.pages(s);
+    var idx = list.indexOf(Dash.info.currentId(s));
+    var out = '';
+    for (var i = 0; i < list.length; i++) out += '<i' + (i === idx ? ' class="on"' : '') + '></i>';
+    return out;
   }
 
   Dash.themes.register({
@@ -274,20 +268,23 @@
     name: '디지털 숫자',
     group: '디지털',
     preview: '<svg viewBox="0 0 160 90"><rect width="160" height="90" rx="8" fill="#0b0c0a"/>' +
-      '<rect x="6" y="6" width="148" height="78" rx="6" fill="#141a12"/>' +
-      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(function (i) {
-        var h = 4 + i * 1.1;
-        return '<rect x="' + (14 + i * 9.6) + '" y="' + (26 - h) + '" width="6.5" height="' + h + '" fill="' + (i > 11 ? '#ff4a2e' : i > 8 ? '#3b2a12' : '#ffb02e') + '"/>';
+      '<rect x="4" y="4" width="152" height="82" rx="6" fill="#141a12"/>' +
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(function (i) {
+        var a = (-62 + i * 124 / 15) * Math.PI / 180;
+        var r0 = 44;
+        var r1 = r0 + 5 + i * 0.6;
+        var x0 = 80 + r0 * Math.sin(a);
+        var y0 = 96 - r0 * Math.cos(a);
+        var x1 = 80 + r1 * Math.sin(a);
+        var y1 = 96 - r1 * Math.cos(a);
+        return '<line x1="' + r2(x0) + '" y1="' + r2(y0) + '" x2="' + r2(x1) + '" y2="' + r2(y1) + '" stroke-width="4" stroke="' + (i > 12 ? '#ff4a2e' : i > 8 ? '#3b2a12' : '#ffb02e') + '"/>';
       }).join('') +
-      '<g transform="translate(22 36) skewX(-7)" fill="#ffb02e">' +
-      // "88" 처럼 보이는 숫자 두 개 (꺼진 칸은 희미하게)
-      '<path d="M3 0h18l-3 4H6zM0 3l4 4v12l-4 3zM24 3v19l-4-3V7zM3 23h18l-3 3H6l-3-3z"/>' +
-      '<path d="M0 26l4 3v13l-4 3zM24 26v19l-4-3V29zM3 46h18l-3-4H6z" fill-opacity="0.15"/>' +
-      '<path d="M24 26v19l-4-3V29zM3 46h18l-3-4H6z"/>' +
-      '<g transform="translate(30 0)"><path d="M3 0h18l-3 4H6zM24 3v19l-4-3V7zM3 23h18l-3 3H6l-3-3zM0 26l4 3v13l-4 3zM3 46h18l-3-4H6z"/>' +
-      '<path d="M0 3l4 4v12l-4 3zM24 26v19l-4-3V29z" fill-opacity="0.15"/></g></g>' +
-      '<rect x="102" y="38" width="38" height="38" rx="4" fill="none" stroke="#ffb02e" stroke-opacity="0.5"/>' +
-      '<text x="121" y="68" font-size="28" font-weight="900" fill="#ffb02e" text-anchor="middle" font-family="Arial">D</text></svg>',
+      '<g transform="translate(62 58) skewX(-7)" fill="#ffb02e">' +
+      '<path d="M2 0h12l-2 3H4zM16 2v12l-3-2V4zM16 16v12l-3-2v-8zM2 30h12l-2-3H4z"/>' +
+      '<g transform="translate(20 0)"><path d="M2 0h12l-2 3H4zM16 2v12l-3-2V4zM16 16v12l-3-2v-8zM2 30h12l-2-3H4zM0 2l3 2v8l-3 2zM2 15h12l-2 2H4z"/></g></g>' +
+      '<rect x="128" y="56" width="24" height="28" rx="3" fill="none" stroke="#ffb02e" stroke-opacity="0.6"/>' +
+      '<text x="140" y="78" font-size="20" font-weight="900" fill="#ffb02e" text-anchor="middle" font-family="Arial">4</text>' +
+      '<rect x="10" y="12" width="34" height="34" rx="3" fill="none" stroke="#ffb02e" stroke-opacity="0.4"/></svg>',
     showsMessages: true,
 
     mount: function (container) {
@@ -295,26 +292,22 @@
       root.innerHTML =
         '<div class="lc">' +
         '  <div class="lc-stage">' +
-        '    <div class="lc-glass"><div class="lc-flow"></div><div class="lc-chev"></div></div>' +
+        '    <div class="lc-glass"><div class="lc-flow"></div></div>' +
         '    <svg class="lc-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + stageSvg() + '</svg>' +
-        '    <div class="lc-group lc-top-left">' + TOP_LEFT.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
-        '    <div class="lc-group lc-top-right">' + TOP_RIGHT.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
-        '    ' + iconSlot('turnLeft', 'lc-turn lc-turn-left') + iconSlot('turnRight', 'lc-turn lc-turn-right') +
-        '    <div class="lc-top"></div>' +
-        '    <div class="lc-roadrow">' +
+        '    <div class="lc-turn left">' + ARROW_LEFT + '</div>' +
+        '    <div class="lc-turn right">' + ARROW_RIGHT + '</div>' +
+        '    ' + group(TOP_LEFT, 'lc-top-left') + group(TOP_RIGHT, 'lc-top-right') +
+        '    <div class="lc-top">' +
         '      <div class="lc-limit"><span></span></div>' +
         '      <div class="lc-light"></div>' +
         '      <div class="lc-sign"></div>' +
-        '      <div class="lc-camera">📷 <b></b></div>' +
+        '      <div class="lc-camera"><i>📷</i><b></b></div>' +
+        '      <div class="lc-nav"></div>' +
         '    </div>' +
-        '    <div class="lc-mc"><div class="lc-page"></div><div class="lc-status"></div></div>' +
-        '    <div class="lc-ann">' +
-        '      <span data-m="eco">에코</span><span data-m="comfort">보통</span><span data-m="sport">스포츠</span>' +
-        '      <span class="lc-ai"><i></i>AI 운전</span>' +
-        '    </div>' +
-        '    <div class="lc-popup"><div class="t"></div><div class="v"></div></div>' +
+        '    <div class="lc-mc"><div class="lc-page"></div><div class="lc-dots"></div>' +
+        '      <div class="lc-popup"><div class="t"></div><div class="v"></div></div></div>' +
+        '    ' + group(GRID, 'lc-grid') +
         '    <div class="lc-msg"></div>' +
-        '    <div class="lc-group lc-bottom">' + BOTTOM.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
         '  </div>' +
         '</div>';
 
@@ -322,32 +315,29 @@
       el.lc = q('.lc');
       digits = {
         speed: collectDigits('lc-speed'),
-        gear: collectDigits('lc-gear')[0],
-        odo: collectDigits('lc-odo'),
-        trip: collectDigits('lc-trip'),
-        clock: collectDigits('lc-clock')
+        gear: collectDigits('lc-gear')[0]
       };
       rpmBars = Array.prototype.slice.call(root.querySelectorAll('#lc-rpm polygon'));
       fuelSegs = Array.prototype.slice.call(root.querySelectorAll('#lc-fuel polygon'));
       tempSegs = Array.prototype.slice.call(root.querySelectorAll('#lc-temp polygon'));
       rpmBars.concat(fuelSegs, tempSegs).forEach(function (n) { n._base = n.getAttribute('class'); n._on = false; });
       el.prnd = root.querySelectorAll('#lc-prnd text');
-      el.dp = q('#lc-trip-dp');
-      el.colon = q('#lc-colon');
-      el.top = q('.lc-top');
       el.limit = q('.lc-limit');
       el.limitText = q('.lc-limit span');
       el.light = q('.lc-light');
       el.sign = q('.lc-sign');
       el.camera = q('.lc-camera');
       el.cameraText = q('.lc-camera b');
+      el.nav = q('.lc-nav');
+      el.mc = q('.lc-mc');
       el.page = q('.lc-page');
-      el.status = q('.lc-status');
-      el.modes = root.querySelectorAll('.lc-ann [data-m]');
+      el.dots = q('.lc-dots');
       el.popup = q('.lc-popup');
       el.popupT = q('.lc-popup .t');
       el.popupV = q('.lc-popup .v');
       el.msg = q('.lc-msg');
+      el.turnL = q('.lc-turn.left');
+      el.turnR = q('.lc-turn.right');
       warnIcons = {};
       Array.prototype.forEach.call(root.querySelectorAll('[data-ind]'), function (n) {
         warnIcons[n.getAttribute('data-ind')] = n;
@@ -359,22 +349,23 @@
 
     update: function (s) {
       var on = s.engineOn;
-      var d = new Date();
       var testing = on && s.startTimer < TEST_SECONDS;  // 모든 칸 점검
       var sweeping = on && !testing && s.startTimer < TEST_SECONDS + SWEEP_SECONDS;
 
-      el.lc.classList.toggle('off', !on);
-      el.lc.classList.toggle('ap', s.autopilot.on);
-      el.lc.classList.toggle('night', s.night);
-      el.lc.classList.toggle('over', on && s.overspeed);
-      if (el.lc.getAttribute('data-mode') !== s.driveMode) el.lc.setAttribute('data-mode', s.driveMode);
+      toggle(el.lc, 'off', !on);
+      toggle(el.lc, 'ap', s.autopilot.on);
+      toggle(el.lc, 'night', !!s.night);
+      toggle(el.lc, 'over', on && s.overspeed);
+      toggle(el.lc, 'hazard', !!s.hazard);
+      toggle(el.lc, 'moving', on && s.speed > 2);
+      if (el.lc._mode !== s.driveMode) { el.lc._mode = s.driveMode; el.lc.setAttribute('data-mode', s.driveMode); }
 
       // 속도·기어
       if (testing) {
         setAll(digits.speed, '8');
         setDigit(digits.gear, '8');
       } else if (on) {
-        setNumber(digits.speed, Math.round(s.speed), 1);
+        setNumber(digits.speed, Math.round(s.speed));
         setDigit(digits.gear, s.gear === 'D' ? String(s.autoGear) : s.gear === 'R' ? 'r' : s.gear === 'N' ? 'n' : 'P');
       } else {
         setAll(digits.speed, ' ');
@@ -393,63 +384,51 @@
         lit = Math.max(Math.round(s.rpm / RPM_MAX * RPM_BARS), Math.round(RPM_BARS * (k < 0.5 ? k * 2 : 2 - k * 2)));
       } else lit = on ? Math.round(s.rpm / RPM_MAX * RPM_BARS) : 0;
       setLevel(rpmBars, lit);
+      toggle(el.lc, 'redline', on && !testing && !sweeping && s.rpm > RPM_RED);
 
       // 연료·온도
       var fuelShown = on || s.refueling ? s.fuel : 0;
       setLevel(fuelSegs, testing ? LEVEL_SEGS : Math.ceil(fuelShown * LEVEL_SEGS - 0.15));
-      el.lc.classList.toggle('lowfuel', s.fuel < Dash.vehicle.LOW_FUEL);
+      toggle(el.lc, 'lowfuel', s.fuel < Dash.vehicle.LOW_FUEL);
       var t = on ? Math.max(0, Math.min(1, (s.coolantTemp - 50) / 80)) : 0;
       setLevel(tempSegs, testing ? LEVEL_SEGS : Math.round(t * LEVEL_SEGS));
+      toggle(el.lc, 'hot', s.coolantTemp > Dash.vehicle.OVERHEAT_TEMP);
 
-      // 누적 거리·트립·시계 (시동이 꺼져도 누적 거리는 보인다)
-      if (testing) {
-        setAll(digits.odo, '8'); setAll(digits.trip, '8'); setAll(digits.clock, '8');
-      } else {
-        setNumber(digits.odo, s.odometer, 1);
-        setNumber(digits.trip, s.trip * 10, 2);
-        if (on) {
-          setNumber(digits.clock.slice(0, 2), d.getHours(), 1);
-          setNumber(digits.clock.slice(2), d.getMinutes(), 2);
-        } else setAll(digits.clock, ' ');
-      }
-      el.colon.classList.toggle('on', on && (testing || d.getSeconds() % 2 === 0));
-
-      // 제한속도·신호등·표지판·카메라
+      // 위 가운데: 제한속도·신호등·표지판·카메라·내비
       setText('limit', el.limitText, String(s.speedLimit));
-      el.limit.classList.toggle('over', s.overspeed);
       setHtml('light', el.light, lightHtml(s));
       setHtml('sign', el.sign, signHtml(s));
       var cam = on && s.camera != null && s.camera < 0.6;
-      el.camera.classList.toggle('show', cam);
+      toggle(el.camera, 'show', cam);
       if (cam) setText('cam', el.cameraText, Math.round(s.camera * 1000 / 10) * 10 + 'm');
+      setHtml('nav', el.nav, navHtml(s));
 
-      // 위 가운데: 내비·도로 / 오른쪽 점-글자 정보창
-      setHtml('top', el.top, topHtml(s));
+      // 왼쪽 위 점-글자 정보창
+      var pageId = Dash.info.currentId(s) || 'off';
+      if (el.mc._page !== pageId) { el.mc._page = pageId; el.mc.setAttribute('data-page', pageId); }
       setHtml('page', el.page, Dash.info.current(s));
-      setHtml('status', el.status, statusHtml(s));
-
-      // 아래: 주행 모드 표시 칸
-      for (var m = 0; m < el.modes.length; m++) {
-        var mon = on && (testing || el.modes[m].getAttribute('data-m') === s.driveMode);
-        if (el.modes[m]._on !== mon) { el.modes[m]._on = mon; el.modes[m].classList.toggle('on', mon); }
-      }
+      setHtml('dots', el.dots, pageDots(s));
 
       var pop = s.popup.timer > 0;
-      el.popup.classList.toggle('show', pop);
+      toggle(el.popup, 'show', pop);
       if (pop) {
         setText('popT', el.popupT, s.popup.title);
-        setText('popV', el.popupV, s.popup.value);
+        setText('popV', el.popupV, String(s.popup.value));
       }
-      el.msg.classList.toggle('show', !!s.message);
+      toggle(el.msg, 'show', !!s.message);
       if (s.message) setText('msg', el.msg, s.message);
 
-      // 경고등
+      // 경고등·깜빡이
       var w = Dash.warnings.compute(s);
       for (var id in warnIcons) {
         var node = warnIcons[id];
-        var cls = 'lc-ind ' + node.getAttribute('data-extra') + (w[id].on ? ' on ' + w[id].color : '');
+        var cls = 'lc-ind' + (w[id].on ? ' on ' + w[id].color : '');
         if (node._cls !== cls) { node._cls = cls; node.className = cls; }
       }
+      toggle(el.turnL, 'on', w.turnLeft.on);
+      toggle(el.turnR, 'on', w.turnRight.on);
+      toggle(el.turnL, 'armed', s.turnLeft || s.hazard);
+      toggle(el.turnR, 'armed', s.turnRight || s.hazard);
     },
 
     unmount: function (container) {

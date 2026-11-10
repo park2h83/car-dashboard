@@ -115,7 +115,7 @@
     if (g.holdT >= HOLD) {
       g.stars++;
       g.holdT = 0;
-      U.emit(s, 'good');
+      U.emit(s, 'coach'); // 칭찬 소리만 (운전 점수와는 상관없게 'good' 은 쓰지 않는다)
       if (Dash.progress && Dash.progress.addStars) Dash.progress.addStars(s, 1, '바늘 맞추기');
       if (g.stars >= ROUNDS) {
         U.emit(s, 'arrive');

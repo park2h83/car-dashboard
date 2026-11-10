@@ -1,12 +1,12 @@
 /* 스포츠카 테마. 모든 규칙은 .theme-sport 아래에 둔다.
    .sx-stage 안의 좌표는 1600x800 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
-   움직이는 효과(빛 고리·빗금·파란 빛)는 HTML 덮개에 transform·opacity 애니메이션으로만 준다 (SVG 는 그대로). */
+   움직이는 효과(빛 고리·빗금·파란 빛)는 HTML 덮개에 transform·opacity 애니메이션으로만 준다. */
 .theme-sport .sx {
   --accent-rgb: 255, 30, 30;          /* 보통: 빨강 */
   --accent: rgb(var(--accent-rgb));
-  --face-a: #ffec6e;
+  --face-a: #fff27a;
   --face-b: #ffcc00;
-  --face-c: #e39a00;
+  --face-c: #e08a00;
   --muted: #9aa1aa;
   position: absolute;
   inset: 0;
@@ -16,16 +16,13 @@
   font-family: "Avenir Next", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
   font-variant-numeric: tabular-nums;
 }
-/* 주행 모드: 에코는 연두 얼굴 + 초록 숨 쉬는 빛, 스포츠는 주황빛 얼굴 + 빨간 빗금이 달린다 */
+/* 주행 모드: 에코는 연두 얼굴 + 초록 빛, 스포츠는 주황빛 얼굴 + 빨간 빗금이 달린다 */
 .theme-sport .sx[data-mode="eco"] { --accent-rgb: 38, 224, 106; --face-a: #f2ff8a; --face-b: #c2ec3a; --face-c: #74b015; }
 .theme-sport .sx[data-mode="sport"] { --accent-rgb: 255, 40, 20; --face-a: #ffe04a; --face-b: #ffa200; --face-c: #f04800; }
-/* 자율주행: 파랑 */
 .theme-sport .sx.ap { --accent-rgb: 47, 141, 255; }
-/* 밤: 얼굴이 어두운 호박색이 된다 */
 .theme-sport .sx.night { --face-a: #e0ae00; --face-b: #8f6800; --face-c: #352600; }
 .theme-sport .sx.night[data-mode="eco"] { --face-a: #b4cf2c; --face-b: #607e10; --face-c: #223004; }
 .theme-sport .sx.night[data-mode="sport"] { --face-a: #e89400; --face-b: #9a4000; --face-c: #360e00; }
-/* 시동 꺼짐: 빛이 꺼진 칙칙한 얼굴 */
 .theme-sport .sx.off[data-mode] { --face-a: #6f6a58; --face-b: #4d4839; --face-c: #29261e; }
 
 /* ---- 카본 무늬 바탕 ---- */
@@ -33,7 +30,7 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 34% 62% at 50% 55%, rgba(var(--accent-rgb), 0.22), transparent 70%),
+    radial-gradient(ellipse 36% 64% at 50% 55%, rgba(var(--accent-rgb), 0.28), transparent 70%),
     radial-gradient(ellipse 80% 90% at 50% 40%, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.55) 80%),
     linear-gradient(27deg, #141414 5px, transparent 5px) 0 5px,
     linear-gradient(207deg, #141414 5px, transparent 5px) 10px 0,
@@ -80,344 +77,298 @@
 /* ---- 시프트 라이트 ---- */
 .theme-sport .sx-ledbar {
   position: absolute;
-  left: 510px;
-  top: 12px;
-  width: 580px;
-  height: 64px;
+  left: 500px;
+  top: 8px;
+  width: 600px;
+  height: 74px;
   padding: 0 18px;
-  border-radius: 32px;
+  border-radius: 37px;
   background: linear-gradient(#1a1b1e, #070708);
-  border: 2px solid #34373c;
+  border: 3px solid #3a3d42;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
 }
 .theme-sport .sx-leds { position: relative; flex: 1; display: flex; justify-content: space-between; }
-.theme-sport .sx-leds i { width: 38px; height: 38px; border-radius: 50%; background: #1f2226; border: 2px solid #2c3036; }
+.theme-sport .sx-leds i { width: 36px; height: 36px; border-radius: 50%; background: #1f2226; border: 2px solid #2c3036; }
 .theme-sport .sx-leds i.g { background: #0f2414; }
 .theme-sport .sx-leds i.y { background: #2a2408; }
 .theme-sport .sx-leds i.r { background: #2c0c0c; }
-.theme-sport .sx-leds i.g.on { background: radial-gradient(circle at 40% 35%, #c9ffd6, #22e05a 60%); border-color: #7dffa0; }
-.theme-sport .sx-leds i.y.on { background: radial-gradient(circle at 40% 35%, #fff4c0, #ffd21f 60%); border-color: #ffe680; }
-.theme-sport .sx-leds i.r.on { background: radial-gradient(circle at 40% 35%, #ffd0d0, #ff2a2a 60%); border-color: #ff8080; }
-.theme-sport .sx-leds i.shift { background: radial-gradient(circle at 40% 35%, #ffffff, #ff2a2a 55%); border-color: #fff; }
+.theme-sport .sx-leds i.g.on { background: radial-gradient(circle at 40% 35%, #c9ffd6, #22e05a 60%); border-color: #7dffa0; box-shadow: 0 0 14px #22e05a; }
+.theme-sport .sx-leds i.y.on { background: radial-gradient(circle at 40% 35%, #fff4c0, #ffd21f 60%); border-color: #ffe680; box-shadow: 0 0 14px #ffd21f; }
+.theme-sport .sx-leds i.r.on { background: radial-gradient(circle at 40% 35%, #ffd0d0, #ff2a2a 60%); border-color: #ff8080; box-shadow: 0 0 14px #ff2a2a; }
+.theme-sport .sx-leds i.shift { background: radial-gradient(circle at 40% 35%, #ffffff, #4f9dff 55%); border-color: #fff; box-shadow: 0 0 18px #4f9dff; }
 /* 자율주행: 파란 빛이 왔다 갔다 */
 .theme-sport .sx-scan {
   position: absolute;
   left: -20px;
-  top: -12px;
+  top: -14px;
   width: 120px;
-  height: 62px;
-  border-radius: 31px;
+  height: 64px;
+  border-radius: 32px;
   background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(140, 200, 255, 0.95), rgba(47, 141, 255, 0.6) 40%, transparent 72%);
   opacity: 0;
 }
 .theme-sport .sx.ap:not(.off) .sx-scan { opacity: 1; animation: sx-scan 1.4s ease-in-out infinite alternate; will-change: transform; }
 @keyframes sx-scan { to { transform: translateX(460px); } }
 
-/* ---- 큰 RPM 계기 ---- */
+/* ---- 커다란 깜빡이 화살표 ---- */
+.theme-sport .sx-arrow { position: absolute; top: 0; width: 96px; height: 86px; color: #1d3a24; }
+.theme-sport .sx-arrow svg { width: 100%; height: 100%; fill: currentColor; stroke: #2a2d31; stroke-width: 3; }
+.theme-sport .sx-arrow-l { left: 392px; }
+.theme-sport .sx-arrow-r { left: 1112px; }
+.theme-sport .sx-arrow.on { color: #2bff6a; filter: drop-shadow(0 0 10px #2bff6a) drop-shadow(0 0 22px rgba(43, 255, 106, 0.7)); }
+.theme-sport .sx-arrow.on svg { stroke: #d8ffe2; }
+
+/* ---- 계기 공통 ---- */
 .theme-sport .sx-face-a { stop-color: var(--face-a); }
 .theme-sport .sx-face-b { stop-color: var(--face-b); }
 .theme-sport .sx-face-c { stop-color: var(--face-c); }
-.theme-sport .sx-accent-ring { fill: none; stroke: var(--accent); stroke-width: 8; }
-.theme-sport .sx-accent-ring.small { stroke-width: 4; }
-.theme-sport .sx[data-mode="sport"] .sx-accent-ring { stroke-width: 14; }
-.theme-sport .sx[data-mode="sport"] .sx-accent-ring.small { stroke-width: 6; }
-.theme-sport .sx.off .sx-accent-ring { stroke: #3a3c40; }
-.theme-sport .sx-ap-ring { fill: none; stroke: #2f8dff; stroke-width: 5; stroke-dasharray: 18 12; opacity: 0; }
+.theme-sport .sx-accent-ring { fill: none; stroke: rgba(var(--accent-rgb), 0.35); }
+.theme-sport .sx.off .sx-accent-ring { stroke: #2a2c30; }
+.theme-sport .sx-glass { opacity: 0.16; pointer-events: none; }
+.theme-sport .sx.night .sx-glass { opacity: 0.08; }
+.theme-sport .sx-ap-ring { fill: none; stroke: #2f8dff; stroke-width: 6; stroke-dasharray: 18 12; opacity: 0; }
+.theme-sport .sx-ap-ring.small { stroke-width: 4; }
 .theme-sport .sx.ap .sx-ap-ring { opacity: 1; }
-.theme-sport .sx-red { fill: none; stroke: #e0101a; stroke-width: 22; }
-.theme-sport .sx-red.small { stroke-width: 10; }
-.theme-sport .sx .tick-major { stroke: #111; stroke-width: 5; }
-.theme-sport .sx .tick-minor { stroke: #222; stroke-width: 2.5; }
+.theme-sport .sx-red { fill: none; stroke: #e0101a; stroke-width: 24; }
+.theme-sport .sx-red.small { stroke-width: 12; }
+.theme-sport .sx .tick-major { stroke: #111; stroke-width: 6; }
+.theme-sport .sx .tick-minor { stroke: #222; stroke-width: 3; }
 .theme-sport .sx .tick-major.hot,
 .theme-sport .sx .tick-minor.hot { stroke: #a8000a; }
-.theme-sport .sx .tick-label { fill: #111; font-size: 52px; font-weight: 900; font-style: italic; }
+.theme-sport .sx .tick-label { fill: #111; font-size: 60px; font-weight: 900; font-style: italic; }
 .theme-sport .sx .tick-label.hot { fill: #b0000c; }
-.theme-sport .sx-unit { fill: #80868e; font-size: 17px; font-weight: 800; letter-spacing: 3px; }
-.theme-sport .sx-disc-ring { fill: none; stroke: var(--accent); stroke-width: 5; }
-.theme-sport .sx-pr { fill: #4a4d52; font-size: 32px; font-weight: 900; }
+.theme-sport .sx-sdial .tick-label { font-size: 38px; letter-spacing: -2px; }
+.theme-sport .sx-hub { stroke: #e8141a; stroke-width: 4; }
+.theme-sport .sx-needle path { fill: #e8141a; stroke: rgba(232, 20, 26, 0.35); stroke-width: 8; stroke-linejoin: round; paint-order: stroke; }
+.theme-sport .sx-needle.small path { stroke-width: 4; }
+
+/* 큰 RPM 계기: 둘레 빛 고리가 RPM 만큼 차오른다 */
+.theme-sport .sx-trail,
+.theme-sport .sx-trail-glow { fill: none; stroke: var(--accent); stroke-linecap: butt; }
+.theme-sport .sx-trail { stroke-width: 18; }
+.theme-sport .sx-trail-glow { stroke-width: 44; opacity: 0.3; }
+.theme-sport .sx.redline .sx-trail { stroke: #fff; }
+.theme-sport .sx.redline .sx-trail-glow { stroke: #ff2a2a; opacity: 0.6; }
+.theme-sport .sx-disc-ring { fill: none; stroke: var(--accent); stroke-width: 6; }
+.theme-sport .sx-pr { fill: #4a4d52; font-size: 38px; font-weight: 900; }
 .theme-sport .sx-pr.on { fill: var(--accent); }
-.theme-sport .sx-gear { fill: #fff; font-size: 170px; font-weight: 900; font-style: italic; }
+.theme-sport .sx[data-mode="eco"] .sx-pr.on { fill: #5dff95; }
+.theme-sport .sx-gear { fill: #fff; font-size: 190px; font-weight: 900; font-style: italic; }
 .theme-sport .sx-gear.rev { fill: #ffb020; }
-.theme-sport .sx[data-mode="sport"] .sx-gear.drive { fill: #ffe8e4; }
-.theme-sport .sx-gearsub { fill: #c9ced5; font-size: 26px; font-weight: 800; }
-.theme-sport .sx-speedbox { fill: #0b0b0c; stroke: var(--accent); stroke-width: 4; }
+.theme-sport .sx-speedbox { fill: #0b0b0c; stroke: var(--accent); stroke-width: 5; }
 .theme-sport .sx-speedbox.over { fill: #b80d16; stroke: #fff; animation: sx-blink-fill 0.6s steps(1) infinite; }
 @keyframes sx-blink-fill { 50% { fill: #0b0b0c; stroke: #ff3b30; } }
-.theme-sport .sx-speed { fill: #fff; font-size: 78px; font-weight: 900; font-style: italic; }
-.theme-sport .sx-kmh { fill: #2b1f00; font-size: 22px; font-weight: 900; }
-.theme-sport .sx-needle path { fill: #e8141a; stroke: rgba(232, 20, 26, 0.35); stroke-width: 7; stroke-linejoin: round; paint-order: stroke; }
-.theme-sport .sx-needle.small path { stroke-width: 4; }
-.theme-sport .sx.ap .sx-needle path { fill: #ff2a2a; }
+.theme-sport .sx-speed { fill: #fff; font-size: 92px; font-weight: 900; font-style: italic; }
 
-/* 작은 계기 (연료·온도) */
-.theme-sport .sx-small-label { fill: #111; font-size: 24px; font-weight: 900; }
-.theme-sport .sx-small-icon { color: #2b1f00; }
-.theme-sport .sx-small-val { fill: #111; font-size: 21px; font-weight: 900; }
-.theme-sport .sx-small-hub { fill: #111; stroke: #e8141a; stroke-width: 3; }
-.theme-sport .sx.lowfuel #sx-fuel-val { fill: #c4101a; }
-.theme-sport .sx.hot #sx-temp-val { fill: #c4101a; }
+/* 속도계 */
+.theme-sport .sx-limit-mark { fill: #e0201b; stroke: #fff; stroke-width: 3; }
+.theme-sport .sx.off .sx-limit-mark { opacity: 0.3; }
+.theme-sport .sx-ap-mark { opacity: 0; }
+.theme-sport .sx-ap-mark.show { opacity: 1; }
+.theme-sport .sx-ap-mark path { fill: #2f8dff; stroke: #fff; stroke-width: 2; }
+.theme-sport .sx-mini .tick-label { display: none; }
+.theme-sport .sx-mini-icon { color: #2b1f00; }
+.theme-sport .sx.lowfuel .sx-mini.fuel .sx-mini-icon,
+.theme-sport .sx.hot .sx-mini.temp .sx-mini-icon { color: #d0101a; animation: sx-blink 0.8s steps(1) infinite; }
 
-/* ---- 경고등 ---- */
-.theme-sport .sx-group { position: absolute; display: flex; gap: 12px; }
-.theme-sport .sx-top-left { left: 30px; top: 22px; }
-.theme-sport .sx-top-right { right: 30px; top: 22px; }
-.theme-sport .sx-bottom-left { left: 30px; top: 730px; }
-.theme-sport .sx-bottom-right { right: 30px; top: 730px; }
-.theme-sport .sx-ind {
-  display: inline-flex;
-  width: 42px;
-  height: 42px;
-  color: #fff;
-  opacity: 0.1;
-}
-.theme-sport .sx-ind svg { width: 100%; height: 100%; }
-.theme-sport .sx-ind.on { opacity: 1; }
-.theme-sport .sx-ind.on.red { color: #ff3b30; }
-.theme-sport .sx-ind.on.amber { color: #ffb020; }
-.theme-sport .sx-ind.on.green { color: #2fdc5a; }
-.theme-sport .sx-ind.on.blue { color: #4f9dff; }
-.theme-sport .sx-ind.on.white { color: #eef2f5; }
-.theme-sport .sx-turn { position: absolute; top: 10px; width: 68px; height: 68px; }
-.theme-sport .sx-turn-left { left: 430px; }
-.theme-sport .sx-turn-right { left: 1102px; }
-
-/* ---- 왼쪽: 도로·내비·모드 ---- */
-.theme-sport .sx-left {
-  position: absolute;
-  left: 30px;
-  top: 364px;
-  width: 420px;
-  height: 352px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.theme-sport .sx-roadrow { position: relative; height: 96px; display: flex; align-items: flex-start; gap: 16px; }
-.theme-sport .sx-limit {
-  flex: 0 0 auto;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: #fff;
-  border: 9px solid #e0201b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #111;
-  font-size: 35px;
-  font-weight: 900;
-}
-.theme-sport .sx.off .sx-limit { opacity: 0.2; }
-.theme-sport .sx-limit.over { animation: sx-over 0.6s steps(1) infinite; }
-@keyframes sx-over {
-  0% { background: #e0201b; color: #fff; }
-  50% { background: #fff; color: #111; }
-}
-.theme-sport .sx-light,
-.theme-sport .sx-sign {
-  width: 86px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--muted);
-}
-.theme-sport .sx-light { padding-top: 22px; }
-.theme-sport .sx-sign svg { width: 68px; height: 68px; }
-.theme-sport .sx-lamps { display: flex; gap: 5px; padding: 5px 7px; border-radius: 9px; background: #0a0a0a; border: 2px solid #333; }
-.theme-sport .sx-lamps i { width: 18px; height: 18px; border-radius: 50%; background: #2a2a2a; }
-.theme-sport .sx-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
-.theme-sport .sx-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 10px #ffb020; }
-.theme-sport .sx-lamps i.green.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
-.theme-sport .sx-camera {
-  align-self: center;
-  font-size: 20px;
-  font-weight: 800;
-  color: #ffb020;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.theme-sport .sx-camera.show { opacity: 1; }
-
-.theme-sport .sx-top { height: 158px; display: flex; }
-.theme-sport .sx-nav,
-.theme-sport .sx-road {
-  flex: 1;
-  min-width: 0;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(30, 31, 35, 0.95), rgba(10, 10, 12, 0.95));
-  border: 2px solid #34373c;
-  border-left: 8px solid var(--accent);
-  overflow: hidden;
-}
-.theme-sport .sx-nav { display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 8px; }
-.theme-sport .sx-nav .nav-arrow { width: 96px; height: 96px; flex: 0 0 auto; fill: none; stroke: #fff; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
-.theme-sport .sx-nav > div { min-width: 0; }
-.theme-sport .sx-nav b { display: block; font-size: 44px; font-weight: 900; font-style: italic; line-height: 1.1; }
-.theme-sport .sx-nav span { display: block; font-size: 22px; font-weight: 800; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.theme-sport .sx-nav em { display: block; font-style: normal; font-size: 18px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.theme-sport .sx-road { display: flex; flex-direction: column; justify-content: center; padding: 10px 20px; font-size: 28px; font-weight: 900; white-space: nowrap; text-overflow: ellipsis; }
-.theme-sport .sx-road small { font-size: 20px; font-weight: 700; color: var(--muted); }
-
-.theme-sport .sx-badges { display: flex; gap: 12px; }
-.theme-sport .sx-mode,
-.theme-sport .sx-ap {
-  padding: 8px 18px;
-  border-radius: 12px;
-  font-size: 24px;
-  font-weight: 900;
-  font-style: italic;
-  white-space: nowrap;
-  transform: skewX(-8deg);
-}
-.theme-sport .sx-mode { background: var(--accent); color: #fff; }
-.theme-sport .sx[data-mode="eco"] .sx-mode { color: #062a12; }
-.theme-sport .sx.off .sx-mode { background: #2a2c30; color: #5b6068; }
-.theme-sport .sx[data-mode="sport"]:not(.off) .sx-mode { animation: sx-pulse 0.8s ease-in-out infinite; }
-@keyframes sx-pulse { 50% { opacity: 0.6; } }
-.theme-sport .sx-ap { display: none; background: #2f8dff; color: #fff; }
-.theme-sport .sx.ap .sx-ap { display: block; }
-
-/* ---- 큰 계기 둘레 빛 고리 (HTML 덮개, 움직이는 효과는 여기만) ---- */
+/* ---- 큰 계기 둘레 빛 고리 (HTML 덮개) ---- */
 .theme-sport .sx-glow {
   position: absolute;
-  left: 420px;
-  top: 60px;
-  width: 760px;
-  height: 760px;
+  left: 400px;
+  top: 36px;
+  width: 800px;
+  height: 800px;
   border-radius: 50%;
-  background: radial-gradient(circle closest-side, transparent 84%, rgba(var(--accent-rgb), 0.55) 88%, transparent 100%);
-  opacity: 0;
+  background: radial-gradient(circle closest-side, transparent 80%, rgba(var(--accent-rgb), 0.5) 86%, transparent 100%);
+  opacity: 0.5;
   transition: opacity 0.5s;
   pointer-events: none;
 }
+.theme-sport .sx.off .sx-glow { opacity: 0; }
 .theme-sport .sx[data-mode="eco"]:not(.off) .sx-glow { opacity: 1; animation: sx-breathe 3s ease-in-out infinite; }
 .theme-sport .sx[data-mode="sport"]:not(.off) .sx-glow { opacity: 1; animation: sx-breathe 0.8s ease-in-out infinite; }
 .theme-sport .sx.ap:not(.off) .sx-glow { opacity: 1; animation: none; }
 .theme-sport .sx.shift .sx-glow {
   opacity: 1;
   animation: none;
-  background: radial-gradient(circle closest-side, transparent 84%, rgba(255, 255, 255, 0.85) 87%, rgba(255, 40, 40, 0.6) 92%, transparent 100%);
+  background: radial-gradient(circle closest-side, transparent 80%, rgba(255, 255, 255, 0.85) 84%, rgba(255, 40, 40, 0.6) 90%, transparent 100%);
 }
-@keyframes sx-breathe { 50% { opacity: 0.25; } }
+@keyframes sx-breathe { 50% { opacity: 0.3; } }
+
+/* ---- 경고등 (위 양쪽 구석, 꺼진 건 희미하게) ---- */
+.theme-sport .sx-group { position: absolute; top: 10px; width: 364px; display: flex; flex-wrap: wrap; gap: 8px; }
+.theme-sport .sx-top-left { left: 22px; }
+.theme-sport .sx-top-right { left: 1214px; justify-content: flex-end; }
+.theme-sport .sx-ind { display: inline-flex; width: 44px; height: 44px; color: #fff; opacity: 0.1; }
+.theme-sport .sx-ind svg { width: 100%; height: 100%; }
+.theme-sport .sx-ind.on { opacity: 1; filter: drop-shadow(0 0 6px currentColor); }
+.theme-sport .sx-ind.on.red { color: #ff3b30; }
+.theme-sport .sx-ind.on.amber { color: #ffb020; }
+.theme-sport .sx-ind.on.green { color: #2fdc5a; }
+.theme-sport .sx-ind.on.blue { color: #4f9dff; }
+.theme-sport .sx-ind.on.white { color: #eef2f5; }
 
 /* ---- 오른쪽: 정보 화면 ---- */
-.theme-sport .sx-right {
-  position: absolute;
-  left: 1150px;
-  top: 108px;
-  width: 420px;
-  height: 608px;
-}
+.theme-sport .sx-right { position: absolute; left: 1150px; top: 126px; width: 426px; height: 400px; }
 .theme-sport .sx-card {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: 14px 18px 6px;
-  border-radius: 20px;
+  padding: 14px 18px 10px;
+  border-radius: 24px;
   background:
-    linear-gradient(180deg, rgba(var(--accent-rgb), 0.16), transparent 22%),
-    linear-gradient(180deg, #17181b, #08080a);
-  border: 2px solid #34373c;
-  border-top: 6px solid var(--accent);
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.2), transparent 30%),
+    linear-gradient(180deg, #17181b, #070709);
+  border: 3px solid #3a3d42;
+  border-top: 8px solid var(--accent);
+  box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.25), inset 0 0 30px rgba(0, 0, 0, 0.6);
   transition: opacity 0.6s;
 }
-.theme-sport .sx.off .sx-card { opacity: 0.8; }
-.theme-sport .sx-page { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 9px; overflow: hidden; }
+.theme-sport .sx.off .sx-card { opacity: 0.85; box-shadow: none; }
+.theme-sport .sx-page { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; overflow: hidden; }
 .theme-sport .sx-page > * { flex-shrink: 0; }
-.theme-sport .sx-status { height: 30px; display: flex; justify-content: center; align-items: center; font-size: 19px; font-weight: 800; }
-.theme-sport .st-over { color: #ff3b30; animation: sx-blink 0.6s steps(1) infinite; }
-.theme-sport .st-warn { color: #ffb020; }
-.theme-sport .st-info { color: #9fd8ff; }
-@keyframes sx-blink { 50% { opacity: 0.2; } }
-.theme-sport .sx-foot {
-  height: 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid #2c2f34;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--muted);
-}
+.theme-sport .sx-dots { height: 18px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+.theme-sport .sx-dots i { width: 12px; height: 12px; border-radius: 6px; background: #3a3d42; }
+.theme-sport .sx-dots i.on { width: 32px; background: var(--accent); }
 
-/* 정보창 페이지 (js/core/info.js) */
-.theme-sport .info-title {
-  font-size: 21px;
-  font-weight: 900;
-  font-style: italic;
-  color: var(--accent);
-  padding-bottom: 6px;
-  border-bottom: 2px solid #2c2f34;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* 정보창 페이지 (js/core/info.js) — 쉬운 모드: 그림 + 큰 숫자 */
+.theme-sport .info-title { font-size: 26px; font-weight: 900; font-style: italic; color: var(--accent); text-align: center; white-space: nowrap; overflow: hidden; }
+.theme-sport .info-title.icon { position: absolute; left: 30px; top: 22px; font-size: 44px; font-style: normal; }
+.theme-sport .info-tiles { display: flex; justify-content: center; gap: 12px; }
+.theme-sport .info-tile {
+  flex: 1;
+  max-width: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #24262b, #121316);
+  border: 2px solid #34373c;
 }
-.theme-sport .info-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 19px; color: #aab1ba; }
-.theme-sport .info-row b { color: #fff; font-size: 23px; font-weight: 800; white-space: nowrap; }
-.theme-sport .info-label { font-size: 17px; color: #aab1ba; }
-.theme-sport .info-sub { font-size: 16px; color: #aab1ba; text-align: center; }
-.theme-sport .info-bar { height: 14px; border-radius: 3px; background: #26292e; overflow: hidden; transform: skewX(-12deg); }
+.theme-sport .info-tile i { font-style: normal; font-size: 40px; line-height: 1.1; }
+.theme-sport .info-tile b { font-size: 50px; font-weight: 900; font-style: italic; line-height: 1.05; color: #ffd21f; }
+.theme-sport .info-tile b:empty, .theme-sport .info-tile small:empty { display: none; }
+.theme-sport .info-tile small { font-size: 22px; font-weight: 800; color: var(--muted); }
+.theme-sport .info-tile.hot b, .theme-sport .info-tile.low b { color: #ff3b30; }
+.theme-sport .info-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 22px; color: #aab1ba; }
+.theme-sport .info-row b { color: #fff; font-size: 26px; font-weight: 800; white-space: nowrap; }
+.theme-sport .info-label, .theme-sport .info-sub { font-size: 20px; color: #aab1ba; text-align: center; }
+.theme-sport .info-bar { height: 16px; border-radius: 4px; background: #26292e; overflow: hidden; transform: skewX(-12deg); }
 .theme-sport .info-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcc00, var(--accent)); }
-.theme-sport .info-bar.big { height: 22px; }
-.theme-sport .info-big { font-size: 68px; font-weight: 900; font-style: italic; text-align: center; color: #ffcc00; padding: 8px 0 2px; }
-.theme-sport .info-car { height: 180px; align-self: center; overflow: visible; }
+.theme-sport .info-bar.big { height: 26px; margin: 0 20px; }
+.theme-sport .info-bar.low i { background: #ff3b30; }
+.theme-sport .info-big { font-size: 110px; font-weight: 900; font-style: italic; text-align: center; color: #ffcc00; line-height: 1; }
+.theme-sport .info-car { height: 250px; align-self: center; overflow: visible; }
 .theme-sport .info-car .car-body { fill: #f5f7fa; stroke: var(--accent); stroke-width: 2.5; }   /* 내 차는 흰색 */
 .theme-sport .info-car .car-glass { fill: #1b1e24; }
 .theme-sport .tire { fill: #5b6068; }
 .theme-sport .tire.bad { fill: #ffb020; }
-.theme-sport .tire-psi { fill: #fff; font-size: 16px; font-weight: 800; }
-.theme-sport .tire-psi.bad { fill: #ffb020; }
+.theme-sport .tire-psi { fill: #ffd21f; font-size: 30px; font-weight: 900; font-style: italic; }
+.theme-sport .tire-psi[text-anchor="start"] { transform: translate(-46px, 8px); }
+.theme-sport .tire-psi[text-anchor="end"] { transform: translate(46px, 8px); }
+.theme-sport .tire-psi.bad { fill: #ff3b30; }
 .theme-sport .door { fill: none; stroke: #ffcc00; stroke-width: 3; stroke-linecap: round; }
 .theme-sport .door.open { stroke: #ff3b30; stroke-width: 5; }
-.theme-sport .sx-page .nav-arrow { width: 110px; height: 110px; align-self: center; fill: none; stroke: #ffcc00; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
-.theme-sport .nav-dist { font-size: 40px; font-weight: 900; font-style: italic; text-align: center; }
-.theme-sport .nav-word { font-size: 21px; font-weight: 800; text-align: center; color: var(--accent); }
-.theme-sport .clim-temps { display: flex; justify-content: space-around; font-size: 36px; font-weight: 900; font-style: italic; }
-.theme-sport .road-name { font-size: 24px; font-weight: 900; text-align: center; padding: 4px 0; }
-.theme-sport .ap-state { font-size: 24px; font-weight: 900; text-align: center; color: #8cc4ff; }
-.theme-sport .off-hint { margin-top: 50px; font-size: 22px; line-height: 1.6; text-align: center; color: #aab1ba; }
+.theme-sport .sx-page .nav-arrow { width: 170px; height: 170px; align-self: center; fill: none; stroke: #ffcc00; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.theme-sport .nav-dist { font-size: 64px; font-weight: 900; font-style: italic; text-align: center; line-height: 1; }
+.theme-sport .nav-word { font-size: 24px; font-weight: 800; text-align: center; color: var(--accent); }
+.theme-sport .off-hint { font-size: 64px; text-align: center; color: #fff; }
+.theme-sport .clim-temps { display: flex; justify-content: space-around; font-size: 40px; font-weight: 900; font-style: italic; }
+.theme-sport .road-name, .theme-sport .ap-state { font-size: 26px; font-weight: 900; text-align: center; }
 
-/* ---- 팝업·안내 문구 ---- */
+/* ---- 오른쪽 아래: 내비 화살표·신호등·표지판·제한속도 ---- */
+.theme-sport .sx-roadrow {
+  position: absolute;
+  left: 1110px;
+  top: 548px;
+  width: 466px;
+  height: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+.theme-sport .sx-nav:empty, .theme-sport .sx-light:empty, .theme-sport .sx-sign:empty { display: none; }
+.theme-sport .sx-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px 10px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #1c1d21, #08080a);
+  border: 3px solid #3a3d42;
+  border-left: 10px solid var(--accent);
+}
+.theme-sport .sx-nav .nav-arrow { width: 120px; height: 120px; fill: none; stroke: #fff; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.8)); }
+.theme-sport .sx-nav b { font-size: 46px; font-weight: 900; font-style: italic; line-height: 1; white-space: nowrap; }
+.theme-sport .sx-sign svg { width: 110px; height: 110px; }
+.theme-sport .sx-lamps { display: flex; flex-direction: column; gap: 8px; padding: 10px 9px; border-radius: 16px; background: #0a0a0a; border: 3px solid #333; }
+.theme-sport .sx-lamps i { width: 34px; height: 34px; border-radius: 50%; background: #2a2a2a; }
+.theme-sport .sx-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 16px #ff3b30; }
+.theme-sport .sx-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 16px #ffb020; }
+.theme-sport .sx-lamps i.green.on { background: #22c55e; box-shadow: 0 0 16px #22c55e; }
+.theme-sport .sx-camera { display: none; font-size: 64px; animation: sx-blink 0.8s steps(1) infinite; }
+.theme-sport .sx-camera.show { display: block; }
+.theme-sport .sx-limit {
+  flex: 0 0 auto;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: #fff;
+  border: 15px solid #e0201b;
+  box-shadow: 0 0 0 3px #fff, 0 6px 18px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  font-size: 62px;
+  font-weight: 900;
+  letter-spacing: -2px;
+}
+.theme-sport .sx.off .sx-limit { opacity: 0.25; }
+.theme-sport .sx-limit.over { animation: sx-over 0.6s steps(1) infinite; }
+@keyframes sx-over {
+  0% { background: #e0201b; color: #fff; }
+  50% { background: #fff; color: #111; }
+}
+@keyframes sx-blink { 50% { opacity: 0.25; } }
+
+/* ---- 팝업·안내 문구 (정보 화면 위에 크게) ---- */
 .theme-sport .sx-popup {
   position: absolute;
   left: 16px;
   right: 16px;
-  top: 130px;
-  height: 220px;
+  top: 90px;
+  height: 200px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border-radius: 18px;
+  border-radius: 20px;
   background: #0c0c0e;
-  border: 3px solid var(--accent);
+  border: 4px solid var(--accent);
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: none;
 }
 .theme-sport .sx-popup.show { opacity: 1; }
-.theme-sport .sx-popup .t { font-size: 22px; color: var(--muted); font-weight: 700; }
-.theme-sport .sx-popup .v { font-size: 52px; font-weight: 900; font-style: italic; text-align: center; }
+.theme-sport .sx-popup .v { font-size: 60px; font-weight: 900; font-style: italic; text-align: center; line-height: 1.1; }
 .theme-sport .sx-msg {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 50px;
-  padding: 12px 14px;
-  border-radius: 14px;
+  left: 10px;
+  right: 10px;
+  bottom: 24px;
+  padding: 14px 16px;
+  border-radius: 18px;
   background: rgba(30, 24, 4, 0.97);
-  border: 3px solid #ffd21f;
+  border: 4px solid #ffd21f;
   color: #ffe27a;
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.35;
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1.2;
   text-align: center;
   opacity: 0;
   transform: translateY(12px);

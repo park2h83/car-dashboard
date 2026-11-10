@@ -1,5 +1,6 @@
 /* 클래식 (원형 바늘) 테마. 모든 규칙은 .theme-classic 아래에 둔다.
-   .cl-stage 안의 좌표는 1600x680 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다. */
+   .cl-stage 안의 좌표는 1600x840 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
+   왼쪽 계기 중심 (330, 440), 오른쪽 (1270, 440), 반지름 296. 가운데 정보창 x 660~940. 작은 글씨는 두지 않는다. */
 .theme-classic .cl {
   --accent: #4fc3ff;
   position: absolute;
@@ -23,7 +24,6 @@
 .theme-classic .cl[data-mode="sport"] .accent-ring { stroke-width: 7; }
 .theme-classic .cl[data-mode="sport"] .tick-label { fill: #ffd9d4; }
 .theme-classic .cl[data-mode="sport"] .dial-digital { fill: #ffece9; font-style: italic; }
-.theme-classic .cl[data-mode="sport"] .dial-mode { font-size: 28px; letter-spacing: 8px; }
 .theme-classic .cl.ap { --accent: #3d8bff; } /* 자율주행 중엔 파란색 */
 
 .theme-classic .cl-stage {
@@ -31,52 +31,64 @@
   left: 0;
   top: 0;
   width: 1600px;
-  height: 680px;
+  height: 840px;
   transform-origin: 0 0;
 }
 .theme-classic .cl-svg { position: absolute; inset: 0; overflow: visible; }
 
 /* ---- 계기 눈금 ---- */
 .theme-classic .accent-ring { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0.85; transition: stroke 0.4s; }
-.theme-classic .tick-major { stroke: #f2f4f7; stroke-width: 4; }
-.theme-classic .tick-minor { stroke: #9aa4b0; stroke-width: 2; }
+.theme-classic .tick-major { stroke: #f2f4f7; stroke-width: 5; }
+.theme-classic .tick-minor { stroke: #9aa4b0; stroke-width: 2.5; }
 .theme-classic .tick-major.hot,
 .theme-classic .tick-minor.hot { stroke: #ff3b30; }
-.theme-classic .tick-label { fill: #f2f4f7; font-size: 34px; font-weight: 600; }
+.theme-classic .tick-label { fill: #f2f4f7; font-size: 42px; font-weight: 700; }
 .theme-classic .tick-label.hot { fill: #ff3b30; }
 .theme-classic .zone-red { fill: none; stroke: #c0141a; opacity: 0.85; }
-.theme-classic .dial-unit { fill: #8b95a1; font-size: 20px; }
-.theme-classic .dial-mode { fill: var(--accent); font-size: 22px; font-weight: 700; letter-spacing: 4px; }
-.theme-classic .dial-digital { fill: #fff; font-size: 60px; font-weight: 600; }
-.theme-classic .dial-digital.over { fill: #ff3b30; }
+.theme-classic .dial-mode { font-size: 54px; }
+.theme-classic .dial-digital,
+.theme-classic .dial-gear { fill: #fff; font-size: 112px; font-weight: 800; letter-spacing: -3px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 6px; paint-order: stroke; }
+.theme-classic .dial-digital.over { fill: #ff3b30; stroke: #ff3b30; animation: cl-blink 0.6s steps(1) infinite; }
+.theme-classic .dial-gear.g-D { fill: var(--accent); stroke: #fff; stroke-opacity: 0.18; }
+.theme-classic .dial-gear.g-P { fill: #ff5a4f; stroke: #ff3b30; }
+.theme-classic .dial-gear.g-R { fill: #ffb020; stroke: #ffb020; }
+/* 바깥 빛 테두리 · 안쪽 은은한 빛 · 바늘을 따라 차오르는 빛 띠 */
+.theme-classic .cl-bezel-glow { fill: none; stroke: var(--accent); stroke-width: 4; opacity: 0.6; transition: opacity 0.6s; }
+.theme-classic .cl-halo0 { stop-color: var(--accent); }
+.theme-classic .cl-halo { transition: opacity 0.6s; }
+.theme-classic .cl-trail-wide { fill: none; stroke: var(--accent); stroke-width: 24; opacity: 0.22; }
+.theme-classic .cl-trail { fill: none; stroke: var(--accent); stroke-width: 9; }
+.theme-classic .cl.redline #cl-trail-left, .theme-classic .cl.redline #cl-trailw-left { stroke: #ff3b30; }
+.theme-classic .cl.redline .zone-red { animation: cl-blink 0.25s steps(1) infinite; }
+.theme-classic .cl.off .cl-bezel-glow, .theme-classic .cl.off .cl-halo { opacity: 0; }
 /* 빛나는 느낌은 반투명 테두리로 (흐림 필터는 바늘이 움직일 때마다 다시 그려서 느리다) */
 .theme-classic .needle path { fill: #ff4a1c; stroke: rgba(255, 90, 40, 0.35); stroke-width: 7; stroke-linejoin: round; paint-order: stroke; }
 .theme-classic .limit-mark { fill: #ffb020; }
 .theme-classic .ap-mark { fill: #3d8bff; }
 
 /* 아래쪽 작은 게이지 */
-.theme-classic .sub .seg { fill: none; stroke: #1d232b; stroke-width: 14; }
+.theme-classic .sub .seg { fill: none; stroke: #1d232b; stroke-width: 18; }
 .theme-classic .sub .seg.lit { stroke: #e8ecf1; }
 .theme-classic .sub .seg.lit.cold { stroke: #4fc3ff; }
 .theme-classic .sub .seg.lit.hot { stroke: #ff3b30; }
 .theme-classic .sub .seg.lit.low { stroke: #ffb020; }
-.theme-classic .sub-label { fill: #8b95a1; font-size: 20px; font-weight: 600; }
-.theme-classic .sub-icon { color: #8b95a1; }
+.theme-classic .sub-label { fill: #c9d0d8; font-size: 28px; font-weight: 800; }
+.theme-classic .sub-icon { color: #aeb7c2; }
 
 /* 시동 꺼짐: 계기 조명이 꺼진다 */
 .theme-classic .cl-svg .accent-ring,
 .theme-classic .cl-svg [class^="tick"],
 .theme-classic .cl-svg [class^="zone"],
-.theme-classic .cl-svg .dial-unit,
 .theme-classic .cl-svg .dial-mode,
+.theme-classic .cl-svg .dial-gear,
 .theme-classic .cl-svg .dial-digital,
 .theme-classic .cl-svg .sub-label,
 .theme-classic .cl-lcd { transition: opacity 0.6s; }
 .theme-classic .cl.off .cl-svg .accent-ring,
 .theme-classic .cl.off .cl-svg [class^="tick"],
 .theme-classic .cl.off .cl-svg [class^="zone"],
-.theme-classic .cl.off .cl-svg .dial-unit,
 .theme-classic .cl.off .cl-svg .dial-mode,
+.theme-classic .cl.off .cl-svg .dial-gear,
 .theme-classic .cl.off .cl-svg .dial-digital,
 .theme-classic .cl.off .cl-svg .sub-label { opacity: 0.12; }
 .theme-classic .cl.off .cl-lcd { opacity: 0.6; }
@@ -84,14 +96,14 @@
 
 /* ---- 경고등 ---- */
 .theme-classic .cl-group { position: absolute; display: flex; gap: 14px; }
-.theme-classic .cl-top-left { left: 40px; top: 16px; }
-.theme-classic .cl-top-right { right: 40px; top: 16px; }
-.theme-classic .cl-bottom { left: 50%; bottom: 12px; transform: translateX(-50%); gap: 20px; }
+.theme-classic .cl-top-left { left: 30px; top: 18px; }
+.theme-classic .cl-top-right { right: 30px; top: 18px; }
+.theme-classic .cl-bottom { left: 50%; bottom: 10px; transform: translateX(-50%); gap: 20px; }
 
 .theme-classic .cl-ind {
   display: inline-flex;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   color: #fff;
   opacity: 0.07; /* 꺼진 경고등은 검은 유리 뒤에 희미하게 */
 }
@@ -103,58 +115,63 @@
 .theme-classic .cl-ind.on.blue { color: #3d8bff; filter: drop-shadow(0 0 6px rgba(61, 139, 255, 0.8)); }
 .theme-classic .cl-ind.on.white { color: #e8ecf1; }
 
-.theme-classic .cl-turn { position: absolute; top: 24px; width: 60px; height: 60px; }
-.theme-classic .cl-turn-left { left: 566px; }
-.theme-classic .cl-turn-right { left: 974px; }
+/* 깜빡이: 크게, 켜지면 초록으로 빛난다 */
+.theme-classic .cl-turn { position: absolute; top: 8px; width: 104px; height: 104px; opacity: 0.12; }
+.theme-classic .cl-turn.on { opacity: 1; filter: drop-shadow(0 0 14px rgba(46, 232, 106, 0.95)); }
+.theme-classic .cl-turn-left { left: 640px; }
+.theme-classic .cl-turn-right { left: 856px; }
 
 /* 다가오는 신호등 (제한속도 왼쪽), 표지판 (오른쪽) */
 .theme-classic .cl-light {
   position: absolute;
-  left: 652px;
-  top: 52px;
-  width: 92px;
+  left: 330px;
+  top: 14px;
+  width: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  font-size: 15px;
-  color: #8b95a1;
+  font-size: 28px;
+  font-weight: 800;
+  color: #e8ecf1;
 }
-.theme-classic .cl-lamps { display: flex; gap: 5px; padding: 5px 7px; border-radius: 9px; background: #111; border: 2px solid #333; }
-.theme-classic .cl-lamps i { width: 17px; height: 17px; border-radius: 50%; background: #2a2a2a; }
+.theme-classic .cl-lamps { display: flex; gap: 6px; padding: 7px 9px; border-radius: 12px; background: #111; border: 3px solid #333; }
+.theme-classic .cl-lamps i { width: 26px; height: 26px; border-radius: 50%; background: #2a2a2a; }
 .theme-classic .cl-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
 .theme-classic .cl-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 10px #ffb020; }
 .theme-classic .cl-lamps i.green.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
 .theme-classic .cl-sign {
   position: absolute;
-  left: 860px;
-  top: 26px;
-  width: 84px;
+  left: 1140px;
+  top: 4px;
+  width: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  font-size: 15px;
-  color: #8b95a1;
+  gap: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #e8ecf1;
 }
-.theme-classic .cl-sign svg { width: 72px; height: 72px; }
+.theme-classic .cl-sign svg { width: 82px; height: 82px; }
 .theme-classic .st-rain { color: #6fb1ff; }
 
 /* ---- 제한속도 표지판 ---- */
 .theme-classic .cl-limit {
   position: absolute;
-  left: 754px;
-  top: 34px;
-  width: 92px;
-  height: 92px;
+  left: 748px;
+  top: 10px;
+  width: 104px;
+  height: 104px;
+  box-sizing: border-box;
   border-radius: 50%;
   background: #fff;
-  border: 9px solid #e0201b;
+  border: 11px solid #e0201b;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #111;
-  font-size: 36px;
+  font-size: 42px;
   font-weight: 800;
   letter-spacing: -1px;
 }
@@ -167,9 +184,14 @@
 .theme-classic .cl-camera {
   position: absolute;
   left: 800px;
-  top: 130px;
+  top: 112px;
   transform: translateX(-50%);
-  font-size: 18px;
+  z-index: 2;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(10, 14, 19, 0.9);
+  font-size: 28px;
+  font-weight: 800;
   color: #ffb020;
   white-space: nowrap;
   opacity: 0;
@@ -180,17 +202,18 @@
 /* ---- 가운데 정보창 ---- */
 .theme-classic .cl-lcd {
   position: absolute;
-  left: 668px;
-  top: 160px;
-  width: 264px;
-  height: 440px;
-  padding: 12px 16px;
+  left: 660px;
+  top: 150px;
+  width: 280px;
+  height: 610px;
+  box-sizing: border-box;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  border-radius: 18px;
+  border-radius: 22px;
   background: linear-gradient(#0d1117, #05070a);
-  border: 1px solid #232a33;
-  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+  border: 2px solid #232a33;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 0 3px #030405, 0 0 0 5px var(--accent), 0 0 24px -2px var(--accent);
   color: #e8ecf1;
   font-size: 18px;
 }
@@ -199,13 +222,16 @@
   display: flex;
   justify-content: center;
   align-items: baseline;
-  gap: 16px;
-  font-size: 30px;
-  font-weight: 700;
+  gap: 14px;
+  font-size: 50px;
+  font-weight: 900;
   color: #333b46;
 }
-.theme-classic .lcd-gears span.on { color: #fff; text-shadow: 0 0 10px var(--accent); }
-.theme-classic .lcd-gearnum { margin-left: -12px; font-size: 22px; color: var(--accent); min-width: 14px; }
+.theme-classic .lcd-gears span.on { color: #fff; text-shadow: 0 0 14px var(--accent); }
+.theme-classic .lcd-gears span[data-g="P"].on { color: #ff5a4f; }
+.theme-classic .lcd-gears span[data-g="R"].on { color: #ffb020; }
+.theme-classic .lcd-gears span[data-g="D"].on { color: var(--accent); }
+.theme-classic .lcd-gearnum { margin-left: -12px; font-size: 32px; color: var(--accent); min-width: 18px; }
 
 .theme-classic .lcd-page {
   flex: 1;
@@ -232,12 +258,14 @@
 .theme-classic .info-bar.big { height: 18px; }
 .theme-classic .info-bar.big i { background: #39d353; }
 
-.theme-classic .info-car { height: 210px; align-self: center; overflow: visible; }
-.theme-classic .car-body { fill: none; stroke: #8b95a1; stroke-width: 2; }
+.theme-classic .info-car { height: 250px; align-self: center; overflow: visible; }
+.theme-classic .car-body { fill: #f5f7fa; stroke: var(--accent); stroke-width: 2.5; }
 .theme-classic .car-glass { fill: #2a323c; }
 .theme-classic .tire { fill: #4b5563; }
 .theme-classic .tire.bad { fill: #ffb020; }
-.theme-classic .tire-psi { fill: #e8ecf1; font-size: 16px; font-weight: 700; }
+.theme-classic .tire-psi { fill: #fff; font-size: 30px; font-weight: 900; }
+.theme-classic .tire-psi[text-anchor="start"] { transform: translate(-36px, 10px); }
+.theme-classic .tire-psi[text-anchor="end"] { transform: translate(36px, 10px); }
 .theme-classic .tire-psi.bad { fill: #ffb020; }
 .theme-classic .door { fill: none; stroke: #8b95a1; stroke-width: 3; stroke-linecap: round; }
 .theme-classic .door.open { stroke: #ff3b30; stroke-width: 4; }
@@ -252,12 +280,12 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.theme-classic .nav-dist { font-size: 36px; font-weight: 700; text-align: center; }
+.theme-classic .nav-dist { font-size: 54px; font-weight: 900; text-align: center; }
 .theme-classic .nav-word { font-size: 20px; text-align: center; color: var(--accent); }
 
 .theme-classic .clim-temps { display: flex; justify-content: space-around; font-size: 34px; font-weight: 700; }
 .theme-classic .road-name { font-size: 22px; font-weight: 700; text-align: center; padding: 8px 0; }
-.theme-classic .info-big { font-size: 56px; font-weight: 700; text-align: center; color: #39d353; padding: 20px 0 8px; }
+.theme-classic .info-big { font-size: 80px; font-weight: 900; text-align: center; color: #39d353; padding: 10px 0 8px; text-shadow: 0 0 20px rgba(57, 211, 83, 0.45); }
 .theme-classic .ap-state { font-size: 24px; font-weight: 700; text-align: center; color: #6fb1ff; padding: 6px 0; }
 .theme-classic .off-hint { margin-top: 70px; font-size: 20px; line-height: 1.6; text-align: center; color: #8b95a1; }
 
@@ -280,20 +308,20 @@
   pointer-events: none;
 }
 .theme-classic .lcd-popup.show { opacity: 1; }
-.theme-classic .lcd-popup .t { font-size: 18px; color: #8b95a1; }
-.theme-classic .lcd-popup .v { font-size: 40px; font-weight: 700; text-align: center; }
+.theme-classic .lcd-popup .t { font-size: 24px; font-weight: 700; color: #aeb7c2; }
+.theme-classic .lcd-popup .v { font-size: 48px; font-weight: 800; text-align: center; }
 
 .theme-classic .lcd-msg {
   position: absolute;
   left: 14px;
   right: 14px;
-  bottom: 52px;
+  bottom: 70px;
   padding: 12px 10px;
-  border-radius: 12px;
+  border-radius: 16px;
   background: rgba(26, 20, 4, 0.97);
-  border: 2px solid #ffb020;
+  border: 3px solid #ffb020;
   color: #ffd27a;
-  font-size: 18px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1.35;
   text-align: center;
@@ -306,26 +334,18 @@
 .theme-classic .lcd-msg.show { opacity: 1; transform: none; }
 
 .theme-classic .lcd-status {
-  height: 30px;
+  height: 56px;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 42px;
+  font-weight: 900;
 }
 .theme-classic .st-ap { color: #6fb1ff; }
 .theme-classic .st-over { color: #ff3b30; animation: cl-blink 0.6s steps(1) infinite; }
 @keyframes cl-blink { 50% { opacity: 0.2; } }
 
-.theme-classic .lcd-foot {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 8px;
-  border-top: 1px solid #1e252e;
-  font-size: 14px;
-  color: #8b95a1;
-}
 
 /* 밤: 계기판 조명이 조금 어둡고 따뜻해진다 */
 .theme-classic .cl::after {
@@ -339,3 +359,30 @@
 }
 .theme-classic .cl.night::after { opacity: 1; }
 .theme-classic .cl.night .tick-label { fill: #f5ead6; }
+
+/* 쉬운 모드 정보창: 큰 그림 제목 + 큰 숫자 타일 (좁고 긴 창이라 타일을 세로로 쌓는다) */
+.theme-classic .info-title.icon { align-self: center; font-size: 50px; line-height: 1.1; border-bottom: 0; padding: 4px 0; color: #fff; letter-spacing: 0; }
+.theme-classic .info-tiles { display: flex; flex-direction: column; flex-wrap: nowrap; gap: 10px; }
+.theme-classic .info-tile {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: linear-gradient(#18212c, #0b1017);
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 14px -4px var(--accent);
+}
+.theme-classic .info-tile i { font-style: normal; font-size: 40px; line-height: 1; }
+.theme-classic .info-tile b { flex: 1; text-align: right; font-size: 56px; font-weight: 900; line-height: 1; letter-spacing: -2px; color: #fff; white-space: nowrap; }
+.theme-classic .info-tile b:empty { display: none; }
+.theme-classic .info-tile small { font-size: 24px; font-weight: 800; color: var(--accent); }
+.theme-classic .info-tile small:empty { display: none; }
+.theme-classic .info-tile.hot, .theme-classic .info-tile.low { border-color: #ff8a3d; }
+.theme-classic .info-tile.hot b, .theme-classic .info-tile.low b, .theme-classic .info-tile.hot small, .theme-classic .info-tile.low small { color: #ff8a3d; }
+.theme-classic .info-title.icon ~ .info-bar.big { height: 26px; border-radius: 13px; margin-top: 6px; }
+.theme-classic .info-bar.big.low i { background: #ffa000; }
+.theme-classic .info-title.icon ~ .off-hint { margin-top: 60px; font-size: 54px; color: #fff; }
+.theme-classic .info-title.icon ~ .nav-arrow { width: 160px; height: 160px; }

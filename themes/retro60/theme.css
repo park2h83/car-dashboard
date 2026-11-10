@@ -1,0 +1,239 @@
+/* 1960년대 클래식 느낌 테마. 모든 규칙은 .theme-retro60 아래에 둔다.
+   .rt-stage 안의 좌표는 1600x840 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다. */
+.theme-retro60 .rt {
+  --ink: #1a140c;
+  --cream: #f1e6c8;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #4a250e;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", "Apple SD Gothic Neo", serif;
+  font-variant-numeric: tabular-nums;
+}
+/* 나뭇결 대시보드 */
+.theme-retro60 .rt-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(177deg, rgba(50, 20, 4, 0.32) 0 3px, rgba(0, 0, 0, 0) 3px 11px, rgba(110, 55, 20, 0.22) 11px 13px, rgba(0, 0, 0, 0) 13px 23px),
+    repeating-radial-gradient(ellipse 170% 26% at 28% 64%, rgba(45, 18, 3, 0.28) 0 5px, rgba(0, 0, 0, 0) 5px 17px),
+    repeating-radial-gradient(ellipse 140% 22% at 80% 20%, rgba(45, 18, 3, 0.2) 0 4px, rgba(0, 0, 0, 0) 4px 15px),
+    linear-gradient(180deg, #84491f 0%, #5e2f12 48%, #7a4520 100%);
+  transition: filter 0.6s;
+}
+.theme-retro60 .rt.night .rt-bg { filter: brightness(0.5); }
+
+.theme-retro60 .rt-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 840px;
+  transform-origin: 0 0;
+}
+.theme-retro60 .rt-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* 크롬 몰딩 */
+.theme-retro60 .rt-trim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: linear-gradient(#fff, #9aa0a7 40%, #e6e8ea 60%, #6a7078);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.theme-retro60 .rt-trim-top { top: 0; }
+.theme-retro60 .rt-trim-bottom { bottom: 0; }
+
+/* ---- 크림색 계기 ---- */
+.theme-retro60 .rt-shadow { fill: rgba(20, 8, 0, 0.55); }
+.theme-retro60 .rt-ring { fill: none; stroke: rgba(26, 20, 12, 0.5); stroke-width: 1.5; }
+.theme-retro60 .rt-svg .tick-major { stroke: var(--ink); stroke-width: 4; }
+.theme-retro60 .rt-svg .tick-minor { stroke: var(--ink); stroke-width: 1.6; }
+.theme-retro60 .rt-svg .tick-major.hot,
+.theme-retro60 .rt-svg .tick-minor.hot { stroke: #b3170e; }
+.theme-retro60 .rt-svg .tick-label { fill: var(--ink); font-weight: 700; }
+.theme-retro60 .rt-svg .tick-label.hot { fill: #b3170e; }
+.theme-retro60 .rt-spd .tick-label { font-size: 36px; }
+.theme-retro60 .rt-tach .tick-label { font-size: 50px; }
+.theme-retro60 .rt-redband { fill: none; stroke: #c0281c; stroke-width: 12; opacity: 0.85; }
+.theme-retro60 .rt-zone { fill: none; stroke: #c0281c; stroke-width: 7; }
+.theme-retro60 .rt-small-tick { stroke: var(--ink); stroke-width: 3; }
+.theme-retro60 .rt-small-icon { color: #3a2a18; }
+.theme-retro60 .rt-hand { stroke: var(--ink); stroke-linecap: round; }
+.theme-retro60 .rt-hand.sec { stroke: #b3170e; }
+
+.theme-retro60 .rt-needle-shadow { fill: rgba(0, 0, 0, 0.22); }
+.theme-retro60 .rt-needle-body { fill: #0d0d0d; }
+.theme-retro60 .rt-needle-tip { fill: #c0281c; }
+.theme-retro60 .rt-hub-in { fill: #222; }
+
+/* P R N D 표시판 */
+.theme-retro60 .rt-quad { fill: #1b140d; stroke: #8d939a; stroke-width: 3; }
+.theme-retro60 .rt-prnd { fill: #7d7260; font-size: 34px; font-weight: 700; }
+.theme-retro60 .rt-prnd.on { fill: #fff6dc; }
+.theme-retro60 .rt-gearptr { fill: #c0281c; transition: transform 0.25s; }
+
+/* 굴러가는 숫자 통 */
+.theme-retro60 .rt-drums {
+  position: absolute;
+  left: 711px;
+  top: 548px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #111;
+  border: 3px solid #b9bec4;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+.theme-retro60 .rt-drum {
+  position: relative;
+  width: 52px;
+  height: 64px;
+  overflow: hidden;
+  background: #f6f0de;
+}
+.theme-retro60 .rt-drum::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0) 72%, rgba(0, 0, 0, 0.45));
+}
+.theme-retro60 .rt-strip { will-change: transform; }
+.theme-retro60 .rt-strip b {
+  display: block;
+  height: 64px;
+  line-height: 64px;
+  text-align: center;
+  font-size: 52px;
+  font-weight: 700;
+  color: #111;
+}
+.theme-retro60 .rt-drum.lead b { color: rgba(17, 17, 17, 0.15); }
+.theme-retro60 .rt-drums.over .rt-drum:not(.lead) b { color: #c0281c; }
+.theme-retro60 .rt.off .rt-drums { opacity: 0.7; }
+
+/* ---- 깜빡이 (초록 보석 등) ---- */
+.theme-retro60 .rt-turn { position: absolute; top: 18px; width: 180px; height: 100px; color: #1f5a2e; }
+.theme-retro60 .rt-turn-left { left: 468px; }
+.theme-retro60 .rt-turn-right { left: 952px; }
+.theme-retro60 .rt-turn svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.theme-retro60 .rt-arrow-bezel { fill: none; stroke: #d9dde1; stroke-width: 9; stroke-linejoin: round; }
+.theme-retro60 .rt-arrow-glass { opacity: 0.45; }
+.theme-retro60 .rt-turn.on { color: #2bff5c; filter: drop-shadow(0 0 14px #2bff5c) drop-shadow(0 0 26px rgba(43, 255, 92, 0.6)); }
+.theme-retro60 .rt-turn.on .rt-arrow-glass { opacity: 1; }
+
+/* ---- 경고등: 둥근 크롬 테두리 램프 ---- */
+.theme-retro60 .rt-lamps {
+  position: absolute;
+  left: 478px;
+  top: 712px;
+  width: 644px;
+  height: 112px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 6px 4px;
+}
+.theme-retro60 .rt-ind {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #3a2a1c, #120b05);
+  border: 3px solid #c3c8cd;
+  color: rgba(255, 255, 255, 0.1);
+  flex: none;
+}
+.theme-retro60 .rt-ind svg { width: 100%; height: 100%; display: block; }
+.theme-retro60 .rt-ind.on { background: radial-gradient(circle at 40% 35%, #4a3a2a, #1a1008); }
+.theme-retro60 .rt-ind.on.red { color: #ff4a3a; box-shadow: 0 0 12px #ff3b30; }
+.theme-retro60 .rt-ind.on.amber { color: #ffb020; box-shadow: 0 0 12px #ffb020; }
+.theme-retro60 .rt-ind.on.green { color: #3dff6a; box-shadow: 0 0 12px #3dff6a; }
+.theme-retro60 .rt-ind.on.blue { color: #4d9bff; box-shadow: 0 0 12px #3d8bff; }
+.theme-retro60 .rt-ind.on.white { color: #fff6dc; }
+
+/* ---- 오른쪽 정보창: 크롬 테두리의 크림색 라디오 판 ---- */
+.theme-retro60 .rt-info {
+  position: absolute;
+  left: 1150px;
+  top: 64px;
+  width: 420px;
+  height: 562px;
+  box-sizing: border-box;
+  padding: 18px 20px;
+  border-radius: 26px;
+  border: 10px solid #cfd3d8;
+  box-shadow: inset 0 0 0 2px #7a8088, inset 0 0 40px rgba(120, 80, 20, 0.25), 0 8px 18px rgba(0, 0, 0, 0.55);
+  background:
+    repeating-linear-gradient(90deg, rgba(120, 90, 40, 0.06) 0 2px, rgba(0, 0, 0, 0) 2px 6px),
+    radial-gradient(ellipse at 45% 35%, #fbf4e0, #e9dbb5);
+  font-size: 24px;
+  overflow: hidden;
+}
+.theme-retro60 .rt-page { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 10px; overflow: hidden; }
+
+.theme-retro60 .rt-info .info-title { font-size: 20px; font-weight: 700; color: #6a3a14; text-align: center; }
+.theme-retro60 .rt-info .info-title.icon { font-size: 52px; }
+.theme-retro60 .rt-info .info-tiles { gap: 10px; }
+.theme-retro60 .rt-info .info-tile { background: rgba(90, 50, 15, 0.1); border: 2px solid rgba(90, 50, 15, 0.35); border-radius: 50px; padding: 8px 14px; min-width: 96px; }
+.theme-retro60 .rt-info .info-tile i { font-size: 36px; }
+.theme-retro60 .rt-info .info-tile b { font-size: 54px; font-weight: 700; color: var(--ink); }
+.theme-retro60 .rt-info .info-tile small { font-size: 19px; color: #6a3a14; opacity: 1; }
+.theme-retro60 .rt-info .info-tile.hot b,
+.theme-retro60 .rt-info .info-tile.low b { color: #b3170e; }
+.theme-retro60 .rt-info .info-big { font-size: 130px; font-weight: 700; text-align: center; color: var(--ink); line-height: 1; }
+.theme-retro60 .rt-info .info-row { display: flex; justify-content: space-between; font-size: 18px; color: #6a5030; }
+.theme-retro60 .rt-info .info-row b { color: var(--ink); }
+.theme-retro60 .rt-info .info-sub,
+.theme-retro60 .rt-info .info-label { font-size: 16px; color: #6a5030; text-align: center; }
+.theme-retro60 .rt-info .info-bar { height: 16px; border-radius: 8px; background: rgba(90, 50, 15, 0.18); overflow: hidden; }
+.theme-retro60 .rt-info .info-bar i { display: block; height: 100%; background: #3a6b2a; }
+.theme-retro60 .rt-info .info-bar.big { height: 26px; border-radius: 13px; }
+.theme-retro60 .rt-info .info-bar.low i { background: #b3170e; }
+.theme-retro60 .rt-info .info-car { height: 340px; align-self: center; overflow: visible; }
+.theme-retro60 .rt-info .car-body { fill: #ffffff; stroke: #3a2a18; stroke-width: 2.5; }
+.theme-retro60 .rt-info .car-glass { fill: #8fa6b3; }
+.theme-retro60 .rt-info .tire { fill: #2a2018; }
+.theme-retro60 .rt-info .tire.bad { fill: #e08a00; }
+.theme-retro60 .rt-info .tire-psi { fill: var(--ink); font-size: 22px; font-weight: 700; }
+.theme-retro60 .rt-info .tire-psi.bad { fill: #b3170e; }
+.theme-retro60 .rt-info .door { fill: none; stroke: #6a5030; stroke-width: 3; stroke-linecap: round; }
+.theme-retro60 .rt-info .door.open { stroke: #b3170e; stroke-width: 5; }
+.theme-retro60 .rt-info .nav-arrow {
+  width: 200px;
+  height: 200px;
+  align-self: center;
+  fill: none;
+  stroke: #1d5a2c;
+  stroke-width: 11;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.theme-retro60 .rt-info .nav-dist { font-size: 60px; font-weight: 700; text-align: center; color: var(--ink); }
+.theme-retro60 .rt-info .nav-word { font-size: 19px; text-align: center; color: #6a3a14; }
+.theme-retro60 .rt-info .off-hint { font-size: 54px; text-align: center; line-height: 1.4; }
+.theme-retro60 .rt-info .ap-state { font-size: 22px; font-weight: 700; text-align: center; color: #1d4a8a; }
+.theme-retro60 .rt-info .road-name { font-size: 21px; font-weight: 700; text-align: center; }
+.theme-retro60 .rt-info .clim-temps { display: flex; justify-content: space-around; font-size: 36px; font-weight: 700; }
+
+.theme-retro60 .rt-popup {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(246, 238, 214, 0.97);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.theme-retro60 .rt-popup.show { opacity: 1; }
+.theme-retro60 .rt-popup .t { font-size: 20px; color: #6a3a14; }
+.theme-retro60 .rt-popup .v { font-size: 40px; font-weight: 700; color: var(--ink); text-align: center; }

@@ -1,20 +1,24 @@
 // 클래식 원형 바늘 테마: 왼쪽 RPM 바늘, 오른쪽 속도 바늘, 가운데 정보창.
-// 1600x680 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다.
+// 1600x840 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다 (아이패드 계기판 칸 비율 ≈ 1.9:1 에 꽉 차게).
+// 작은 글씨(단위·ODO·시계·긴 문장)는 없다: 바늘·큰 숫자·그림·색으로만. 바늘 뒤엔 빛 띠가 따라 차오른다.
 (function (Dash) {
   'use strict';
 
   var W = 1600;
-  var H = 680;
-  var R = 270;               // 큰 계기 반지름
-  var LEFT = { cx: 380, cy: 350 };
-  var RIGHT = { cx: 1220, cy: 350 };
+  var H = 840;
+  var R = 296;               // 큰 계기 반지름
+  var LEFT = { cx: 330, cy: 440 };
+  var RIGHT = { cx: 1270, cy: 440 };
   var A0 = -135;             // 바늘 시작 각도 (12시 = 0°)
   var A1 = 135;
-  var SUB_R = 238;           // 아래쪽 작은 게이지(연료·온도) 반지름
+  var SUB_R = 262;           // 아래쪽 작은 게이지(연료·온도) 반지름
   var SUB_FROM = 208;        // 왼쪽 끝 각도
   var SUB_TO = 152;          // 오른쪽 끝 각도
   var SUB_SEGMENTS = 10;
   var SWEEP_SECONDS = 1.5;   // 시동 때 바늘이 끝까지 갔다 오는 시간
+  var TRAIL_R = R - 7;       // 바늘을 따라 차오르는 빛 띠
+  var TRAIL_LEN = TRAIL_R * (A1 - A0) * Math.PI / 180;
+  var MODE_ICONS = { eco: '🍃', comfort: '😊', sport: '🔥' };
 
   var SPEED = { min: 0, max: 240, major: 20, minor: 10, labelEvery: 20 };
   var TACH = { min: 0, max: 8, major: 1, minor: 0.25, labelEvery: 1, hotFrom: 6.5 };
@@ -38,17 +42,26 @@
       '  <stop offset="0" stop-color="#d9dee5"/><stop offset="0.45" stop-color="#5d6570"/>' +
       '  <stop offset="0.55" stop-color="#2d333b"/><stop offset="1" stop-color="#a7afb9"/>' +
       '</linearGradient>' +
+      '<radialGradient id="cl-halo"><stop offset="0" class="cl-halo0" stop-opacity="0.45"/><stop offset="1" class="cl-halo0" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="cl-shade"><stop offset="0.88" stop-color="#000" stop-opacity="0.8"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>' +
       '<radialGradient id="cl-hub" cx="40%" cy="35%" r="70%">' +
       '  <stop offset="0" stop-color="#6b737e"/><stop offset="0.6" stop-color="#22272e"/><stop offset="1" stop-color="#0c0e11"/>' +
       '</radialGradient>' +
       '</defs>';
   }
 
-  function dialBase(c) {
-    return '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 14) + '" fill="url(#cl-bezel)"/>' +
+  function dialBase(c, id) {
+    var d = G.arc(c.cx, c.cy, TRAIL_R, A0, A1);
+    var dash = '0 ' + Math.ceil(TRAIL_LEN + 2);
+    return '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 40) + '" fill="url(#cl-shade)"/>' +
+      '<circle class="cl-bezel-glow" cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 20) + '"/>' +
+      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 14) + '" fill="url(#cl-bezel)"/>' +
       '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 4) + '" fill="#030405"/>' +
       '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + R + '" fill="url(#cl-face)"/>' +
-      '<path class="accent-ring" d="' + G.arc(c.cx, c.cy, R - 4, A0, A1) + '"/>';
+      '<circle class="cl-halo" cx="' + c.cx + '" cy="' + (c.cy + 30) + '" r="' + (R * 0.6) + '" fill="url(#cl-halo)"/>' +
+      '<path class="accent-ring" d="' + G.arc(c.cx, c.cy, R - 4, A0, A1) + '"/>' +
+      '<path class="cl-trail-wide" id="cl-trailw-' + id + '" d="' + d + '" stroke-dasharray="' + dash + '"/>' +
+      '<path class="cl-trail" id="cl-trail-' + id + '" d="' + d + '" stroke-dasharray="' + dash + '"/>';
   }
 
   function scale(c, o) {
@@ -78,36 +91,36 @@
     var rp = G.polar(c.cx, c.cy, SUB_R, SUB_TO - 7);
     out += '<text class="sub-label" x="' + r2(lp.x) + '" y="' + r2(lp.y) + '" text-anchor="middle" dominant-baseline="central">' + leftLabel + '</text>';
     out += '<text class="sub-label" x="' + r2(rp.x) + '" y="' + r2(rp.y) + '" text-anchor="middle" dominant-baseline="central">' + rightLabel + '</text>';
-    out += '<svg class="sub-icon" x="' + (c.cx - 15) + '" y="' + (c.cy + SUB_R - 58) + '" width="30" height="30" viewBox="0 0 24 24">' + Dash.icons.list[icon] + '</svg>';
+    out += '<svg class="sub-icon" x="' + (c.cx - 20) + '" y="' + (c.cy + SUB_R - 62) + '" width="40" height="40" viewBox="0 0 24 24">' + Dash.icons.list[icon] + '</svg>';
     return out + '</g>';
   }
 
   function needleAndHub(c, id) {
-    return '<g id="cl-needle-' + id + '">' + G.needle(c.cx, c.cy, R - 28, 34, 14, 'needle') + '</g>' +
-      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="24" fill="url(#cl-hub)" stroke="#000" stroke-width="2"/>';
+    return '<g id="cl-needle-' + id + '">' + G.needle(c.cx, c.cy, R - 26, 36, 15, 'needle') + '</g>' +
+      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="26" fill="url(#cl-hub)" stroke="#000" stroke-width="2"/>' +
+      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="8" fill="#0b0d10"/>';
   }
 
   function leftDial() {
     var c = LEFT;
-    return dialBase(c) +
-      zoneArc(c, TACH, TACH.hotFrom, TACH.max, 'zone-red', 12) +
+    return dialBase(c, 'left') +
+      zoneArc(c, TACH, TACH.hotFrom, TACH.max, 'zone-red', 14) +
       scale(c, TACH) +
-      '<text class="dial-unit" x="' + c.cx + '" y="' + (c.cy - 92) + '" text-anchor="middle">x1000 r/min</text>' +
-      '<text class="dial-mode" id="cl-mode" x="' + c.cx + '" y="' + (c.cy + 112) + '" text-anchor="middle"></text>' +
+      '<text class="dial-mode" id="cl-mode" x="' + c.cx + '" y="' + (c.cy - 100) + '" text-anchor="middle" dominant-baseline="central"></text>' +
+      '<text class="dial-gear" id="cl-dgear" x="' + c.cx + '" y="' + (c.cy + 132) + '" text-anchor="middle">P</text>' +
       subGauge(c, 'temp', 'C', 'H', 'coolant') +
       needleAndHub(c, 'left');
   }
 
   function rightDial() {
     var c = RIGHT;
-    return dialBase(c) +
+    return dialBase(c, 'right') +
       scale(c, SPEED) +
-      '<text class="dial-unit" x="' + c.cx + '" y="' + (c.cy - 92) + '" text-anchor="middle">km/h</text>' +
-      '<text class="dial-digital" id="cl-digital" x="' + c.cx + '" y="' + (c.cy + 128) + '" text-anchor="middle">0</text>' +
+      '<text class="dial-digital" id="cl-digital" x="' + c.cx + '" y="' + (c.cy + 132) + '" text-anchor="middle">0</text>' +
       subGauge(c, 'fuel', 'E', 'F', 'fuel') +
       // 속도 눈금 바깥의 표시: 제한속도(주황), 자율주행 목표 속도(파랑)
-      '<g id="cl-limit-mark"><path class="limit-mark" d="M' + c.cx + ' ' + (c.cy - R + 2) + 'l-9 -14h18z"/></g>' +
-      '<g id="cl-ap-mark"><path class="ap-mark" d="M' + c.cx + ' ' + (c.cy - R + 26) + 'l-8 -14h16z"/></g>' +
+      '<g id="cl-limit-mark"><path class="limit-mark" d="M' + c.cx + ' ' + (c.cy - R + 2) + 'l-11 -17h22z"/></g>' +
+      '<g id="cl-ap-mark"><path class="ap-mark" d="M' + c.cx + ' ' + (c.cy - R + 30) + 'l-10 -16h20z"/></g>' +
       needleAndHub(c, 'right');
   }
 
@@ -126,6 +139,21 @@
     if (lastHtml[key] === html) return;
     lastHtml[key] = html;
     node.innerHTML = html;
+  }
+  function setText(key, node, text) {
+    if (lastHtml[key] === text) return;
+    lastHtml[key] = text;
+    node.textContent = text;
+  }
+
+  // 바늘을 따라 차오르는 빛 띠 (ratio 0..1)
+  function setTrail(side, ratio) {
+    var len = (Math.max(0, Math.min(1, ratio)) * TRAIL_LEN).toFixed(0);
+    if (lastHtml['trail' + side] === len) return;
+    lastHtml['trail' + side] = len;
+    var v = len + ' ' + Math.ceil(TRAIL_LEN + 2);
+    el.trail[side][0].setAttribute('stroke-dasharray', v);
+    el.trail[side][1].setAttribute('stroke-dasharray', v);
   }
 
   function fillSegments(segs, ratio, colorize) {
@@ -151,6 +179,8 @@
       '<circle cx="116" cy="46" r="32" fill="#12161c" stroke="#9aa4b0" stroke-width="3"/>' +
       '<path d="M44 46 26 60M116 46 132 26" stroke="#ff4a1c" stroke-width="3" stroke-linecap="round"/>' +
       '<path d="M22 66a32 32 0 1 1 44 0M94 66a32 32 0 1 1 44 0" fill="none" stroke="#4fc3ff" stroke-width="1.5" stroke-dasharray="2 4"/>' +
+      '<path d="M18 66a32 32 0 0 1-6-34" fill="none" stroke="#4fc3ff" stroke-width="4" opacity="0.8"/>' +
+      '<path d="M90 66a32 32 0 0 1-6-34" fill="none" stroke="#4fc3ff" stroke-width="4" opacity="0.8"/>' +
       '<rect x="72" y="28" width="16" height="36" rx="3" fill="#0d1117" stroke="#232a33"/></svg>',
     showsMessages: true, // 안내 문구를 직접 그린다 (화면 아래 노란 알림 대신)
 
@@ -176,7 +206,6 @@
         '      <div class="lcd-popup"><div class="t"></div><div class="v"></div></div>' +
         '      <div class="lcd-msg"></div>' +
         '      <div class="lcd-status"></div>' +
-        '      <div class="lcd-foot"><span class="odo"></span><span class="out"></span><span class="clock"></span></div>' +
         '    </div>' +
         '  </div>' +
         '</div>';
@@ -205,9 +234,11 @@
       el.popupV = root.querySelector('.lcd-popup .v');
       el.msg = root.querySelector('.lcd-msg');
       el.status = root.querySelector('.lcd-status');
-      el.odo = root.querySelector('.lcd-foot .odo');
-      el.out = root.querySelector('.lcd-foot .out');
-      el.clock = root.querySelector('.lcd-foot .clock');
+      el.dgear = svg.querySelector('#cl-dgear');
+      el.trail = {
+        left: [svg.querySelector('#cl-trail-left'), svg.querySelector('#cl-trailw-left')],
+        right: [svg.querySelector('#cl-trail-right'), svg.querySelector('#cl-trailw-right')]
+      };
       Array.prototype.forEach.call(root.querySelectorAll('[data-ind]'), function (n) {
         warnIcons[n.getAttribute('data-ind')] = n;
       });
@@ -240,9 +271,15 @@
       rotate(el.needleLeft, shown.left, TACH, LEFT);
       rotate(el.needleRight, shown.right, SPEED, RIGHT);
 
-      el.digital.textContent = Math.round(s.speed);
-      el.digital.classList.toggle('over', s.overspeed);
-      el.mode.textContent = s.autopilot.on ? 'AUTO PILOT' : s.driveMode.toUpperCase();
+      setTrail('left', s.engineOn ? shown.left / TACH.max : 0);
+      setTrail('right', s.engineOn ? shown.right / SPEED.max : 0);
+      el.cl.classList.toggle('redline', s.engineOn && s.rpm >= TACH.hotFrom * 1000);
+
+      setText('digital', el.digital, String(Math.round(s.speed)));
+      el.digital.classList.toggle('over', s.overspeed && s.engineOn);
+      setText('mode', el.mode, s.autopilot.on ? '🤖' : MODE_ICONS[s.driveMode] || '');
+      setText('dgear', el.dgear, s.gear === 'D' && s.engineOn ? 'D' + s.autoGear : s.gear);
+      if (el.dgear._g !== s.gear) { el.dgear._g = s.gear; el.dgear.setAttribute('class', 'dial-gear g-' + s.gear); }
 
       // 작은 게이지
       fillSegments(el.tempSegs, s.engineOn ? Math.max(0, Math.min(1, (s.coolantTemp - 50) / 80)) : 0, function (i) {
@@ -266,7 +303,7 @@
       var n = s.engineOn && s.nextSign;
       setHtml('sign', el.sign, n ? Dash.signs.svg(n.type) + '<span>' + Math.round(n.dist / 10) * 10 + 'm</span>' : '');
 
-      var cam = s.camera != null && s.camera < 0.6;
+      var cam = s.engineOn && s.camera != null && s.camera < 0.6;
       el.camera.classList.toggle('show', cam);
       if (cam) el.cameraText.textContent = Math.round(s.camera * 1000 / 10) * 10 + 'm';
 
@@ -300,19 +337,17 @@
       el.status.style.visibility = s.message ? 'hidden' : '';
       if (s.message) el.msg.textContent = s.message;
 
+      // 상태 줄: 글씨 대신 그림 + 숫자
       var status = '';
-      if (s.rainLevel > 0.05) status = '<span class="st-rain">' + (s.weather === 'storm' ? '⛈' : '🌧') + ' 와이퍼 ' + Dash.vehicle.WIPER_NAMES[s.wiper] + '</span>';
-      if (s.inTunnel) status = '<span class="st-rain">🚇 터널</span>';
-      if (s.nav.on && s.nav.destId === 'station') status = '<span class="st-over">⛽ 주유소로 가는 중</span>';
-      if (s.autopilot.on) status = '<span class="st-ap">🤖 자율주행 ' + s.autopilot.target + ' km/h</span>';
-      if (s.overspeed) status = '<span class="st-over">⚠ 과속! 제한 ' + s.speedLimit + '</span>';
-      if (s.fcw || s.aeb) status = '<span class="st-over">⚠ 앞 차 충돌 주의!</span>';
+      if (s.engineOn) {
+        if (s.rainLevel > 0.05) status = '<span class="st-rain">' + (s.weather === 'storm' ? '⛈' : '🌧') + '</span>';
+        if (s.inTunnel) status = '<span class="st-rain">🚇</span>';
+        if (s.nav.on && s.nav.destId === 'station') status = '<span class="st-over">⛽</span>';
+        if (s.autopilot.on) status = '<span class="st-ap">🤖 ' + s.autopilot.target + '</span>';
+        if (s.overspeed) status = '<span class="st-over">⚠️ ' + s.speedLimit + '</span>';
+        if (s.fcw || s.aeb) status = '<span class="st-over">⚠️ 🚗</span>';
+      }
       setHtml('status', el.status, status);
-
-      el.odo.textContent = 'ODO ' + Math.floor(s.odometer).toLocaleString('ko-KR') + ' km';
-      el.out.textContent = s.outsideTemp + '°C';
-      var d = new Date();
-      el.clock.textContent = Dash.info.pad(d.getHours()) + ':' + Dash.info.pad(d.getMinutes());
     },
 
     unmount: function (container) {

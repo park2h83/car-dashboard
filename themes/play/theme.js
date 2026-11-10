@@ -2,6 +2,7 @@
 // 계기는 몇 개만 크게: 속도 숫자, 기어, 제한속도, 깜빡이 화살표, 연료 막대, 내비·표지판, 꼭 필요한 경고등.
 // 움직이는 걸 보는 게 재미있는 어린아이를 위한 화면. 도로 그림은 js/core/scene.js 를 그대로 쓴다.
 // 1600x680 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다. 하늘·땅은 무대 밖까지 칠해서 빈 띠가 안 보이게 한다.
+// 속도는 아래 왼쪽의 진짜 같은 바늘 계기(빛 띠가 바늘을 따라 차오른다) + 가운데 큰 숫자. 작은 글씨는 두지 않는다.
 (function (Dash) {
   'use strict';
 
@@ -26,7 +27,41 @@
   var WARN = ['parkingBrake', 'seatbelt', 'door', 'fcw', 'fuel', 'coolant', 'oil', 'battery', 'brake',
     'engine', 'airbag', 'tpms', 'rest', 'blindSpot', 'lowBeam', 'highBeam'];
 
-  var MODE_NAMES = { eco: '🍃 에코', comfort: '😊 보통', sport: '🔥 스포츠' };
+  var MODE_ICONS = { eco: '🍃', comfort: '😊', sport: '🔥' };
+
+  // 아래 왼쪽 속도 바늘 계기 (자기 SVG 안의 좌표: 340x340, 가운데 170,170)
+  var G = Dash.gauge;
+  var DIAL = { cx: 170, cy: 170, r: 150 };
+  var A0 = -135, A1 = 135;
+  var SPEED = { min: 0, max: 220, major: 20, minor: 10 };
+  var TRAIL_R = DIAL.r - 8;
+  var TRAIL_LEN = TRAIL_R * (A1 - A0) * Math.PI / 180;
+  var SWEEP_SECONDS = 1.5;
+
+  function dialSvg() {
+    var c = DIAL;
+    var d = G.arc(c.cx, c.cy, TRAIL_R, A0, A1);
+    var dash = '0 ' + Math.ceil(TRAIL_LEN + 2);
+    return '<svg class="pg-dial" viewBox="0 0 340 340" width="340" height="340">' +
+      '<defs><linearGradient id="pg-bezel" x1="0" y1="0" x2="0.3" y2="1">' +
+      '<stop offset="0" stop-color="#f1f4f8"/><stop offset="0.4" stop-color="#7d8792"/><stop offset="0.55" stop-color="#2b3139"/>' +
+      '<stop offset="1" stop-color="#cfd5dc"/></linearGradient>' +
+      '<radialGradient id="pg-face" cx="50%" cy="45%" r="60%"><stop offset="0" class="pg-face0"/><stop offset="1" stop-color="#05070a"/></radialGradient></defs>' +
+      '<circle cx="170" cy="170" r="168" fill="url(#pg-bezel)"/>' +
+      '<circle cx="170" cy="170" r="158" fill="#030405"/>' +
+      '<circle cx="170" cy="170" r="' + c.r + '" fill="url(#pg-face)"/>' +
+      '<path class="pg-ring" d="' + G.arc(c.cx, c.cy, c.r - 3, A0, A1) + '"/>' +
+      '<path class="pg-trail-wide" d="' + d + '" stroke-dasharray="' + dash + '"/>' +
+      '<path class="pg-trail" d="' + d + '" stroke-dasharray="' + dash + '"/>' +
+      G.ticks({ cx: c.cx, cy: c.cy, r: c.r - 14, min: SPEED.min, max: SPEED.max, a0: A0, a1: A1,
+        major: SPEED.major, minor: SPEED.minor, labelEvery: 40, labelR: c.r - 46, majorLen: 18, minorLen: 9 }) +
+      '<g class="pg-limit-mark"><path d="M170 ' + (170 - c.r + 2) + 'l-9 -14h18z"/></g>' +
+      '<text class="pg-dial-mode" x="170" y="104" text-anchor="middle" dominant-baseline="central"></text>' +
+      '<text class="pg-dial-speed" x="170" y="262" text-anchor="middle">0</text>' +
+      '<g class="pg-needle-g">' + G.needle(c.cx, c.cy, c.r - 18, 26, 12, 'pg-needle') + '</g>' +
+      '<circle cx="170" cy="170" r="17" fill="#2a3038" stroke="#000" stroke-width="2"/><circle cx="170" cy="170" r="6" fill="#0b0d10"/>' +
+      '</svg>';
+  }
 
   var ARROW_LEFT = '<svg viewBox="0 0 100 100"><path d="M8 50 50 10v22h42v36H50v22z"/></svg>';
   var ARROW_RIGHT = '<svg viewBox="0 0 100 100"><path d="M92 50 50 10v22H8v36h42v22z"/></svg>';
@@ -113,11 +148,10 @@
     function navHtml(s) {
       if (!s.engineOn || !s.nav.on) return '';
       var n = s.nav;
-      var word = Dash.road.TURN_WORDS[n.turn] || '직진';
+      // 큰 화살표 + 남은 거리 숫자만 (글씨는 아이가 못 읽는다)
       return Dash.info.arrowSvg(n.turn) +
-        '<div class="pg-nav-txt"><b>' + Dash.info.fmtDist(n.turnDist) + '</b>' +
-        '<span>' + word + (n.turn !== 'arrive' && n.nextRoad ? ' → ' + n.nextRoad : '') + '</span>' +
-        '<em>🏁 ' + n.destination + '</em></div>';
+        '<div class="pg-nav-txt"><b>' + Dash.info.fmtDist(n.turnDist) + '</b></div>' +
+        (n.turn === 'arrive' ? '<span class="pg-nav-flag">🏁</span>' : '');
     }
 
     function signHtml(s) {
@@ -137,9 +171,17 @@
     function apHtml(s) {
       if (!s.autopilot.on) return '';
       var a = s.autopilot;
-      return '🤖 AI가 운전해요' + (a.parking ? ' · 주차 중' : a.target ? ' · ' + a.target + ' km/h' : '') +
-        (a.reason && !a.parking ? '<small>' + a.reason + '</small>' : '');
+      if (s.easy) return '🤖 ' + (a.parking ? '🅿️' : a.target ? '<b>' + a.target + '</b>' : '');
+      return '🤖 AI가 운전해요' + (a.parking ? ' · 주차 중' : a.target ? ' · ' + a.target + ' km/h' : '');
     }
+
+    function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+    var shownSpeed = 0;
+
+    // 시동 꺼짐 카드: 글씨 대신 반짝이는 시동 버튼 그림
+    var START_BTN = '<svg class="pg-startbtn" viewBox="0 0 120 120">' +
+      '<circle cx="60" cy="60" r="54" class="ring"/><circle cx="60" cy="60" r="42" class="face"/>' +
+      '<path d="M44 44a22 22 0 1 0 32 0" class="pw"/><path d="M60 34v24" class="pw"/></svg>';
 
     return {
       id: 'play',
@@ -190,7 +232,7 @@
           '    <div class="pg-turn right">' + ARROW_RIGHT + '</div>' +
           // 아래 왼쪽: 속도 · 기어
           '    <div class="pg-drive">' +
-          '      <div class="pg-speed"><div class="pg-mode"></div><b>0</b><small>km/h</small></div>' +
+          '      <div class="pg-speed">' + dialSvg() + '</div>' +
           '      <div class="pg-gear"><b>P</b><i></i></div>' +
           '    </div>' +
           // 아래 오른쪽: 경고등 · 연료
@@ -202,7 +244,8 @@
           '    </div>' +
           '    <div class="pg-popup"><div class="t"></div><div class="v"></div></div>' +
           // 시동 꺼짐
-          '    <div class="pg-offcard"><b>🔑 시동 버튼을 눌러요</b><span>브레이크를 꾹 밟고 눌러요</span></div>' +
+          '    <div class="pg-offcard">' + START_BTN + '<span class="pg-off-hand">👆</span>' +
+          '<div class="pg-off-txt"><b>시동 버튼을 눌러요</b><span>브레이크를 꾹 밟고 눌러요</span></div></div>' +
           '  </div>' +
           '</div>';
 
@@ -222,8 +265,12 @@
         el.ap = q('.pg-ap');
         el.turnL = q('.pg-turn.left');
         el.turnR = q('.pg-turn.right');
-        el.speed = q('.pg-speed b');
-        el.mode = q('.pg-mode');
+        el.speed = q('.pg-dial-speed');
+        el.mode = q('.pg-dial-mode');
+        el.needle = q('.pg-needle-g');
+        el.trail = q('.pg-trail');
+        el.trailW = q('.pg-trail-wide');
+        el.limitMark = q('.pg-limit-mark');
         el.gear = q('.pg-gear');
         el.gearL = q('.pg-gear b');
         el.gearN = q('.pg-gear i');
@@ -232,7 +279,7 @@
         el.popup = q('.pg-popup');
         el.popupT = q('.pg-popup .t');
         el.popupV = q('.pg-popup .v');
-        el.offHint = q('.pg-offcard span');
+
         warnIcons = {};
         Array.prototype.forEach.call(root.querySelectorAll('[data-ind]'), function (n) {
           warnIcons[n.getAttribute('data-ind')] = n;
@@ -246,6 +293,7 @@
         last = {};
         lastFrame = 0;
         sceneDt = 0;
+        shownSpeed = 0;
         unfit = Dash.themes.fitStage(root, q('.pg-stage'), W, H);
       },
 
@@ -306,7 +354,21 @@
         // ---- 속도 · 기어 ----
         setText('speed', el.speed, String(Math.round(s.speed)));
         setCls('spOver', el.speed, 'over', s.overspeed && s.engineOn);
-        setText('modeTxt', el.mode, MODE_NAMES[s.driveMode] || '');
+        setText('modeTxt', el.mode, s.autopilot.on ? '🤖' : MODE_ICONS[s.driveMode] || '');
+        // 바늘: 살짝 늦게 따라가고, 시동 직후엔 끝까지 갔다가 돌아온다
+        if (s.engineOn && s.startTimer < SWEEP_SECONDS) {
+          var half = SWEEP_SECONDS / 2;
+          var k = s.startTimer < half ? ease(s.startTimer / half) : 1 - ease((s.startTimer - half) / half);
+          shownSpeed = Math.max(s.speed, SPEED.max * k);
+        } else {
+          shownSpeed += (s.speed - shownSpeed) * Math.min(1, dt * 14);
+        }
+        var ang = Math.round(G.angleFor(shownSpeed, SPEED.min, SPEED.max, A0, A1) * 10) / 10;
+        if (last.needle !== ang) { last.needle = ang; el.needle.setAttribute('transform', 'rotate(' + ang + ' 170 170)'); }
+        var tl = (s.engineOn ? Math.max(0, Math.min(1, shownSpeed / SPEED.max)) * TRAIL_LEN : 0).toFixed(0) + ' ' + Math.ceil(TRAIL_LEN + 2);
+        if (last.trail !== tl) { last.trail = tl; el.trail.setAttribute('stroke-dasharray', tl); el.trailW.setAttribute('stroke-dasharray', tl); }
+        var lim = Math.round(G.angleFor(s.speedLimit, SPEED.min, SPEED.max, A0, A1));
+        if (last.lim !== lim) { last.lim = lim; el.limitMark.setAttribute('transform', 'rotate(' + lim + ' 170 170)'); }
         setText('gear', el.gearL, s.gear);
         setText('gearN', el.gearN, s.gear === 'D' && s.engineOn ? String(s.autoGear) : '');
         if (last.gearCls !== s.gear) { last.gearCls = s.gear; el.gear.setAttribute('data-g', s.gear); }
@@ -332,8 +394,8 @@
           setText('popV', el.popupV, String(s.popup.value));
         }
 
-        // 쉬운 모드(브레이크 없이 시동)에서는 브레이크 안내를 뺀다
-        setCls('easy', el.offHint, 'hide', !!s.easy);
+        // 쉬운 모드에서는 글씨 없이 시동 버튼 그림만
+        setCls('easy', pg, 'easy', !!s.easy);
       },
 
       unmount: function (container) {

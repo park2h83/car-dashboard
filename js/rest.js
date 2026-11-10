@@ -114,6 +114,7 @@
 
   function startRest() {
     var s = state;
+    if (Dash.follow && s.follow.on) Dash.follow.stop(); // 아빠 차 따라가기도 끝 (안 그러면 GPS 가 시동을 다시 켠다)
     Dash.autopilot.disengage(s);
     s.engineOn = false;
     s.gear = 'P';
@@ -377,7 +378,8 @@
         U.announce(s, '😴 오래 운전했어요. 차를 세우고 쉬어요', '오래 운전했어요. 이제 차를 세우고 쉬어요');
       }
       // 차가 멈추면(또는 시동이 꺼져 있으면) 쉬는 시간 시작 (부모님 확인 화면이 떠 있어도 쉬는 시간이 먼저)
-      if (s.restDue && s.speed < 0.5) {
+      // 아빠 차 따라가기 중이면 진짜 차가 달리고 있어도 바로 쉬는 시간 (바늘은 아빠 차 속도라 멈추길 기다릴 수 없다)
+      if (s.restDue && (s.speed < 0.5 || s.follow.on)) {
         gate = null;
         startRest();
       }

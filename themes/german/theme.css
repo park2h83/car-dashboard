@@ -1,0 +1,231 @@
+/* 독일 고급 세단 느낌 테마. 모든 규칙은 .gm 아래에 둔다.
+   .gm-stage 안의 좌표는 1600x840 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다. */
+.gm {
+  --glow: #2f8cff;
+  --glow-soft: rgba(47, 140, 255, 0.55);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 30% 60% at 19% 53%, rgba(47, 140, 255, 0.08), transparent 70%),
+    radial-gradient(ellipse 30% 60% at 81% 53%, rgba(47, 140, 255, 0.08), transparent 70%),
+    linear-gradient(#050608, #000 60%, #050608);
+  font-family: "Avenir Next", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
+  color: #eef2f6;
+}
+.gm[data-mode="sport"] { --glow: #ff3b30; --glow-soft: rgba(255, 59, 48, 0.55); }
+.gm[data-mode="eco"] { --glow: #2fd36a; --glow-soft: rgba(47, 211, 106, 0.5); }
+.gm.ap { --glow: #36d6ff; --glow-soft: rgba(54, 214, 255, 0.6); }
+
+.gm-stage { position: absolute; left: 0; top: 0; width: 1600px; height: 840px; transform-origin: 0 0; }
+.gm-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* ---- 큰 계기 ---- */
+.gm .gm-g0 { stop-color: var(--glow); }
+.gm-glow { transition: opacity 1.2s; }
+.gm.off .gm-glow { opacity: 0.12; }
+.gm.night .gm-glow { opacity: 1; }
+.gm-ring { fill: none; stroke: var(--glow); stroke-width: 3; opacity: 0.9; }
+.gm.off .gm-ring { opacity: 0.15; }
+.gm-trail-bg { fill: none; stroke: rgba(255, 255, 255, 0.04); stroke-width: 10; }
+.gm-trail { fill: none; stroke: var(--glow); stroke-width: 9; opacity: 0.9; }
+.gm-red { fill: none; stroke: #d0141c; stroke-width: 16; opacity: 0.9; }
+.gm.redline .gm-red { stroke: #ff2a2a; stroke-width: 22; opacity: 1; animation: gm-pulse 0.25s infinite alternate; }
+.gm .tick-major { stroke: #f4f6f8; stroke-width: 4.5; }
+.gm .tick-minor { stroke: #b9c1ca; stroke-width: 2; }
+.gm .tick-major.hot, .gm .tick-minor.hot { stroke: #ff3b30; }
+.gm .tick-label { fill: #f4f6f8; font-size: 40px; font-weight: 500; letter-spacing: -1px; }
+.gm .tick-label.hot { fill: #ff3b30; }
+.gm-scale { transition: opacity 0.8s; }
+.gm.off .gm-scale { opacity: 0.35; }
+.gm-needle .gm-nb { fill: #f6f8fa; stroke: rgba(255, 255, 255, 0.25); stroke-width: 5; paint-order: stroke; stroke-linejoin: round; }
+.gm-needle .gm-nt { fill: #ff2418; }
+.gm-limit-mark { fill: #ffb020; }
+.gm.off .gm-limit-mark { opacity: 0; }
+
+/* 작은 계기 (연료·냉각수) */
+.gm-mini-tick { stroke: #a9b2bc; stroke-width: 2.5; }
+.gm-mini-tick.major { stroke: #f4f6f8; stroke-width: 4; }
+.gm-mini-zone { fill: none; stroke: #d0141c; stroke-width: 7; }
+.gm-mini-icon { color: #a9b2bc; }
+.gm.lowfuel .gm-mini-icon { color: #ffb020; }
+.gm-mneedle path { fill: #fff; }
+.gm-mini-hub { fill: #1b1f24; stroke: #8a939d; stroke-width: 2; }
+
+/* ---- 깜빡이 · 시계 · 경고등 ---- */
+.gm-turn {
+  position: absolute;
+  top: 14px;
+  width: 104px;
+  height: 104px;
+  fill: #0f2216;
+  transition: fill 0.06s;
+}
+.gm-turn svg { width: 100%; height: 100%; display: block; }
+.gm-turn.left { left: 470px; }
+.gm-turn.right { left: 1026px; }
+.gm-turn.on { fill: #2bff5a; filter: drop-shadow(0 0 16px rgba(43, 255, 90, 0.95)); }
+
+.gm-clock {
+  position: absolute;
+  left: 600px;
+  top: 22px;
+  width: 400px;
+  text-align: center;
+  font-size: 60px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  color: #dfe5ec;
+  font-variant-numeric: tabular-nums;
+}
+
+.gm-warns { position: absolute; display: flex; gap: 10px; }
+.gm-warns.tl { left: 24px; top: 22px; }
+.gm-warns.tr { right: 24px; top: 22px; }
+.gm-warns.bottom { left: 200px; right: 200px; top: 776px; justify-content: center; gap: 12px; }
+.gm-ind { width: 50px; height: 50px; color: #fff; opacity: 0.07; }
+.gm-ind svg { width: 100%; height: 100%; display: block; }
+.gm-ind.on { opacity: 1; }
+.gm-ind.on.red { color: #ff3b30; }
+.gm-ind.on.amber { color: #ffb020; }
+.gm-ind.on.green { color: #34e05c; }
+.gm-ind.on.blue { color: #3d8bff; }
+.gm-ind.on.white { color: #f4f6f8; }
+
+/* ---- 가운데 화면 ---- */
+.gm-screen {
+  position: absolute;
+  left: 600px;
+  top: 128px;
+  width: 400px;
+  height: 628px;
+  box-sizing: border-box;
+  padding: 8px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 34px;
+  background:
+    linear-gradient(170deg, rgba(255, 255, 255, 0.07), transparent 30%),
+    linear-gradient(#0c1118, #05070a);
+  box-shadow: 0 0 0 2px #2a3038, 0 0 0 5px #000, 0 0 30px var(--glow-soft), inset 0 0 40px rgba(0, 0, 0, 0.8);
+  transition: box-shadow 1s;
+}
+.gm.off .gm-screen { box-shadow: 0 0 0 2px #2a3038, 0 0 0 5px #000, inset 0 0 40px rgba(0, 0, 0, 0.8); }
+.gm-top { position: relative; width: 100%; height: 132px; flex: 0 0 auto; }
+.gm-speed {
+  text-align: center;
+  font-size: 128px;
+  line-height: 132px;
+  font-weight: 300;
+  letter-spacing: -3px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 22px var(--glow-soft);
+}
+.gm-speed.over { color: #ff5a4a; text-shadow: 0 0 22px rgba(255, 60, 40, 0.7); }
+.gm-limit {
+  position: absolute;
+  right: -6px;
+  top: 10px;
+  width: 70px;
+  height: 70px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 8px solid #e0201b;
+  background: #fff;
+  color: #111;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 900;
+}
+.gm-limit.show { display: flex; }
+
+.gm-gears { display: flex; align-items: baseline; gap: 18px; height: 56px; flex: 0 0 auto; font-size: 34px; font-weight: 600; color: #3b434d; }
+.gm-gears span.on { color: #fff; font-size: 48px; text-shadow: 0 0 14px var(--glow-soft); }
+.gm-gears b { color: var(--glow); font-size: 40px; margin-left: -12px; }
+.gm.off .gm-gears span.on { color: #3b434d; font-size: 34px; text-shadow: none; }
+
+.gm-car { width: 330px; height: 184px; flex: 0 0 auto; overflow: visible; }
+.gm-road { fill: #151a21; }
+.gm-road-edge { fill: none; stroke: #4b5562; stroke-width: 3; }
+.gm-road-dash { fill: none; stroke: #e8ecf1; stroke-width: 5; stroke-dasharray: 26 34; opacity: 0.8; }
+.gm-body { fill: #f5f7fa; stroke: #8792a0; stroke-width: 2; }
+.gm-glass { fill: #1a2230; }
+.gm-tail { fill: #7a0f12; }
+.gm-blink { fill: #7a4a0a; }
+.gm-car.il .gm-blink.l, .gm-car.ir .gm-blink.r { fill: #ffb020; filter: drop-shadow(0 0 10px #ffb020); }
+.gm-stop { stroke: #5a0d10; stroke-width: 5; stroke-linecap: round; }
+.gm-car.lights .gm-tail { fill: #c2161c; }
+.gm-car.braking .gm-tail { fill: #ff2a2a; filter: drop-shadow(0 0 12px #ff2a2a); }
+.gm-car.braking .gm-stop { stroke: #ff3b30; }
+.gm.off .gm-road-dash { opacity: 0.3; }
+
+/* 정보창 (js/core/info.js) */
+.gm-info {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  margin-top: 8px;
+  padding: 8px 4px 22px;
+  box-sizing: border-box;
+  border-top: 2px solid #1c232c;
+  font-size: 20px;
+  overflow: hidden;
+}
+.gm-page { display: none; flex-direction: column; align-items: center; gap: 6px; height: 100%; }
+.gm.info-on .gm-page { display: flex; }
+.gm-page > * { flex-shrink: 0; }
+.gm-dots { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; justify-content: center; gap: 8px; }
+.gm-dots i { width: 9px; height: 9px; border-radius: 5px; background: #333b45; }
+.gm-dots i.on { width: 24px; background: var(--glow); }
+.gm .info-title { font-size: 24px; font-weight: 700; color: var(--glow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.gm .info-title.icon { font-size: 34px; }
+.gm .info-tile { background: rgba(255, 255, 255, 0.05); border: 1px solid #222a33; border-radius: 12px; padding: 4px 8px; }
+.gm .info-tile b { font-size: 46px; font-weight: 400; color: #fff; }
+.gm .info-tile i { font-size: 28px; }
+.gm .info-tile small { color: #8d97a3; font-size: 16px; }
+.gm .info-tile.hot b, .gm .info-tile.low b { color: #ffb020; }
+.gm .info-row { display: flex; justify-content: space-between; width: 100%; font-size: 20px; color: #9aa5b2; }
+.gm .info-row b { color: #fff; }
+.gm .info-sub, .gm .info-label { font-size: 18px; color: #9aa5b2; text-align: center; }
+.gm .info-big { font-size: 70px; font-weight: 300; color: #fff; line-height: 1; }
+.gm .info-bar { width: 90%; height: 14px; border-radius: 7px; background: #1d232b; overflow: hidden; }
+.gm .info-bar i { display: block; height: 100%; background: var(--glow); }
+.gm .info-bar.low i { background: #ffb020; }
+.gm .nav-arrow { width: 78px; height: 78px; fill: none; stroke: #fff; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.gm .nav-dist { font-size: 44px; font-weight: 400; }
+.gm .nav-word, .gm .road-name { font-size: 20px; color: #ffe066; }
+.gm .off-hint { font-size: 40px; margin-top: 30px; }
+.gm .info-car { height: 160px; overflow: visible; }
+.gm .info-car .car-body { fill: #f5f7fa; stroke: var(--glow); stroke-width: 2.5; }
+.gm .info-car .car-glass { fill: #1b2230; }
+.gm .tire { fill: #59606b; }
+.gm .tire.bad { fill: #ffb020; }
+.gm .tire-psi { fill: #fff; font-size: 32px; font-weight: 600; }
+.gm .tire-psi[text-anchor="start"] { transform: translate(-40px, 10px); }
+.gm .tire-psi[text-anchor="end"] { transform: translate(40px, 10px); }
+.gm .tire-psi.bad { fill: #ffb020; }
+.gm .door { fill: none; stroke: #6b7684; stroke-width: 3; stroke-linecap: round; }
+.gm .door.open { stroke: #ff3b30; stroke-width: 4.5; }
+
+.gm-popup {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 150px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(8, 12, 18, 0.95);
+  box-shadow: 0 0 0 2px var(--glow);
+  text-align: center;
+  display: none;
+}
+.gm-popup.show { display: block; }
+.gm-popup .t { font-size: 24px; color: #9aa5b2; }
+.gm-popup .v { font-size: 52px; font-weight: 600; }
+
+@keyframes gm-pulse { to { opacity: 0.55; } }

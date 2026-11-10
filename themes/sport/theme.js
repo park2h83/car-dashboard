@@ -1,40 +1,48 @@
-// 스포츠카 테마: 카본 무늬 바탕 가운데에 노란 얼굴의 큰 RPM 계기 하나.
-// 빨간 바늘이 가운데 검은 화면(큰 기어 숫자) 둘레를 돌고, 계기 아래쪽 창에 디지털 속도가 나온다.
-// 위에는 시프트 라이트, 왼쪽에 작은 연료·온도 계기와 내비, 오른쪽에 정보 화면.
+// 스포츠카 테마: 카본 무늬 바탕에 노란 얼굴의 바늘 계기 다섯 개 — 레이싱카 계기판 느낌.
+// 가운데 아주 큰 RPM 계기(빨간 바늘 + 둘레를 따라 차오르는 빛 고리, 가운데 큰 기어 숫자, 아래 디지털 속도),
+// 왼쪽에 바늘 속도계, 그 아래 작은 연료·온도 계기, 위에는 시프트 라이트와 커다란 깜빡이 화살표,
+// 오른쪽에 정보 화면과 내비 화살표·제한속도. 작은 글씨(주행거리·도로 이름·설명)는 두지 않는다.
 // 1600x800 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다.
 (function (Dash) {
   'use strict';
 
   var W = 1600;
   var H = 800;
-  var C = { cx: 800, cy: 440 };   // 큰 RPM 계기 가운데
-  var R = 296;
-  var DISC = 150;                 // 가운데 검은 화면 반지름 (바늘은 이 바깥에서만 돈다)
   var A0 = -135;
   var A1 = 135;
-  var TACH = { min: 0, max: 8, major: 1, minor: 0.2, labelEvery: 1, hotFrom: 6.5 };
   var SWEEP_SECONDS = 1.6;
 
+  // 가운데 큰 RPM 계기
+  var C = { cx: 800, cy: 436 };
+  var R = 300;
+  var DISC = 140;                 // 가운데 검은 화면 반지름 (바늘은 이 바깥에서만 돈다)
+  var TACH = { min: 0, max: 8, major: 1, minor: 0.2, labelEvery: 1, hotFrom: 6.5 };
+
+  // 왼쪽 바늘 속도계
+  var SC = { cx: 262, cy: 330 };
+  var SR = 176;
+  var SPEED = { min: 0, max: 240, major: 20, minor: 10, labelEvery: 40 };
+
+  // 작은 계기 (연료·온도): -120° ~ 120°
+  var MR = 78;
+  var FUEL_C = { cx: 150, cy: 664 };
+  var TEMP_C = { cx: 374, cy: 664 };
+  var MA0 = -120;
+  var MA1 = 120;
+
   // 시프트 라이트: LED_FROM 부터 하나씩 켜지고 SHIFT_RPM 이 넘으면 모두 깜빡인다
-  var LEDS = 11;
-  var LED_FROM = 2500;
+  var LEDS = 13;
+  var LED_FROM = 2200;
   var SHIFT_RPM = 6000;
   var LED_BLINK_MS = 90;
 
-  // 작은 계기 (연료·온도): 위쪽 반원 -90° ~ 90°
-  var SMALL_R = 86;
-  var FUEL_C = { cx: 136, cy: 246 };
-  var TEMP_C = { cx: 346, cy: 246 };
-  var SA0 = -90;
-  var SA1 = 90;
+  var WARN_TOP_LEFT = ['lowBeam', 'highBeam', 'fogFront', 'fogRear', 'parkingBrake', 'brake', 'abs',
+    'seatbelt', 'airbag', 'door', 'battery', 'oil', 'washer'];
+  var WARN_TOP_RIGHT = ['autopilot', 'laneAssist', 'blindSpot', 'rest', 'frost', 'fcw',
+    'esc', 'escOff', 'tpms', 'engine', 'coolant', 'fuel'];
 
-  var TOP_LEFT = ['lowBeam', 'highBeam', 'fogFront', 'fogRear'];
-  var TOP_RIGHT = ['rest', 'frost', 'blindSpot', 'laneAssist', 'autopilot'];
-  var BOTTOM_LEFT = ['parkingBrake', 'brake', 'abs', 'seatbelt', 'airbag', 'door', 'battery', 'oil'];
-  var BOTTOM_RIGHT = ['coolant', 'fcw', 'engine', 'esc', 'escOff', 'tpms', 'fuel', 'washer'];
-
-  var GEAR_WORDS = { P: '주차', R: '후진', N: '중립' };
-  var MODE_NAMES = { eco: '🍃 에코', comfort: '🏁 보통', sport: '🔥 스포츠' };
+  var ARROW_L = '<svg viewBox="0 0 100 100"><path d="M4 50 50 8v24h46v36H50v24z"/></svg>';
+  var ARROW_R = '<svg viewBox="0 0 100 100"><path d="M96 50 50 8v24H4v36h46v24z"/></svg>';
 
   var G = Dash.gauge;
   var r2 = G.round;
@@ -43,85 +51,108 @@
 
   function defs() {
     return '<defs>' +
-      '<radialGradient id="sx-face" cx="50%" cy="42%" r="62%">' +
-      '  <stop offset="0" class="sx-face-a"/><stop offset="0.72" class="sx-face-b"/><stop offset="1" class="sx-face-c"/>' +
+      '<radialGradient id="sx-face" cx="50%" cy="40%" r="64%">' +
+      '  <stop offset="0" class="sx-face-a"/><stop offset="0.7" class="sx-face-b"/><stop offset="1" class="sx-face-c"/>' +
       '</radialGradient>' +
       '<linearGradient id="sx-bezel" x1="0" y1="0" x2="0.4" y2="1">' +
-      '  <stop offset="0" stop-color="#5c6168"/><stop offset="0.3" stop-color="#1b1d21"/>' +
-      '  <stop offset="0.6" stop-color="#3a3e44"/><stop offset="1" stop-color="#0b0c0e"/>' +
+      '  <stop offset="0" stop-color="#7b8189"/><stop offset="0.25" stop-color="#1b1d21"/>' +
+      '  <stop offset="0.55" stop-color="#4a4f56"/><stop offset="1" stop-color="#0b0c0e"/>' +
       '</linearGradient>' +
       '<radialGradient id="sx-disc" cx="50%" cy="35%" r="70%">' +
-      '  <stop offset="0" stop-color="#23262b"/><stop offset="1" stop-color="#050506"/>' +
+      '  <stop offset="0" stop-color="#262a30"/><stop offset="1" stop-color="#050506"/>' +
       '</radialGradient>' +
       '<linearGradient id="sx-gloss" x1="0" y1="0" x2="0" y2="1">' +
-      '  <stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>' +
+      '  <stop offset="0" stop-color="#fff" stop-opacity="0.55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>' +
       '</linearGradient>' +
+      '<radialGradient id="sx-hub" cx="40%" cy="35%" r="70%">' +
+      '  <stop offset="0" stop-color="#6a6f77"/><stop offset="1" stop-color="#0b0b0c"/>' +
+      '</radialGradient>' +
       '</defs>';
+  }
+
+  // 유리 반사 (계기 위쪽 반달 빛)
+  function gloss(cx, cy, r) {
+    return '<path class="sx-glass" d="M' + r2(cx - r * 0.86) + ' ' + r2(cy - r * 0.18) + 'A' + r + ' ' + r + ' 0 0 1 ' + r2(cx + r * 0.86) + ' ' + r2(cy - r * 0.18) +
+      'Q' + cx + ' ' + r2(cy - r * 0.62) + ' ' + r2(cx - r * 0.86) + ' ' + r2(cy - r * 0.18) + 'Z" fill="url(#sx-gloss)"/>';
+  }
+
+  function dialBase(cx, cy, r, ring) {
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + ring + 14) + '" fill="url(#sx-bezel)"/>' +
+      '<circle class="sx-accent-ring" cx="' + cx + '" cy="' + cy + '" r="' + (r + ring / 2 + 6) + '" style="stroke-width:' + ring + 'px"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 5) + '" fill="#060607"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#sx-face)"/>';
+  }
+
+  function needlePath(cx, cy, from, to, w) {
+    return '<path d="M' + r2(cx - w) + ' ' + (cy - from) + 'L' + r2(cx - w * 0.3) + ' ' + (cy - to) +
+      'L' + r2(cx + w * 0.3) + ' ' + (cy - to) + 'L' + r2(cx + w) + ' ' + (cy - from) + 'Z"/>';
   }
 
   function tachSvg() {
     var c = C;
     var hotA = G.angleFor(TACH.hotFrom, TACH.min, TACH.max, A0, A1);
-    return '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 32) + '" fill="url(#sx-bezel)"/>' +
-      '<circle class="sx-accent-ring" cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 17) + '"/>' +
-      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 6) + '" fill="#060607"/>' +
-      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + R + '" fill="url(#sx-face)"/>' +
-      '<circle class="sx-ap-ring" cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 24) + '"/>' +
-      '<path class="sx-red" d="' + G.arc(c.cx, c.cy, R - 16, hotA, A1) + '"/>' +
+    var trail = G.arc(c.cx, c.cy, R + 17, A0, A1);
+    return dialBase(c.cx, c.cy, R, 22) +
+      // 둘레 빛 고리: RPM 만큼 차오른다 (넓고 옅은 빛 + 가늘고 진한 선)
+      '<path class="sx-trail-glow" id="sx-trail-glow" pathLength="1000" d="' + trail + '"/>' +
+      '<path class="sx-trail" id="sx-trail" pathLength="1000" d="' + trail + '"/>' +
+      '<circle class="sx-ap-ring" cx="' + c.cx + '" cy="' + c.cy + '" r="' + (R + 40) + '"/>' +
+      '<path class="sx-red" d="' + G.arc(c.cx, c.cy, R - 18, hotA, A1) + '"/>' +
       G.ticks({
         cx: c.cx, cy: c.cy, r: R - 6, min: TACH.min, max: TACH.max, a0: A0, a1: A1,
-        major: TACH.major, minor: TACH.minor, labelEvery: TACH.labelEvery, labelR: R - 74,
-        majorLen: 34, minorLen: 14, hotFrom: TACH.hotFrom
+        major: TACH.major, minor: TACH.minor, labelEvery: TACH.labelEvery, labelR: R - 82,
+        majorLen: 40, minorLen: 16, hotFrom: TACH.hotFrom
       }) +
       // 가운데 검은 화면: PRND 와 큰 기어
-      '<circle class="sx-disc-ring" cx="' + c.cx + '" cy="' + c.cy + '" r="' + (DISC + 6) + '"/>' +
+      '<circle class="sx-disc-ring" cx="' + c.cx + '" cy="' + c.cy + '" r="' + (DISC + 7) + '"/>' +
       '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + DISC + '" fill="url(#sx-disc)"/>' +
-      '<text class="sx-unit" x="' + c.cx + '" y="' + (c.cy - 114) + '" text-anchor="middle">RPM ×1000</text>' +
       '<g id="sx-prnd">' + ['P', 'R', 'N', 'D'].map(function (g, i) {
-        return '<text class="sx-pr" data-g="' + g + '" x="' + (c.cx - 63 + i * 42) + '" y="' + (c.cy - 82) + '" text-anchor="middle">' + g + '</text>';
+        return '<text class="sx-pr" data-g="' + g + '" x="' + (c.cx - 69 + i * 46) + '" y="' + (c.cy - 74) + '" text-anchor="middle">' + g + '</text>';
       }).join('') + '</g>' +
-      '<text class="sx-gear" id="sx-gear" x="' + c.cx + '" y="' + (c.cy + 78) + '" text-anchor="middle">P</text>' +
-      '<text class="sx-gearsub" id="sx-gearsub" x="' + c.cx + '" y="' + (c.cy + 120) + '" text-anchor="middle"></text>' +
-      '<path d="M' + (c.cx - DISC + 18) + ' ' + (c.cy - 40) + 'A' + (DISC - 18) + ' ' + (DISC - 18) + ' 0 0 1 ' + (c.cx + DISC - 18) + ' ' + (c.cy - 40) +
-      'Q' + c.cx + ' ' + (c.cy - 70) + ' ' + (c.cx - DISC + 18) + ' ' + (c.cy - 40) + 'Z" fill="url(#sx-gloss)" opacity="0.18"/>' +
+      '<text class="sx-gear" id="sx-gear" x="' + (c.cx - 4) + '" y="' + (c.cy + 92) + '" text-anchor="middle"></text>' +
+      gloss(c.cx, c.cy, DISC - 14) +
       // 아래쪽 창: 디지털 속도
-      '<rect class="sx-speedbox" id="sx-speedbox" x="' + (c.cx - 118) + '" y="' + (c.cy + DISC + 22) + '" width="236" height="92" rx="16"/>' +
-      '<text class="sx-speed" id="sx-speed" x="' + c.cx + '" y="' + (c.cy + DISC + 98) + '" text-anchor="middle">0</text>' +
-      '<text class="sx-kmh" x="' + c.cx + '" y="' + (c.cy + DISC + 136) + '" text-anchor="middle">km/h</text>' +
+      '<rect class="sx-speedbox" id="sx-speedbox" x="' + (c.cx - 128) + '" y="' + (c.cy + DISC + 16) + '" width="256" height="104" rx="18"/>' +
+      '<text class="sx-speed" id="sx-speed" x="' + c.cx + '" y="' + (c.cy + DISC + 102) + '" text-anchor="middle"></text>' +
       // 빨간 바늘: 검은 화면 바깥에서만 돈다
-      '<g id="sx-needle" class="sx-needle"><path d="M' + (c.cx - 9) + ' ' + (c.cy - DISC - 8) + 'L' + (c.cx - 3) + ' ' + (c.cy - R + 8) +
-      'L' + (c.cx + 3) + ' ' + (c.cy - R + 8) + 'L' + (c.cx + 9) + ' ' + (c.cy - DISC - 8) + 'Z"/></g>';
+      '<g id="sx-needle" class="sx-needle">' + needlePath(c.cx, c.cy, DISC + 6, R - 6, 11) + '</g>' +
+      gloss(c.cx, c.cy, R);
   }
 
-  function smallGauge(c, id, leftLabel, rightLabel, icon, hotFrom) {
-    var out = '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + (SMALL_R + 14) + '" fill="url(#sx-bezel)"/>' +
-      '<circle class="sx-accent-ring small" cx="' + c.cx + '" cy="' + c.cy + '" r="' + (SMALL_R + 7) + '"/>' +
-      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="' + SMALL_R + '" fill="url(#sx-face)"/>';
-    if (hotFrom != null) {
-      out += '<path class="sx-red small" d="' + G.arc(c.cx, c.cy, SMALL_R - 10, SA0 + (SA1 - SA0) * hotFrom, SA1) + '"/>';
-    } else {
-      out += '<path class="sx-red small" d="' + G.arc(c.cx, c.cy, SMALL_R - 10, SA0, SA0 + (SA1 - SA0) * 0.15) + '"/>';
-    }
-    out += G.ticks({
-      cx: c.cx, cy: c.cy, r: SMALL_R - 4, min: 0, max: 4, a0: SA0, a1: SA1,
-      major: 2, minor: 1, labelEvery: 4, labelR: 0, majorLen: 18, minorLen: 10,
-      label: function () { return ''; }
-    });
-    var lp = G.polar(c.cx, c.cy, SMALL_R - 38, SA0 + 6);
-    var rp = G.polar(c.cx, c.cy, SMALL_R - 38, SA1 - 6);
-    out += '<text class="sx-small-label" x="' + r2(lp.x + 6) + '" y="' + r2(lp.y - 10) + '" text-anchor="middle">' + leftLabel + '</text>';
-    out += '<text class="sx-small-label" x="' + r2(rp.x - 6) + '" y="' + r2(rp.y - 10) + '" text-anchor="middle">' + rightLabel + '</text>';
-    out += '<svg class="sx-small-icon" x="' + (c.cx - 16) + '" y="' + (c.cy + 18) + '" width="32" height="32" viewBox="0 0 24 24">' + (Dash.icons.list[icon] || '') + '</svg>';
-    out += '<text class="sx-small-val" id="sx-' + id + '-val" x="' + c.cx + '" y="' + (c.cy + 74) + '" text-anchor="middle"></text>';
-    out += '<g id="sx-' + id + '-needle" class="sx-needle small"><path d="M' + (c.cx - 4) + ' ' + (c.cy + 8) + 'L' + (c.cx - 1.5) + ' ' + (c.cy - SMALL_R + 10) +
-      'L' + (c.cx + 1.5) + ' ' + (c.cy - SMALL_R + 10) + 'L' + (c.cx + 4) + ' ' + (c.cy + 8) + 'Z"/></g>';
-    out += '<circle class="sx-small-hub" cx="' + c.cx + '" cy="' + c.cy + '" r="10"/>';
-    return out;
+  function speedSvg() {
+    var c = SC;
+    return dialBase(c.cx, c.cy, SR, 12) +
+      '<circle class="sx-ap-ring small" cx="' + c.cx + '" cy="' + c.cy + '" r="' + (SR + 30) + '"/>' +
+      '<g class="sx-sdial">' + G.ticks({
+        cx: c.cx, cy: c.cy, r: SR - 4, min: SPEED.min, max: SPEED.max, a0: A0, a1: A1,
+        major: SPEED.major, minor: SPEED.minor, labelEvery: SPEED.labelEvery, labelR: SR - 72,
+        majorLen: 24, minorLen: 11
+      }) + '</g>' +
+      '<g id="sx-limit-mark"><path class="sx-limit-mark" d="M' + c.cx + ' ' + (c.cy - SR + 2) + 'l-12 -20h24z"/></g>' +
+      '<g id="sx-ap-mark" class="sx-ap-mark"><path d="M' + c.cx + ' ' + (c.cy - SR + 30) + 'l-11 -18h22z"/></g>' +
+      '<g id="sx-sneedle" class="sx-needle">' + needlePath(c.cx, c.cy, -26, SR - 8, 8) + '</g>' +
+      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="30" fill="url(#sx-hub)" class="sx-hub"/>' +
+      gloss(c.cx, c.cy, SR);
+  }
+
+  function miniSvg(c, id, icon, hot) {
+    var a = hot ? G.arc(c.cx, c.cy, MR - 10, MA1 - 50, MA1) : G.arc(c.cx, c.cy, MR - 10, MA0, MA0 + 40);
+    var out = dialBase(c.cx, c.cy, MR, 6) +
+      '<path class="sx-red small" d="' + a + '"/>' +
+      G.ticks({
+        cx: c.cx, cy: c.cy, r: MR - 4, min: 0, max: 4, a0: MA0, a1: MA1,
+        major: 2, minor: 1, labelEvery: 99, labelR: 0, majorLen: 20, minorLen: 11,
+        label: function () { return ''; }
+      }) +
+      '<svg class="sx-mini-icon" x="' + (c.cx - 22) + '" y="' + (c.cy + 20) + '" width="44" height="44" viewBox="0 0 24 24">' + (Dash.icons.list[icon] || '') + '</svg>' +
+      '<g id="sx-' + id + '-needle" class="sx-needle small">' + needlePath(c.cx, c.cy, -12, MR - 8, 5) + '</g>' +
+      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="13" fill="url(#sx-hub)" class="sx-hub"/>';
+    return '<g class="sx-mini ' + id + '">' + out + gloss(c.cx, c.cy, MR) + '</g>';
   }
 
   function ledStrip() {
     var out = '';
-    for (var i = 0; i < LEDS; i++) out += '<i class="' + (i < 4 ? 'g' : i < 8 ? 'y' : 'r') + '"></i>';
+    for (var i = 0; i < LEDS; i++) out += '<i class="' + (i < 5 ? 'g' : i < 9 ? 'y' : 'r') + '"></i>';
     return '<div class="sx-leds">' + out + '<b class="sx-scan"></b></div>';
   }
 
@@ -129,7 +160,7 @@
 
   var root, el = {}, warnIcons = {}, unfit, leds = [];
   var lastHtml = {}, lastText = {};
-  var shownRpm = 0;
+  var shown = { rpm: 0, speed: 0, fuel: 0, temp: 0 };
   var lastFrame = 0;
 
   function setHtml(key, node, html) {
@@ -144,17 +175,22 @@
     node.textContent = text;
   }
 
-  function setClass(node, cls) {
-    if (node._cls !== cls) { node._cls = cls; node.setAttribute('class', cls); }
+  function setAttr(node, name, value) {
+    var k = '_a_' + name;
+    if (node[k] !== value) { node[k] = value; node.setAttribute(name, value); }
+  }
+
+  function setClass(node, name, on) {
+    var k = '_c_' + name;
+    if (node[k] !== on) { node[k] = on; node.classList.toggle(name, on); }
   }
 
   function rotateTo(node, angle, c) {
-    var t = 'rotate(' + r2(angle) + ' ' + c.cx + ' ' + c.cy + ')';
-    if (node._t !== t) { node._t = t; node.setAttribute('transform', t); }
+    setAttr(node, 'transform', 'rotate(' + r2(angle) + ' ' + c.cx + ' ' + c.cy + ')');
   }
 
-  function iconSlot(id, cls) {
-    return '<span class="sx-ind ' + (cls || '') + '" data-ind="' + id + '" data-extra="' + (cls || '') + '">' + Dash.icons.svg(id) + '</span>';
+  function iconSlot(id) {
+    return '<span class="sx-ind" data-ind="' + id + '">' + Dash.icons.svg(id) + '</span>';
   }
 
   function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
@@ -164,33 +200,26 @@
     if (!l) return '';
     return '<div class="sx-lamps">' + ['red', 'yellow', 'green'].map(function (c) {
       return '<i class="' + c + (l.phase === c ? ' on' : '') + '"></i>';
-    }).join('') + '</div><span>' + Math.round(l.dist) + 'm</span>';
+    }).join('') + '</div>';
   }
 
   function signHtml(s) {
     var n = s.engineOn && s.nextSign;
-    return n ? Dash.signs.svg(n.type) + '<span>' + Math.round(n.dist / 10) * 10 + 'm</span>' : '';
+    return n ? Dash.signs.svg(n.type) : '';
   }
 
   function navHtml(s) {
-    if (!s.engineOn) return '<div class="sx-road">🏁 시동을 걸어요</div>';
-    if (s.nav.on) {
-      var n = s.nav;
-      return '<div class="sx-nav">' + Dash.info.arrowSvg(n.turn) +
-        '<div><b>' + Dash.info.fmtDist(n.turnDist) + '</b><span>' + (Dash.road.TURN_WORDS[n.turn] || '') +
-        (n.turn !== 'arrive' && n.nextRoad ? ' → ' + n.nextRoad : '') + '</span><em>🏁 ' + n.destination + '</em></div></div>';
-    }
-    return '<div class="sx-road">🏁 ' + s.roadName + '<small>' + s.lanes + '차선</small></div>';
+    if (!s.engineOn || !s.nav.on) return '';
+    return Dash.info.arrowSvg(s.nav.turn) + '<b>' + Dash.info.fmtDist(s.nav.turnDist) + '</b>';
   }
 
-  function statusHtml(s) {
+  function dotsHtml(s) {
     if (!s.engineOn) return '';
-    if (s.fcw || s.aeb) return '<span class="st-over">⚠ 앞 차 충돌 주의!</span>';
-    if (s.overspeed) return '<span class="st-over">⚠ 과속! 제한 ' + s.speedLimit + '</span>';
-    if (s.nav.on && s.nav.destId === 'station') return '<span class="st-warn">⛽ 주유소로 가는 중</span>';
-    if (s.inTunnel) return '<span class="st-info">🚇 터널</span>';
-    if (s.rainLevel > 0.05) return '<span class="st-info">' + (s.weather === 'storm' ? '⛈' : '🌧') + ' 와이퍼 ' + Dash.vehicle.WIPER_NAMES[s.wiper] + '</span>';
-    return '';
+    var list = Dash.info.pages(s);
+    var cur = ((s.infoPage % list.length) + list.length) % list.length;
+    var out = '';
+    for (var i = 0; i < list.length; i++) out += '<i' + (i === cur ? ' class="on"' : '') + '></i>';
+    return out;
   }
 
   Dash.themes.register({
@@ -202,15 +231,20 @@
       '<radialGradient id="sxp-f" cx="50%" cy="42%" r="60%"><stop offset="0" stop-color="#ffe14a"/><stop offset="1" stop-color="#f2a900"/></radialGradient></defs>' +
       '<rect width="160" height="90" rx="8" fill="url(#sxp-cf)"/>' +
       [0, 1, 2, 3, 4, 5, 6].map(function (i) {
-        return '<circle cx="' + (56 + i * 8) + '" cy="8" r="2.8" fill="' + (i < 3 ? '#22e05a' : i < 5 ? '#ffd21f' : '#ff2a2a') + '"/>';
+        return '<circle cx="' + (56 + i * 8) + '" cy="7" r="2.8" fill="' + (i < 3 ? '#22e05a' : i < 5 ? '#ffd21f' : '#ff2a2a') + '"/>';
       }).join('') +
-      '<circle cx="80" cy="52" r="35" fill="#2a2d31" stroke="#ff1e1e" stroke-width="2"/><circle cx="80" cy="52" r="31" fill="url(#sxp-f)"/>' +
-      '<circle cx="80" cy="52" r="15" fill="#0b0b0c"/>' +
-      '<text x="80" y="59" font-size="19" font-weight="900" fill="#fff" text-anchor="middle" font-family="Arial">3</text>' +
-      '<path d="M91 41 101 27" stroke="#e8141a" stroke-width="3" stroke-linecap="round"/>' +
-      '<circle cx="26" cy="40" r="14" fill="url(#sxp-f)" stroke="#333" stroke-width="2"/><circle cx="134" cy="40" r="14" fill="url(#sxp-f)" stroke="#333" stroke-width="2"/>' +
-      '<rect x="68" y="72" width="24" height="10" rx="3" fill="#0b0b0c"/>' +
-      '<text x="80" y="80.5" font-size="8" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial">88</text></svg>',
+      '<circle cx="80" cy="50" r="36" fill="#2a2d31" stroke="#ff1e1e" stroke-width="3"/><circle cx="80" cy="50" r="31" fill="url(#sxp-f)"/>' +
+      '<circle cx="80" cy="50" r="14" fill="#0b0b0c"/>' +
+      '<text x="80" y="57" font-size="18" font-weight="900" fill="#fff" text-anchor="middle" font-family="Arial">3</text>' +
+      '<path d="M90 40 101 26" stroke="#e8141a" stroke-width="3" stroke-linecap="round"/>' +
+      '<circle cx="24" cy="38" r="19" fill="#2a2d31"/><circle cx="24" cy="38" r="16" fill="url(#sxp-f)"/>' +
+      '<path d="M24 38 14 30" stroke="#e8141a" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<circle cx="14" cy="74" r="9" fill="url(#sxp-f)" stroke="#333" stroke-width="2"/><circle cx="36" cy="74" r="9" fill="url(#sxp-f)" stroke="#333" stroke-width="2"/>' +
+      '<rect x="120" y="22" width="34" height="38" rx="5" fill="#111" stroke="#ff1e1e" stroke-width="1.5"/>' +
+      '<circle cx="137" cy="74" r="10" fill="#fff" stroke="#e0201b" stroke-width="3"/>' +
+      '<path d="M6 8 14 3v3h6v4h-6v3z" fill="#22e05a"/><path d="M154 8 146 3v3h-6v4h6v3z" fill="#22e05a"/>' +
+      '<rect x="68" y="71" width="24" height="10" rx="3" fill="#0b0b0c"/>' +
+      '<text x="80" y="79.5" font-size="8" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial">88</text></svg>',
     showsMessages: true,
 
     mount: function (container) {
@@ -222,61 +256,55 @@
         '  <div class="sx-stage">' +
         '    <div class="sx-glow"></div>' +
         '    <div class="sx-ledbar">' + ledStrip() + '</div>' +
-        '    <svg class="sx-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + defs() + tachSvg() +
-        smallGauge(FUEL_C, 'fuel', 'E', 'F', 'fuel', null) + smallGauge(TEMP_C, 'temp', 'C', 'H', 'coolant', 0.8) + '</svg>' +
-        '    <div class="sx-group sx-top-left">' + TOP_LEFT.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
-        '    <div class="sx-group sx-top-right">' + TOP_RIGHT.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
-        '    ' + iconSlot('turnLeft', 'sx-turn sx-turn-left') + iconSlot('turnRight', 'sx-turn sx-turn-right') +
-        '    <div class="sx-left">' +
-        '      <div class="sx-roadrow">' +
-        '        <div class="sx-limit"><span></span></div>' +
-        '        <div class="sx-light"></div>' +
-        '        <div class="sx-sign"></div>' +
-        '        <div class="sx-camera">📷 <b></b></div>' +
-        '      </div>' +
-        '      <div class="sx-top"></div>' +
-        '      <div class="sx-badges"><span class="sx-mode"></span><span class="sx-ap">🤖 AI 운전</span></div>' +
-        '    </div>' +
+        '    <div class="sx-arrow sx-arrow-l">' + ARROW_L + '</div>' +
+        '    <div class="sx-arrow sx-arrow-r">' + ARROW_R + '</div>' +
+        '    <svg class="sx-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + defs() +
+        speedSvg() + miniSvg(FUEL_C, 'fuel', 'fuel', false) + miniSvg(TEMP_C, 'temp', 'coolant', true) + tachSvg() + '</svg>' +
+        '    <div class="sx-group sx-top-left">' + WARN_TOP_LEFT.map(iconSlot).join('') + '</div>' +
+        '    <div class="sx-group sx-top-right">' + WARN_TOP_RIGHT.map(iconSlot).join('') + '</div>' +
         '    <div class="sx-right">' +
-        '      <div class="sx-card"><div class="sx-page"></div><div class="sx-status"></div>' +
-        '        <div class="sx-foot"><span class="odo"></span><span class="trip"></span><span class="clock"></span></div></div>' +
-        '      <div class="sx-popup"><div class="t"></div><div class="v"></div></div>' +
+        '      <div class="sx-card"><div class="sx-page"></div><div class="sx-dots"></div></div>' +
+        '      <div class="sx-popup"><div class="v"></div></div>' +
         '      <div class="sx-msg"></div>' +
         '    </div>' +
-        '    <div class="sx-group sx-bottom-left">' + BOTTOM_LEFT.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
-        '    <div class="sx-group sx-bottom-right">' + BOTTOM_RIGHT.map(function (id) { return iconSlot(id); }).join('') + '</div>' +
+        '    <div class="sx-roadrow">' +
+        '      <div class="sx-nav"></div>' +
+        '      <div class="sx-light"></div>' +
+        '      <div class="sx-sign"></div>' +
+        '      <div class="sx-camera">📷</div>' +
+        '      <div class="sx-limit"><span></span></div>' +
+        '    </div>' +
         '  </div>' +
         '</div>';
 
       var q = function (sel) { return root.querySelector(sel); };
       el.sx = q('.sx');
       el.needle = q('#sx-needle');
+      el.sNeedle = q('#sx-sneedle');
+      el.trail = q('#sx-trail');
+      el.trailGlow = q('#sx-trail-glow');
       el.fuelNeedle = q('#sx-fuel-needle');
       el.tempNeedle = q('#sx-temp-needle');
-      el.fuelVal = q('#sx-fuel-val');
-      el.tempVal = q('#sx-temp-val');
+      el.limitMark = q('#sx-limit-mark');
+      el.apMark = q('#sx-ap-mark');
       el.gear = q('#sx-gear');
-      el.gearSub = q('#sx-gearsub');
       el.prnd = root.querySelectorAll('#sx-prnd text');
       el.speed = q('#sx-speed');
       el.speedBox = q('#sx-speedbox');
+      el.arrowL = q('.sx-arrow-l');
+      el.arrowR = q('.sx-arrow-r');
       el.limit = q('.sx-limit');
       el.limitText = q('.sx-limit span');
+      el.nav = q('.sx-nav');
       el.light = q('.sx-light');
       el.sign = q('.sx-sign');
       el.camera = q('.sx-camera');
-      el.cameraText = q('.sx-camera b');
-      el.top = q('.sx-top');
-      el.mode = q('.sx-mode');
       el.page = q('.sx-page');
-      el.status = q('.sx-status');
-      el.odo = q('.sx-foot .odo');
-      el.trip = q('.sx-foot .trip');
-      el.clock = q('.sx-foot .clock');
+      el.dots = q('.sx-dots');
       el.popup = q('.sx-popup');
-      el.popupT = q('.sx-popup .t');
       el.popupV = q('.sx-popup .v');
       el.msg = q('.sx-msg');
+      [el.trail, el.trailGlow].forEach(function (n) { n.setAttribute('stroke-dasharray', '1000 1000'); });
       leds = Array.prototype.slice.call(root.querySelectorAll('.sx-leds i'));
       leds.forEach(function (n) { n._base = n.className; });
       warnIcons = {};
@@ -285,7 +313,7 @@
       });
       lastHtml = {};
       lastText = {};
-      shownRpm = 0;
+      shown = { rpm: 0, speed: 0, fuel: 0, temp: 0 };
       lastFrame = 0;
       unfit = Dash.themes.fitStage(root, q('.sx-stage'), W, H);
     },
@@ -297,87 +325,93 @@
       var on = s.engineOn;
       var sweeping = on && s.startTimer < SWEEP_SECONDS;
 
-      el.sx.classList.toggle('off', !on);
-      el.sx.classList.toggle('ap', s.autopilot.on);
-      el.sx.classList.toggle('night', s.night);
-      if (el.sx.getAttribute('data-mode') !== s.driveMode) el.sx.setAttribute('data-mode', s.driveMode);
+      setClass(el.sx, 'off', !on);
+      setClass(el.sx, 'ap', s.autopilot.on);
+      setClass(el.sx, 'night', s.night);
+      setAttr(el.sx, 'data-mode', s.driveMode);
 
-      // RPM 바늘 (시동 직후 끝까지 갔다 돌아온다)
+      // 바늘: 시동 직후 끝까지 갔다 돌아온다 (진짜 차처럼)
       var rpmK = on ? s.rpm / 1000 : 0;
+      var speedV = on ? s.speed : 0;
+      var fuelV = on || s.refueling ? s.fuel : 0;
+      var tempV = on ? Math.max(0, Math.min(1, (s.coolantTemp - 50) / 80)) : 0;
       if (sweeping) {
         var half = SWEEP_SECONDS / 2;
         var k = s.startTimer < half ? ease(s.startTimer / half) : 1 - ease((s.startTimer - half) / half);
-        shownRpm = Math.max(rpmK, TACH.max * k);
+        shown.rpm = Math.max(rpmK, TACH.max * k);
+        shown.speed = Math.max(speedV, SPEED.max * k);
+        shown.fuel = Math.max(fuelV, k);
+        shown.temp = Math.max(tempV, k);
       } else {
-        shownRpm += (rpmK - shownRpm) * Math.min(1, dt * 16);
+        var f = Math.min(1, dt * 14);
+        shown.rpm += (rpmK - shown.rpm) * f;
+        shown.speed += (speedV - shown.speed) * f;
+        shown.fuel += (fuelV - shown.fuel) * Math.min(1, dt * 4);
+        shown.temp += (tempV - shown.temp) * Math.min(1, dt * 4);
       }
-      rotateTo(el.needle, G.angleFor(shownRpm, TACH.min, TACH.max, A0, A1), C);
+      rotateTo(el.needle, G.angleFor(shown.rpm, TACH.min, TACH.max, A0, A1), C);
+      rotateTo(el.sNeedle, G.angleFor(shown.speed, SPEED.min, SPEED.max, A0, A1), SC);
+      rotateTo(el.fuelNeedle, MA0 + (MA1 - MA0) * shown.fuel, FUEL_C);
+      rotateTo(el.tempNeedle, MA0 + (MA1 - MA0) * shown.temp, TEMP_C);
+      var trailOff = String(Math.round(1000 - 1000 * Math.max(0, Math.min(1, shown.rpm / TACH.max))));
+      setAttr(el.trail, 'stroke-dashoffset', trailOff);
+      setAttr(el.trailGlow, 'stroke-dashoffset', trailOff);
+      setClass(el.sx, 'redline', on && shown.rpm >= TACH.hotFrom);
 
       // 시프트 라이트
-      var shiftNow = on && !s.autopilot.on && s.rpm >= SHIFT_RPM;
+      var shiftNow = on && !sweeping && !s.autopilot.on && s.rpm >= SHIFT_RPM;
       var blinkPhase = Math.floor(Date.now() / LED_BLINK_MS) % 2 === 0;
       var lit = on ? Math.round((s.rpm - LED_FROM) / (SHIFT_RPM - LED_FROM) * LEDS) : 0;
-      if (sweeping) lit = Math.round(LEDS * shownRpm / TACH.max);
-      if (s.autopilot.on) lit = 0; // 자율주행 중엔 파란 빛이 왔다 갔다 한다
+      if (sweeping) lit = Math.round(LEDS * shown.rpm / TACH.max);
+      else if (s.autopilot.on) lit = 0; // 자율주행 중엔 파란 빛이 왔다 갔다 한다
       for (var i = 0; i < leds.length; i++) {
         var cls = leds[i]._base + (shiftNow ? (blinkPhase ? ' shift' : '') : (i < lit ? ' on' : ''));
         if (leds[i].className !== cls) leds[i].className = cls;
       }
-      el.sx.classList.toggle('shift', shiftNow && blinkPhase);
+      setClass(el.sx, 'shift', shiftNow && blinkPhase);
 
       // 기어·속도
       setText('gear', el.gear, !on ? '' : s.gear === 'D' ? String(s.autoGear) : s.gear);
-      setClass(el.gear, 'sx-gear' + (s.gear === 'R' ? ' rev' : s.gear === 'D' ? ' drive' : ''));
-      setText('gearSub', el.gearSub, !on ? '' : s.gear === 'D' ? s.autoGear + '단' : GEAR_WORDS[s.gear] || '');
+      setAttr(el.gear, 'class', 'sx-gear' + (s.gear === 'R' ? ' rev' : s.gear === 'D' ? ' drive' : ''));
       for (var g = 0; g < el.prnd.length; g++) {
-        setClass(el.prnd[g], 'sx-pr' + (on && el.prnd[g].getAttribute('data-g') === s.gear ? ' on' : ''));
+        setAttr(el.prnd[g], 'class', 'sx-pr' + (on && el.prnd[g].getAttribute('data-g') === s.gear ? ' on' : ''));
       }
       setText('speed', el.speed, on ? String(Math.round(s.speed)) : '');
-      setClass(el.speedBox, 'sx-speedbox' + (on && s.overspeed ? ' over' : ''));
+      setAttr(el.speedBox, 'class', 'sx-speedbox' + (on && s.overspeed ? ' over' : ''));
+      rotateTo(el.limitMark, G.angleFor(s.speedLimit, SPEED.min, SPEED.max, A0, A1), SC);
+      setClass(el.apMark, 'show', s.autopilot.on);
+      if (s.autopilot.on) rotateTo(el.apMark, G.angleFor(s.autopilot.target, SPEED.min, SPEED.max, A0, A1), SC);
 
-      // 연료·온도
-      var fuelShown = on || s.refueling ? s.fuel : 0;
-      rotateTo(el.fuelNeedle, SA0 + (SA1 - SA0) * fuelShown, FUEL_C);
-      setText('fuelVal', el.fuelVal, on || s.refueling ? Math.round(s.range) + ' km' : '');
-      var t = on ? Math.max(0, Math.min(1, (s.coolantTemp - 50) / 80)) : 0;
-      rotateTo(el.tempNeedle, SA0 + (SA1 - SA0) * t, TEMP_C);
-      setText('tempVal', el.tempVal, on ? Math.round(s.coolantTemp) + '°C' : '');
-      el.sx.classList.toggle('lowfuel', s.fuel < Dash.vehicle.LOW_FUEL);
-      el.sx.classList.toggle('hot', s.coolantTemp > Dash.vehicle.OVERHEAT_TEMP);
+      setClass(el.sx, 'lowfuel', s.fuel < Dash.vehicle.LOW_FUEL);
+      setClass(el.sx, 'hot', s.coolantTemp > Dash.vehicle.OVERHEAT_TEMP);
 
-      // 왼쪽: 제한속도·신호등·표지판·카메라·내비·모드
+      // 깜빡이: 크게 빛난다
+      setClass(el.arrowL, 'on', s.blinkOn && (s.turnLeft || s.hazard));
+      setClass(el.arrowR, 'on', s.blinkOn && (s.turnRight || s.hazard));
+
+      // 오른쪽 아래: 내비·신호등·표지판·제한속도
       setText('limit', el.limitText, String(s.speedLimit));
-      el.limit.classList.toggle('over', s.overspeed);
+      setClass(el.limit, 'over', s.overspeed);
+      setHtml('nav', el.nav, navHtml(s));
       setHtml('light', el.light, lightHtml(s));
       setHtml('sign', el.sign, signHtml(s));
-      var cam = on && s.camera != null && s.camera < 0.6;
-      el.camera.classList.toggle('show', cam);
-      if (cam) setText('cam', el.cameraText, Math.round(s.camera * 1000 / 10) * 10 + 'm');
-      setHtml('top', el.top, navHtml(s));
-      setText('mode', el.mode, MODE_NAMES[s.driveMode] || '');
+      setClass(el.camera, 'show', on && s.camera != null && s.camera < 0.6);
 
       // 오른쪽: 정보 화면
       setHtml('page', el.page, Dash.info.current(s));
-      setHtml('status', el.status, statusHtml(s));
-      setText('odo', el.odo, 'ODO ' + Math.floor(s.odometer).toLocaleString('ko-KR'));
-      setText('trip', el.trip, 'TRIP ' + s.trip.toFixed(1));
-      var d = new Date();
-      setText('clock', el.clock, Dash.info.pad(d.getHours()) + ':' + Dash.info.pad(d.getMinutes()));
+      setHtml('dots', el.dots, dotsHtml(s));
 
       var pop = s.popup.timer > 0;
-      el.popup.classList.toggle('show', pop);
-      if (pop) {
-        setText('popT', el.popupT, s.popup.title);
-        setText('popV', el.popupV, s.popup.value);
-      }
-      el.msg.classList.toggle('show', !!s.message);
+      setClass(el.popup, 'show', pop);
+      if (pop) setText('popV', el.popupV, s.popup.value);
+      setClass(el.msg, 'show', !!s.message);
       if (s.message) setText('msg', el.msg, s.message);
 
       // 경고등
       var w = Dash.warnings.compute(s);
       for (var id in warnIcons) {
         var node = warnIcons[id];
-        var c2 = 'sx-ind ' + node.getAttribute('data-extra') + (w[id].on ? ' on ' + w[id].color : '');
+        var c2 = 'sx-ind' + (w[id] && w[id].on ? ' on ' + w[id].color : '');
         if (node._cls !== c2) { node._cls = c2; node.className = c2; }
       }
     },
