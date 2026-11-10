@@ -157,6 +157,7 @@
       // ---- 부모님 설정에서 정하는 놀이 옵션 (js/prefs.js 가 채운다) ----
       pendingGear: null,      // 쉬운 모드: 달리다 R·P 를 누르면 멈춘 뒤 바꿀 기어
       easy: true,             // 쉬운 모드 (5살): 큰 버튼 몇 개, 시동 버튼 하나로 출발 (js/easy.js)
+      pedalSoft: true,        // 엑셀·브레이크를 부드럽게 (꾹 누르고 있어야 깊게 밟힌다, 부모님 설정)
       speedCap: 220,          // 가장 빠른 속도 (km/h)
       scoreOn: true,          // 운전 점수
       parkingMission: true,   // 도착하면 주차 미션

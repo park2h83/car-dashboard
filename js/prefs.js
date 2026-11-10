@@ -29,6 +29,8 @@
     // ---- 운전 ----
     { tab: 'drive', key: 'easyMode', label: '조작 모드', def: true,
       options: [[true, '쉬운 모드 (5살)'], [false, '모든 기능']] },
+    { tab: 'drive', key: 'pedalFeel', label: '엑셀·브레이크', def: 'soft',
+      options: [['soft', '부드럽게 (천천히 깊어져요)'], ['normal', '보통']] },
     { tab: 'drive', key: 'maxSpeed', label: '가장 빠른 속도', def: 220,
       options: [[60, '60 km/h'], [100, '100 km/h'], [220, '제한 없음']] },
     { tab: 'drive', key: 'eventRate', label: '길 이벤트 (신호등·동물 …)',
@@ -83,6 +85,7 @@
     state.easy = easy;
     document.body.classList.toggle('easy', easy);
     state.speedCap = get('maxSpeed');
+    state.pedalSoft = get('pedalFeel') !== 'normal';
     state.scoreOn = get('scoreOn');
     state.parkingMission = get('parkingMission');
     if (Dash.sound.setVolume) Dash.sound.setVolume(get('volume'), get('engineVol'));

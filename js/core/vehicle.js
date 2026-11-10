@@ -89,9 +89,13 @@
   function dragAt(speed) { return speed > 0 ? 0.6 + 0.00006 * speed * speed : 0; }
 
   function updatePedals(s, input, dt) {
-    // 누르고 있으면 페달이 서서히 깊게 밟힌다
-    s.pedal = moveToward(s.pedal, input.accel ? 1 : 0, (input.accel ? 1.8 : 4) * dt);
-    s.brakePedal = moveToward(s.brakePedal, input.brake ? 1 : 0, (input.brake ? 3 : 5) * dt);
+    // 누르고 있으면 페달이 서서히 깊게 밟힌다.
+    // 부드럽게(기본): 엑셀은 꾹 누르고 있어야 깊어지고(끝까지 약 3초), 처음엔 살살 — 브레이크도 톡 누르면 살짝, 꾹 누르면 세게(약 1.5초)
+    var soft = s.pedalSoft;
+    var up = soft ? (s.pedal < 0.3 ? 0.22 : 0.4) : 1.8;
+    s.pedal = moveToward(s.pedal, input.accel ? 1 : 0, (input.accel ? up : 4) * dt);
+    var bUp = soft ? (s.brakePedal < 0.35 ? 0.5 : 0.9) : 3;
+    s.brakePedal = moveToward(s.brakePedal, input.brake ? 1 : 0, (input.brake ? bUp : 5) * dt);
     s.brakePressed = !!input.brake;
     s.steer = input.steer || 0;
     s.horn = !!input.horn;
