@@ -82,6 +82,8 @@
     theme.mount(cluster);
     save(THEME_KEY, theme.id);
     if (Dash.windshield && Dash.windshield.setTheme) Dash.windshield.setTheme(theme); // 도로가 든 테마면 위 도로를 숨긴다
+    // 테마 안에 버튼이 있으면(정보 콘솔의 🧭 📄 🎨 ⚙) 거기에 연결하고 아래 조작부의 같은 버튼은 숨긴다
+    if (Dash.controls.setTheme) Dash.controls.setTheme(theme, cluster);
   }
 
   Dash.sound.setMuted(load(MUTE_KEY) === '1');

@@ -1,63 +1,67 @@
-// 계기판 + 도로 테마: 왼쪽 RPM, 오른쪽 속도 — 크고 진짜 같은 바늘 계기 두 개.
-// 그 사이 가운데 화면에서 내 흰색 차가 길을 달린다 (나무가 휙휙 지나가고, 차선을 바꾸면 옆으로 미끄러진다).
+// 계기판 + 도로 테마: 가운데 위에 내 흰색 차가 달리는 큰 도로 화면, 양쪽 끝에 바늘 계기 (왼쪽 RPM, 오른쪽 속도).
+// 도로 화면이 주인공이다 (사용자 요청: "주행 화면을 크게, 계기판은 작게 양쪽 끝에, 가운데에 정보를 풍부하게").
+// 도로 화면 아래는 진짜 차의 가운데 화면 같은 '정보 콘솔': 내비/시계 · 정보창(Dash.info: 타이어·엔진·기름 …) · 주행 모드·점수,
+// 그리고 콘솔 안의 큰 버튼 4개(🧭 📄 🎨 ⚙). 이 버튼들은 테마 플래그 consoleButtons 로 알리면
+// js/core/controls.js 가 아래 조작부에서 같은 버튼을 숨기고 콘솔 버튼에 연결한다 (코치 반짝임도 콘솔 버튼에).
 // 바늘 계기는 classic 테마, 도로 화면은 play 테마(js/core/scene.js)를 그대로 가져다 쓴다.
-// 도로 화면 아래에는 진짜 차의 가운데 화면처럼 정보창(Dash.info: 주행·엔진·타이어 공기압·차량 상태 …)이 있다.
-// 1600x840 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다.
-// 작은 글씨(단위·길 이름·시계·쪽 번호)는 없다: 바늘·큰 숫자·그림·색으로만 보여 준다.
+// 1600x940 좌표로 그린 뒤 화면 크기에 맞게 통째로 확대·축소한다 (쉬운 모드 아이패드 계기판 칸이 약 1.7:1).
+// 작은 글씨(단위·길 이름·쪽 번호)는 없다: 바늘·큰 숫자·그림·색으로만 보여 준다.
 // 바늘 뒤에는 바늘을 따라 빛나는 띠(진짜 계기처럼)가 차오른다.
 (function (Dash) {
   'use strict';
 
   var W = 1600;
-  var H = 840;
+  var H = 940;
 
-  // ---- 바늘 계기 ----
-  var R = 252;               // 계기 반지름 (크롬 테두리는 +18)
-  var LEFT = { cx: 272, cy: 404 };
-  var RIGHT = { cx: 1328, cy: 404 };
-  var A0 = -135;             // 바늘 시작 각도 (12시 = 0°)
-  var A1 = 135;
-  // 큰 계기 아래쪽 빈 곳의 작은 바늘 계기 (냉각수·배터리 전압), 아래 구석의 오일 온도(왼쪽)·연료(오른쪽) 계기
-  var MINI_DY = 200;         // 큰 계기 중심에서 작은 계기 축까지
-  var MINI_R = 64;
-  var MINI_A = 60;           // 작은 계기 바늘이 움직이는 각도 ±
+  // ---- 바늘 계기: 양쪽 끝 (위 구석엔 깜빡이 화살표·경고등, 아래엔 작은 계기·기어·연료) ----
+  var R = 146;               // 계기 반지름 (크롬 테두리는 +14)
+  var LEFT = { cx: 170, cy: 318 };
+  var RIGHT = { cx: 1430, cy: 318 };
+  var A0 = -120;             // 바늘 시작 각도 (12시 = 0°). 아래 빈 곳에 큰 숫자(속도·기어)가 들어가게 ±120°
+  var A1 = 120;
+  // 큰 계기 아래 작은 바늘 계기: 왼쪽 냉각수·오일 온도, 오른쪽 배터리 전압·연료
+  var MINI_R = 52;
+  var MINI_Y = 604;          // 작은 계기 바늘 축 y
   var COOLANT = { min: 50, max: 130, hotFrom: 115, ticks: [[50, 'C'], [90, ''], [130, 'H']] };
   var FUEL = { min: 0, max: 1, lowTo: 0.12, ticks: [[0, 'E'], [0.5, '½'], [1, 'F']] };
   var OIL = { min: 50, max: 150, hotFrom: 130, ticks: [[50, ''], [100, ''], [150, '']] };
-  var OIL_POS = { px: 78, py: 764, r: 54, a: 70 };
   var VOLT = { min: 10, max: 16, lowTo: 11.5, ticks: [[10, '−'], [13, ''], [16, '+']] };
-  var FUEL_POS = { px: 1522, py: 764, r: 54, a: 70 };
-  var FUEL_BARS = 10;        // 아래 연료 칸의 막대 수
+  var TEMP_POS = { px: 92, py: MINI_Y, r: MINI_R, a: 70 };
+  var OIL_POS = { px: 250, py: MINI_Y, r: MINI_R, a: 70 };
+  var VOLT_POS = { px: 1350, py: MINI_Y, r: MINI_R, a: 70 };
+  var FUEL_POS = { px: 1508, py: MINI_Y, r: MINI_R, a: 70 };
+  var FUEL_BARS = 10;        // 연료 칸의 막대 수
   var SWEEP_SECONDS = 1.5;   // 시동 때 바늘이 끝까지 갔다 오는 시간
 
-  var SPEED = { min: 0, max: 220, major: 20, minor: 10, labelEvery: 20 };
+  var SPEED = { min: 0, max: 240, major: 20, minor: 10, labelEvery: 40 };
   var TACH = { min: 0, max: 8, major: 1, minor: 0.25, labelEvery: 1, hotFrom: 6.5 };
 
-  // ---- 가운데 위: 도로 화면 (계기 두 개가 화면 가장자리를 살짝 덮는다), 가운데 아래: 정보창 ----
-  var PANEL = { x: 498, y: 92, w: 604, h: 346, r: 30 };
-  var INFO = { x: 532, y: 450, w: 536, h: 296 };
-  var HORIZON = 196;         // 지평선 y (scene 에도 같은 값을 준다)
+  // ---- 가운데 위: 큰 도로 화면, 가운데 아래: 정보 콘솔 ----
+  var PANEL = { x: 346, y: 10, w: 908, h: 546, r: 34 };
+  var HORIZON = 180;         // 지평선 y (scene 에도 같은 값을 준다)
   var EGO_COLOR = '#f5f7fa'; // 내 차는 흰색
-  // 뒤에서 조금 높이 보는 카메라: 내 차가 화면 아래 가운데에 또렷하게, 차선을 바꾸면 옆으로 움직이는 게 보이게
+  // 뒤에서 조금 높이 보는 카메라: 내 차가 화면 아래 가운데에 크고 또렷하게, 차선을 바꾸면 옆으로 움직이는 게 보이게
   var CAMERA = {
-    zoom: 0.92,
+    zoom: 1.22,
     egoDist: 6.8,
-    camH: 2.6,
+    camH: 3.0,
     horizon: HORIZON,
     bottom: PANEL.y + PANEL.h + 10,
     follow: 0.62,
     glass: { x0: PANEL.x, x1: PANEL.x + PANEL.w, y0: PANEL.y, y1: PANEL.y + PANEL.h },
-    wipers: [{ px: 650, py: 486, len: 300 }, { px: 900, py: 486, len: 280 }]
+    wipers: [{ px: 610, py: 620, len: 470 }, { px: 980, py: 620, len: 440 }]
   };
+  // 도로 화면에서 버튼 대신 쓰는 콘솔 버튼 (controls.js 가 같은 이름의 아래 버튼을 숨긴다)
+  var CONSOLE_BUTTONS = ['🧭', '📄', '🎨', '⚙'];
 
-  // 경고등: 위 왼쪽·위 오른쪽에 자리를 정해 두고, 꺼진 건 희미하게 (진짜 계기판처럼)
+  // 경고등: 양쪽 위 구석(깜빡이 화살표 옆)에 자리를 정해 두고, 꺼진 건 희미하게 (진짜 계기판처럼)
   var TOP_LEFT = ['lowBeam', 'highBeam', 'fogFront', 'fogRear', 'blindSpot', 'frost',
-    'parkingBrake', 'seatbelt', 'door', 'brake', 'abs', 'airbag'];
+    'parkingBrake', 'seatbelt', 'door', 'brake', 'abs', 'airbag', 'washer'];
   var TOP_RIGHT = ['autopilot', 'laneAssist', 'rest', 'fcw', 'esc', 'escOff', 'tpms',
-    'engine', 'oil', 'battery', 'coolant', 'fuel', 'washer'];
+    'engine', 'oil', 'battery', 'coolant', 'fuel'];
 
   var MODE_ICONS = { eco: '🍃', comfort: '😊', sport: '🔥' };
-  var GLOW_R = R - 8;        // 바늘을 따라 차오르는 빛 띠의 반지름
+  var GLOW_R = R - 6;        // 바늘을 따라 차오르는 빛 띠의 반지름
   var GLOW_LEN = GLOW_R * (A1 - A0) * Math.PI / 180;
 
   var ARROW_LEFT = '<svg viewBox="0 0 100 100"><path d="M8 50 50 10v22h42v36H50v22z"/></svg>';
@@ -116,12 +120,24 @@
 
   function starsSvg() {
     var out = '<g class="ck-stars">';
-    for (var i = 0; i < 34; i++) {
+    for (var i = 0; i < 44; i++) {
       var x = PANEL.x + 10 + (i * 197) % (PANEL.w - 20);
       var y = PANEL.y + 12 + (i * 71) % (HORIZON - PANEL.y - 40);
-      out += '<circle cx="' + x + '" cy="' + y + '" r="' + (i % 4 === 0 ? 2.4 : 1.4) + '"/>';
+      out += '<circle cx="' + x + '" cy="' + y + '" r="' + (i % 4 === 0 ? 2.6 : 1.5) + '"/>';
     }
     return out + '</g>';
+  }
+
+  // 산 능선: 도로 화면 너비에 맞춰 (u = 0~1 위치, d = 지평선 위 높이)
+  function ridge(cls, pts) {
+    var p = PANEL, hz = HORIZON;
+    var x0 = p.x - 10, x1 = p.x + p.w + 10;
+    var d = 'M' + x0 + ' ' + (hz + 2) + 'V' + (hz - pts[0][1]);
+    for (var i = 1; i < pts.length; i++) {
+      var x = Math.round(x0 + (x1 - x0) * pts[i][0]);
+      d += (i === 1 ? 'Q' : 'T') + (i === 1 ? Math.round(x0 + (x1 - x0) * pts[i][0] / 2) + ' ' + (hz - pts[i][1] - 20) + ' ' : '') + x + ' ' + (hz - pts[i][1]);
+    }
+    return '<path class="' + cls + '" d="' + d + 'V' + (hz + 2) + 'Z"/>';
   }
 
   // 가운데 화면: 하늘·해·구름·산·땅, 그 위에 scene.js 가 그리는 도로·차·나무
@@ -129,43 +145,42 @@
     var p = PANEL;
     var x0 = p.x - 10, x1 = p.x + p.w + 10, w = x1 - x0;
     var hz = HORIZON;
+    var sx = p.x + 280, sy = p.y + 64; // 해·달 (왼쪽 위 표지판·신호등과 겹치지 않게)
     return '<g clip-path="url(#ck-clip)">' +
       '<g class="ck-world">' +
       '<rect class="ck-skyrect" x="' + x0 + '" y="' + p.y + '" width="' + w + '" height="' + (hz - p.y + 4) + '" fill="url(#ck-sky)"/>' +
       starsSvg() +
-      '<g class="ck-sun"><circle cx="660" cy="138" r="44" fill="rgba(255,224,102,0.15)"/><circle cx="660" cy="138" r="34" fill="rgba(255,224,102,0.35)"/>' +
-      '<circle cx="660" cy="138" r="24" fill="#ffe066"/></g>' +
-      '<g class="ck-moon"><circle cx="660" cy="134" r="22" fill="#fff3c4"/><circle cx="651" cy="128" r="20" class="ck-moon-cut"/></g>' +
-      cloud(560, 122, 0.5, 'c1') + cloud(860, 150, 0.4, 'c2') +
-      '<path class="ck-hill-far" d="M' + x0 + ' ' + (hz + 2) + 'V' + (hz - 30) + 'Q560 ' + (hz - 62) + ' 640 ' + (hz - 36) + 'T790 ' + (hz - 44) +
-      'T940 ' + (hz - 28) + 'T1060 ' + (hz - 54) + 'T' + x1 + ' ' + (hz - 30) + 'V' + (hz + 2) + 'Z"/>' +
-      '<path class="ck-hill-near" d="M' + x0 + ' ' + (hz + 2) + 'V' + (hz - 10) + 'Q600 ' + (hz - 28) + ' 720 ' + (hz - 12) + 'T960 ' + (hz - 14) +
-      'T' + x1 + ' ' + (hz - 12) + 'V' + (hz + 2) + 'Z"/>' +
+      '<g class="ck-sun"><circle cx="' + sx + '" cy="' + sy + '" r="56" fill="rgba(255,224,102,0.15)"/><circle cx="' + sx + '" cy="' + sy + '" r="42" fill="rgba(255,224,102,0.35)"/>' +
+      '<circle cx="' + sx + '" cy="' + sy + '" r="30" fill="#ffe066"/></g>' +
+      '<g class="ck-moon"><circle cx="' + sx + '" cy="' + (sy - 4) + '" r="28" fill="#fff3c4"/><circle cx="' + (sx - 11) + '" cy="' + (sy - 12) + '" r="25" class="ck-moon-cut"/></g>' +
+      cloud(p.x + 250, p.y + 64, 0.66, 'c1') + cloud(p.x + 560, p.y + 104, 0.52, 'c2') +
+      ridge('ck-hill-far', [[0, 36], [0.24, 50], [0.42, 30], [0.6, 46], [0.8, 26], [1, 40]]) +
+      ridge('ck-hill-near', [[0, 12], [0.3, 22], [0.55, 12], [0.78, 18], [1, 12]]) +
       '<rect class="ck-groundrect" x="' + x0 + '" y="' + (hz - 2) + '" width="' + w + '" height="' + (p.y + p.h - hz + 12) + '" fill="url(#ck-grass)"/>' +
       '<g class="ck-road"></g>' +
       '<rect class="ck-dark" x="' + x0 + '" y="' + (hz - 4) + '" width="' + w + '" height="' + (p.y + p.h - hz + 14) + '" fill="url(#ck-night)"/>' +
       '<g class="ck-beam"></g><g class="ck-cars"></g>' +
-      '<rect x="' + x0 + '" y="' + (hz - 4) + '" width="' + w + '" height="30" fill="url(#ck-haze)"/>' +
+      '<rect x="' + x0 + '" y="' + (hz - 4) + '" width="' + w + '" height="36" fill="url(#ck-haze)"/>' +
       '</g>' +
       '<g class="ck-glass"></g>' +
       '<rect class="ck-flash" x="' + x0 + '" y="' + p.y + '" width="' + w + '" height="' + p.h + '"/>' +
       // 유리 반사
-      '<path d="M' + p.x + ' ' + (p.y + 40) + 'Q' + (p.x + p.w / 2) + ' ' + (p.y + 8) + ' ' + (p.x + p.w) + ' ' + (p.y + 40) + 'V' + p.y + 'H' + p.x + 'Z" fill="url(#ck-glare)"/>' +
+      '<path d="M' + p.x + ' ' + (p.y + 46) + 'Q' + (p.x + p.w / 2) + ' ' + (p.y + 8) + ' ' + (p.x + p.w) + ' ' + (p.y + 46) + 'V' + p.y + 'H' + p.x + 'Z" fill="url(#ck-glare)"/>' +
       '</g>' +
       // 화면 테두리
-      '<rect class="ck-frame-out" x="' + (p.x - 7) + '" y="' + (p.y - 7) + '" width="' + (p.w + 14) + '" height="' + (p.h + 14) + '" rx="' + (p.r + 7) + '"/>' +
+      '<rect class="ck-frame-out" x="' + (p.x - 6) + '" y="' + (p.y - 6) + '" width="' + (p.w + 12) + '" height="' + (p.h + 12) + '" rx="' + (p.r + 6) + '"/>' +
       '<rect class="ck-frame" x="' + p.x + '" y="' + p.y + '" width="' + p.w + '" height="' + p.h + '" rx="' + p.r + '"/>';
   }
 
   function dialBase(c) {
     var x = c.cx, y = c.cy;
-    return '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 46) + '" fill="url(#ck-shade)"/>' +
-      '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 18) + '" fill="url(#ck-bezel)"/>' +
-      '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 7) + '" fill="#030405"/>' +
-      '<circle class="ck-bezel-glow" cx="' + x + '" cy="' + y + '" r="' + (R + 26) + '"/>' +
+    return '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 30) + '" fill="url(#ck-shade)"/>' +
+      '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 14) + '" fill="url(#ck-bezel)"/>' +
+      '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 6) + '" fill="#030405"/>' +
+      '<circle class="ck-bezel-glow" cx="' + x + '" cy="' + y + '" r="' + (R + 20) + '"/>' +
       '<circle cx="' + x + '" cy="' + y + '" r="' + R + '" fill="url(#ck-face)"/>' +
-      '<circle class="ck-halo" cx="' + x + '" cy="' + (y + 40) + '" r="' + (R * 0.62) + '" fill="url(#ck-halo)"/>' +
-      '<path class="ck-ring" d="' + G.arc(x, y, R - 5, A0, A1) + '"/>';
+      '<circle class="ck-halo" cx="' + x + '" cy="' + (y + 24) + '" r="' + (R * 0.62) + '" fill="url(#ck-halo)"/>' +
+      '<path class="ck-ring" d="' + G.arc(x, y, R - 4, A0, A1) + '"/>';
   }
 
   // 바늘을 따라 차오르는 빛 띠 (넓고 흐린 띠 + 가늘고 밝은 띠). stroke-dasharray 로 길이만 바꾼다
@@ -178,20 +193,20 @@
 
   function scale(c, o) {
     return G.ticks({
-      cx: c.cx, cy: c.cy, r: R - 16, min: o.min, max: o.max, a0: A0, a1: A1,
-      major: o.major, minor: o.minor, labelEvery: o.labelEvery, labelR: R - 62,
-      majorLen: 28, minorLen: 13, hotFrom: o.hotFrom
+      cx: c.cx, cy: c.cy, r: R - 11, min: o.min, max: o.max, a0: A0, a1: A1,
+      major: o.major, minor: o.minor, labelEvery: o.labelEvery, labelR: R - 44,
+      majorLen: 19, minorLen: 9, hotFrom: o.hotFrom
     });
   }
 
   function zoneArc(c, o, from, to, cls, width) {
     var a = G.angleFor(from, o.min, o.max, A0, A1);
     var b = G.angleFor(to, o.min, o.max, A0, A1);
-    return '<path class="' + cls + '" stroke-width="' + width + '" d="' + G.arc(c.cx, c.cy, R - 22, a, b) + '"/>';
+    return '<path class="' + cls + '" stroke-width="' + width + '" d="' + G.arc(c.cx, c.cy, R - 15, a, b) + '"/>';
   }
 
   // 작은 바늘 계기: 축 (px, py), 반지름 r, 바늘은 -a° ~ +a° (12시 = 0°). 빨간 구역은 hotFrom 위 / lowTo 아래
-  function miniDial(id, px, py, r, a, o, icon) {
+  function miniDial(id, px, py, r, a, o) {
     var out = '<g class="ck-mini" id="ck-mini-' + id + '">';
     var lo = o.lowTo != null ? o.lowTo : null;
     var hi = o.hotFrom != null ? o.hotFrom : null;
@@ -203,54 +218,44 @@
       var ang = G.angleFor(v, o.min, o.max, -a, a);
       var major = i % 4 === 0;
       var p0 = G.polar(px, py, r, ang);
-      var p1 = G.polar(px, py, r - (major ? 16 : 9), ang);
+      var p1 = G.polar(px, py, r - (major ? 15 : 8), ang);
       var hot = (hi != null && v >= hi) || (lo != null && v <= lo);
       out += '<line class="ck-mini-tick' + (major ? ' major' : '') + (hot ? ' hot' : '') + '" x1="' + r2(p0.x) + '" y1="' + r2(p0.y) +
         '" x2="' + r2(p1.x) + '" y2="' + r2(p1.y) + '"/>';
     }
     o.ticks.forEach(function (t) {
       if (!t[1]) return;
-      var lp = G.polar(px, py, r - 30, G.angleFor(t[0], o.min, o.max, -a, a));
+      var lp = G.polar(px, py, r - 28, G.angleFor(t[0], o.min, o.max, -a, a));
       out += '<text class="ck-mini-label" x="' + r2(lp.x) + '" y="' + r2(lp.y) + '" text-anchor="middle" dominant-baseline="central">' + t[1] + '</text>';
     });
-    if (icon) out += '<svg class="ck-mini-icon" x="' + (px - 13) + '" y="' + (py + 12) + '" width="26" height="26" viewBox="0 0 24 24">' + Dash.icons.list[icon] + '</svg>';
     out += '<g id="ck-mneedle-' + id + '">' + G.needle(px, py, r - 6, 12, 8, 'ck-mneedle') + '</g>' +
       '<circle class="ck-mini-hub" cx="' + px + '" cy="' + py + '" r="9"/>';
     return out + '</g>';
   }
 
-  // 오일 온도: 왼쪽 아래 구석의 작은 계기 (글씨 대신 오일 그림)
-  function oilDial() {
-    var o = OIL_POS;
-    return '<circle class="ck-oil-face" cx="' + o.px + '" cy="' + (o.py - 4) + '" r="' + (o.r + 12) + '"/>' +
-      miniDial('oil', o.px, o.py, o.r, o.a, OIL, null) +
-      '<svg class="ck-corner-icon" id="ck-oil-icon" x="' + (o.px - 18) + '" y="' + (o.py + 12) + '" width="36" height="36" viewBox="0 0 24 24">' + Dash.icons.list.oil + '</svg>';
-  }
-
-  // 연료: 오른쪽 아래 구석의 바늘 계기 (E ½ F) + 주유기 그림
-  function fuelDial() {
-    var o = FUEL_POS;
-    return '<circle class="ck-oil-face" cx="' + o.px + '" cy="' + (o.py - 4) + '" r="' + (o.r + 12) + '"/>' +
-      miniDial('fuel', o.px, o.py, o.r, o.a, FUEL, null) +
-      '<svg class="ck-corner-icon" id="ck-fuel-icon" x="' + (o.px - 18) + '" y="' + (o.py + 12) + '" width="36" height="36" viewBox="0 0 24 24">' + Dash.icons.list.fuel + '</svg>';
+  // 큰 계기 아래의 작은 둥근 계기 (글씨 대신 그림: 냉각수·오일·배터리·주유기)
+  function cornerDial(id, pos, cfg, icon) {
+    var o = pos;
+    return '<circle class="ck-oil-face" cx="' + o.px + '" cy="' + (o.py - 4) + '" r="' + (o.r + 14) + '"/>' +
+      miniDial(id, o.px, o.py, o.r, o.a, cfg) +
+      '<svg class="ck-corner-icon" id="ck-' + id + '-icon" x="' + (o.px - 18) + '" y="' + (o.py + 12) + '" width="36" height="36" viewBox="0 0 24 24">' + Dash.icons.list[icon] + '</svg>';
   }
 
   function needleAndHub(c, id) {
-    return '<g id="ck-needle-' + id + '">' + G.needle(c.cx, c.cy, R - 22, 32, 14, 'ck-needle') + '</g>' +
-      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="24" fill="url(#ck-hub)" stroke="#000" stroke-width="2"/>' +
-      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="8" fill="#0b0d10"/>';
+    return '<g id="ck-needle-' + id + '">' + G.needle(c.cx, c.cy, R - 14, 24, 11, 'ck-needle') + '</g>' +
+      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="17" fill="url(#ck-hub)" stroke="#000" stroke-width="2"/>' +
+      '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="6" fill="#0b0d10"/>';
   }
 
   function leftDial() {
     var c = LEFT;
     return dialBase(c) +
-      zoneArc(c, TACH, TACH.hotFrom, TACH.max, 'ck-zone-red', 14) +
+      zoneArc(c, TACH, TACH.hotFrom, TACH.max, 'ck-zone-red', 10) +
       glowTrail(c, 'left') +
       scale(c, TACH) +
       // 가운데 큰 기어 글자 (진짜 차처럼 RPM 계기 안에) + 주행 모드 그림
-      '<text class="ck-dial-mode" id="ck-mode" x="' + c.cx + '" y="' + (c.cy - 92) + '" text-anchor="middle" dominant-baseline="central"></text>' +
-      '<text class="ck-dial-gear" id="ck-dgear" x="' + c.cx + '" y="' + (c.cy + 100) + '" text-anchor="middle">P</text>' +
-      miniDial('temp', c.cx, c.cy + MINI_DY, MINI_R, MINI_A, COOLANT, 'coolant') +
+      '<text class="ck-dial-mode" id="ck-mode" x="' + c.cx + '" y="' + (c.cy - 58) + '" text-anchor="middle" dominant-baseline="central"></text>' +
+      '<text class="ck-dial-gear" id="ck-dgear" x="' + c.cx + '" y="' + (c.cy + 124) + '" text-anchor="middle">P</text>' +
       needleAndHub(c, 'left');
   }
 
@@ -259,33 +264,36 @@
     return dialBase(c) +
       glowTrail(c, 'right') +
       scale(c, SPEED) +
-      '<text class="ck-digital" id="ck-digital" x="' + c.cx + '" y="' + (c.cy + 104) + '" text-anchor="middle">0</text>' +
-      miniDial('volt', c.cx, c.cy + MINI_DY, MINI_R, MINI_A, VOLT, 'battery') +
+      '<text class="ck-digital" id="ck-digital" x="' + c.cx + '" y="' + (c.cy + 124) + '" text-anchor="middle">0</text>' +
       // 속도 눈금 바깥의 표시: 제한속도(주황), 자율주행 목표 속도(파랑)
-      '<g id="ck-limit-mark"><path class="ck-limit-mark" d="M' + c.cx + ' ' + (c.cy - R + 4) + 'l-11 -17h22z"/></g>' +
-      '<g id="ck-ap-mark"><path class="ck-ap-mark" d="M' + c.cx + ' ' + (c.cy - R + 30) + 'l-10 -16h20z"/></g>' +
+      '<g id="ck-limit-mark"><path class="ck-limit-mark" d="M' + c.cx + ' ' + (c.cy - R + 3) + 'l-9 -14h18z"/></g>' +
+      '<g id="ck-ap-mark"><path class="ck-ap-mark" d="M' + c.cx + ' ' + (c.cy - R + 22) + 'l-8 -13h16z"/></g>' +
       needleAndHub(c, 'right');
   }
 
+  // 테마 고르기 카드 그림: 가운데 위 큰 도로 + 흰 차, 양쪽 끝 작은 계기, 아래 콘솔
   function previewSvg() {
     return '<svg viewBox="0 0 160 90">' +
       '<defs><linearGradient id="ck-pv-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb4ff"/><stop offset="1" stop-color="#cfeaff"/></linearGradient>' +
-      '<clipPath id="ck-pv-clip"><rect x="48" y="10" width="64" height="72" rx="6"/></clipPath></defs>' +
+      '<clipPath id="ck-pv-clip"><rect x="36" y="4" width="88" height="54" rx="6"/></clipPath></defs>' +
       '<rect width="160" height="90" rx="8" fill="#07090c"/>' +
-      '<g clip-path="url(#ck-pv-clip)"><rect x="48" y="10" width="64" height="30" fill="url(#ck-pv-sky)"/>' +
-      '<rect x="48" y="38" width="64" height="44" fill="#5cb85c"/>' +
-      '<path d="M76 38h8l26 44H50z" fill="#4a5059"/><path d="M80 42v5M80 53v7M80 66v9" stroke="#fff" stroke-width="1.6"/>' +
-      '<circle cx="58" cy="44" r="4" fill="#3f9b47"/><circle cx="104" cy="46" r="5" fill="#36893f"/>' +
-      '<g transform="translate(80 76)"><path d="M-9 -11l3-6q6-1 12 0l3 6z" fill="#f5f7fa" stroke="#7d8794" stroke-width="0.6"/>' +
+      '<g clip-path="url(#ck-pv-clip)"><rect x="36" y="4" width="88" height="20" fill="url(#ck-pv-sky)"/>' +
+      '<rect x="36" y="22" width="88" height="36" fill="#5cb85c"/>' +
+      '<path d="M76 22h8l34 36H42z" fill="#4a5059"/><path d="M80 26v4M80 35v6M80 46v8" stroke="#fff" stroke-width="1.6"/>' +
+      '<circle cx="48" cy="28" r="4" fill="#3f9b47"/><circle cx="112" cy="30" r="5" fill="#36893f"/>' +
+      '<g transform="translate(80 55) scale(1.25)"><path d="M-9 -11l3-6q6-1 12 0l3 6z" fill="#f5f7fa" stroke="#7d8794" stroke-width="0.6"/>' +
       '<rect x="-11" y="-12" width="22" height="9" rx="2" fill="#f5f7fa" stroke="#7d8794" stroke-width="0.6"/>' +
       '<rect x="-10" y="-10" width="5" height="2" rx="1" fill="#ff3a3a"/><rect x="5" y="-10" width="5" height="2" rx="1" fill="#ff3a3a"/></g></g>' +
-      '<rect x="48" y="10" width="64" height="72" rx="6" fill="none" stroke="#2a323d" stroke-width="2"/>' +
-      '<circle cx="34" cy="46" r="31" fill="#12161c" stroke="#c7ced6" stroke-width="3.5"/>' +
-      '<circle cx="126" cy="46" r="31" fill="#12161c" stroke="#c7ced6" stroke-width="3.5"/>' +
-      '<path d="M14 67a29 29 0 1 1 40 0M106 67a29 29 0 1 1 40 0" fill="none" stroke="#4fc3ff" stroke-width="1.5" stroke-dasharray="2 4"/>' +
-      '<path d="M50 52a29 29 0 0 0 4-14" fill="none" stroke="#e0201b" stroke-width="3"/>' +
-      '<path d="M34 46 18 58M126 46 140 26" stroke="#ff4a1c" stroke-width="3" stroke-linecap="round"/>' +
-      '<circle cx="34" cy="46" r="3.5" fill="#444"/><circle cx="126" cy="46" r="3.5" fill="#444"/></svg>';
+      '<rect x="36" y="4" width="88" height="54" rx="6" fill="none" stroke="#4fc3ff" stroke-width="1.5"/>' +
+      '<rect x="36" y="62" width="88" height="24" rx="5" fill="#0f151d" stroke="#2a323d" stroke-width="1.5"/>' +
+      '<rect x="40" y="66" width="16" height="16" rx="3" fill="#1d232b"/><rect x="104" y="66" width="16" height="16" rx="3" fill="#1d232b"/>' +
+      '<path d="M66 78h28" stroke="#39d353" stroke-width="4" stroke-linecap="round"/>' +
+      '<circle cx="18" cy="38" r="16" fill="#12161c" stroke="#c7ced6" stroke-width="2.5"/>' +
+      '<circle cx="142" cy="38" r="16" fill="#12161c" stroke="#c7ced6" stroke-width="2.5"/>' +
+      '<path d="M18 38 9 45M142 38 150 27" stroke="#ff4a1c" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<circle cx="12" cy="68" r="7" fill="#12161c" stroke="#59616c" stroke-width="1.4"/><circle cx="26" cy="68" r="7" fill="#12161c" stroke="#59616c" stroke-width="1.4"/>' +
+      '<circle cx="134" cy="68" r="7" fill="#12161c" stroke="#59616c" stroke-width="1.4"/><circle cx="148" cy="68" r="7" fill="#12161c" stroke="#59616c" stroke-width="1.4"/>' +
+      '<path d="M6 10l6-5v3h7v4h-7v3zM154 10l-6-5v3h-7v4h7v3z" fill="#2ee86a"/></svg>';
   }
 
   // ---------- 테마 ----------
@@ -345,13 +353,18 @@
       return '<span class="ck-ind" data-ind="' + id + '">' + Dash.icons.svg(id) + '</span>';
     }
 
-    // 아래 가운데: 내비가 켜져 있으면 큰 화살표 + 남은 거리 숫자만. 아니면 주행 모드 그림 (글씨 없음)
+    // 콘솔 왼쪽 칸: 내비가 켜져 있으면 큰 화살표 + 남은 거리 숫자. 아니면 큰 시계 (아이는 숫자를 읽는다)
     function navHtml(s) {
-      if (!s.engineOn) return '';
-      if (!s.nav.on) return '<span class="ck-mode-badge">' + (s.autopilot.on ? '🤖' : MODE_ICONS[s.driveMode] || '') + '</span>';
-      var n = s.nav;
-      return Dash.info.arrowSvg(n.turn) + '<b class="ck-nav-dist">' + Dash.info.fmtDist(n.turnDist) + '</b>' +
-        (n.turn === 'arrive' ? '<span class="ck-nav-flag">🏁</span>' : '');
+      if (s.engineOn && s.nav.on) {
+        var n = s.nav;
+        return Dash.info.arrowSvg(n.turn) + '<b class="ck-nav-dist">' + Dash.info.fmtDist(n.turnDist) + '</b>' +
+          (n.turn === 'arrive' ? '<span class="ck-nav-flag">🏁</span>' : '');
+      }
+      var d = new Date();
+      var h = d.getHours() % 12 || 12;
+      var m = d.getMinutes();
+      return '<span class="ck-clock-icon">' + (s.night ? '🌙' : '☀️') + '</span>' +
+        '<b class="ck-clock">' + h + '<i>:</i>' + (m < 10 ? '0' : '') + m + '</b>';
     }
 
     function signHtml(s) {
@@ -376,14 +389,28 @@
       return '🤖 AI가 운전해요' + (a.parking ? ' · 주차 중' : a.target ? ' · ' + a.target + ' km/h' : '');
     }
 
+    function weatherIcon(s) {
+      if (s.inTunnel) return '🚇';
+      if (s.weather === 'storm') return '⛈️';
+      if (s.rainLevel > 0.2 || s.weather === 'rain') return '🌧️';
+      return s.night ? '🌙' : '☀️';
+    }
+
     // 시동 꺼짐 카드: 글씨 대신 반짝이는 시동 버튼 그림 (모든 기능 모드에서만 글씨도)
     var START_BTN = '<svg class="ck-startbtn" viewBox="0 0 120 120">' +
       '<circle cx="60" cy="60" r="54" class="ring"/><circle cx="60" cy="60" r="42" class="face"/>' +
       '<path d="M44 44a22 22 0 1 0 32 0" class="pw"/><path d="M60 34v24" class="pw"/></svg>';
 
+    function consoleBtn(label) {
+      var face = label === '⚙' ? '⚙️' : label; // 톱니는 색 그림 글자로
+      return '<button type="button" class="ck-cbtn" data-console="' + label + '" aria-label="' + label + '">' + face + '</button>';
+    }
+
     return {
       id: 'cockpit',
       hasRoad: true, // 가운데에 도로가 있어서 위 도로 화면(js/windshield.js)은 숨긴다
+      // 정보 콘솔 안에 있는 버튼 (controls.js 가 아래 조작부의 같은 버튼을 숨기고 이 버튼들에 연결한다)
+      consoleButtons: CONSOLE_BUTTONS,
       name: '계기판 + 도로',
       group: '운전 게임',
       preview: previewSvg(),
@@ -397,26 +424,34 @@
           '    <svg class="ck-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + defs() +
           '      ' + screenSvg() +
           '      <g class="ck-dial">' + leftDial() + '</g><g class="ck-dial">' + rightDial() + '</g>' +
-      '      <g class="ck-dial">' + oilDial() + '</g><g class="ck-dial">' + fuelDial() + '</g>' +
+          '      <g class="ck-dial">' + cornerDial('temp', TEMP_POS, COOLANT, 'coolant') + cornerDial('oil', OIL_POS, OIL, 'oil') +
+          cornerDial('volt', VOLT_POS, VOLT, 'battery') + cornerDial('fuel', FUEL_POS, FUEL, 'fuel') + '</g>' +
           '    </svg>' +
 
-          // 위: 깜빡이 화살표 · 경고등
+          // 위 구석: 깜빡이 화살표 · 경고등
           '    <div class="ck-turn left">' + ARROW_LEFT + '</div>' +
           '    <div class="ck-turn right">' + ARROW_RIGHT + '</div>' +
           '    <div class="ck-warns left">' + TOP_LEFT.map(iconSlot).join('') + '</div>' +
           '    <div class="ck-warns right">' + TOP_RIGHT.map(iconSlot).join('') + '</div>' +
-          // 가운데 화면 위쪽: 신호등·다음 표지판 (왼쪽), 제한속도 (오른쪽)
+          // 도로 화면 위쪽: 신호등·다음 표지판 (왼쪽), 제한속도 (오른쪽)
           '    <div class="ck-signs"><div class="ck-light"></div><div class="ck-next"></div></div>' +
           '    <div class="ck-limit"><span></span></div>' +
           '    <div class="ck-camera">📷 <b></b></div>' +
           // 맨 위 가운데: 안내 문구 · 자율주행
           '    <div class="ck-msgs"><div class="ck-bubble"></div><div class="ck-ap"></div></div>' +
-          // 아래: 기어 · 내비 · 연료
+          // 양쪽 아래: 기어 · 연료 칸, 별 · 바깥 온도
           '    <div class="ck-gears"><span data-g="P">P</span><span data-g="R">R</span><span data-g="N">N</span><span data-g="D">D</span><b></b></div>' +
-          '    <div class="ck-nav"></div>' +
-          '    <div class="ck-fuel"><span class="ck-fuel-icon">⛽</span><span class="ck-fuel-bars">' + new Array(FUEL_BARS + 1).join('<i></i>') + '</span></div>' +
-          // 가운데 아래: 정보창 (📄 정보 버튼으로 넘긴다)
+          '    <div class="ck-fuel"><span class="ck-fuel-icon">⛽</span><span class="ck-fuel-bars">' + new Array(FUEL_BARS + 1).join('<i></i>') + '</span>' +
+          '<b class="ck-fuel-l"></b></div>' +
+          '    <div class="ck-side-tile ck-star-tile"><span class="ck-lv"></span><b></b></div>' +
+          '    <div class="ck-side-tile ck-temp-tile"><span class="ck-wx"></span><b></b></div>' +
+          // 가운데 아래: 정보 콘솔 = 내비/시계 · 정보창(📄 로 넘긴다) · 주행 모드/점수 + 큰 버튼 4개
+          '    <div class="ck-console"></div>' +
+          '    <div class="ck-tile ck-nav"></div>' +
+          '    <div class="ck-tile ck-mode-tile"><span class="ck-mode-badge"></span><b class="ck-score"><i>🏆</i><span></span></b></div>' +
           '    <div class="ck-info"><div class="ck-info-page"></div><div class="ck-info-dots"></div></div>' +
+          '    <div class="ck-cbtns left">' + consoleBtn(CONSOLE_BUTTONS[0]) + consoleBtn(CONSOLE_BUTTONS[1]) + '</div>' +
+          '    <div class="ck-cbtns right">' + consoleBtn(CONSOLE_BUTTONS[2]) + consoleBtn(CONSOLE_BUTTONS[3]) + '</div>' +
           '    <div class="ck-popup"><div class="t"></div><div class="v"></div></div>' +
           // 시동 꺼짐
           '    <div class="ck-offcard">' + START_BTN + '<span class="ck-off-hand">👆</span>' +
@@ -445,8 +480,11 @@
         el.fuelNeedle = svg.querySelector('#ck-mneedle-fuel');
         el.voltNeedle = svg.querySelector('#ck-mneedle-volt');
         el.fuelBars = root.querySelectorAll('.ck-fuel-bars i');
+        el.fuelL = q('.ck-fuel-l');
         el.oilNeedle = svg.querySelector('#ck-mneedle-oil');
+        el.tempIcon = svg.querySelector('#ck-temp-icon');
         el.oilIcon = svg.querySelector('#ck-oil-icon');
+        el.voltIcon = svg.querySelector('#ck-volt-icon');
         el.fuelIcon = svg.querySelector('#ck-fuel-icon');
         el.limitMark = svg.querySelector('#ck-limit-mark');
         el.apMark = svg.querySelector('#ck-ap-mark');
@@ -464,6 +502,13 @@
         el.gears = root.querySelectorAll('.ck-gears span');
         el.gearNum = q('.ck-gears b');
         el.nav = q('.ck-nav');
+        el.modeBadge = q('.ck-mode-badge');
+        el.score = q('.ck-score span');
+        el.starTile = q('.ck-star-tile');
+        el.lv = q('.ck-star-tile .ck-lv');
+        el.stars = q('.ck-star-tile b');
+        el.wx = q('.ck-temp-tile .ck-wx');
+        el.temp = q('.ck-temp-tile b');
         el.fuelBox = q('.ck-fuel');
         el.popup = q('.ck-popup');
         el.popupT = q('.ck-popup .t');
@@ -563,21 +608,23 @@
         shown.temp += ((on ? s.coolantTemp : COOLANT.min) - shown.temp) * km;
         shown.fuel += ((on || s.refueling ? s.fuel : 0) - shown.fuel) * km;
         shown.oil += ((on ? oilT : OIL.min) - shown.oil) * km;
-        var md = MINI_DY;
-        miniRotate('mt', el.tempNeedle, shown.temp, COOLANT, LEFT.cx, LEFT.cy + md, MINI_A);
+        miniRotate('mt', el.tempNeedle, shown.temp, COOLANT, TEMP_POS.px, TEMP_POS.py, TEMP_POS.a);
         miniRotate('mf', el.fuelNeedle, shown.fuel, FUEL, FUEL_POS.px, FUEL_POS.py, FUEL_POS.a);
         // 배터리 전압: 시동 끄면 12.4V, 시동 거는 순간 뚝, 달리면 14V 언저리 (진짜 차처럼)
         var volt = !on ? (s.ignition || s.accessory ? 12.4 : VOLT.min) : s.startTimer < 0.6 ? 10.8 : 13.9 + Math.min(0.4, s.rpm / 12000);
         if (s.faults && s.faults.battery && on) volt = 12.0;
         shown.volt += (volt - shown.volt) * km;
-        miniRotate('mv', el.voltNeedle, shown.volt, VOLT, RIGHT.cx, RIGHT.cy + md, MINI_A);
+        miniRotate('mv', el.voltNeedle, shown.volt, VOLT, VOLT_POS.px, VOLT_POS.py, VOLT_POS.a);
         var bars = Math.ceil(shown.fuel * FUEL_BARS - 0.001);
         for (var bi = 0; bi < el.fuelBars.length; bi++) {
           var bc = bi < bars ? (bars <= 2 ? 'low' : 'on') : '';
           if (el.fuelBars[bi].className !== bc) el.fuelBars[bi].className = bc;
         }
+        setText('fuelL', el.fuelL, String(Math.round(s.fuelLiters != null ? s.fuelLiters : s.fuel * 50)));
         miniRotate('mo', el.oilNeedle, shown.oil, OIL, OIL_POS.px, OIL_POS.py, OIL_POS.a);
+        setAttr('tempCls', el.tempIcon, 'class', 'ck-corner-icon' + (on && s.coolantTemp >= COOLANT.hotFrom ? ' hot' : ''));
         setAttr('oilCls', el.oilIcon, 'class', 'ck-corner-icon' + (on && oilT >= OIL.hotFrom ? ' hot' : ''));
+        setAttr('voltCls', el.voltIcon, 'class', 'ck-corner-icon' + (on && s.faults && s.faults.battery ? ' low' : ''));
         setAttr('fuelCls', el.fuelIcon, 'class', 'ck-corner-icon' + (s.fuel < Dash.vehicle.LOW_FUEL ? ' low' : ''));
 
         // 제한속도 표지판과 눈금 표시
@@ -618,10 +665,19 @@
         }
         setText('gearN', el.gearNum, s.gear === 'D' && s.engineOn ? String(s.autoGear) : '');
 
-        // ---- 내비 (없으면 주행 모드 그림) ----
-        var nav = navHtml(s);
-        setHtml('nav', el.nav, nav);
+        // ---- 콘솔: 내비(없으면 시계) · 주행 모드 · 점수 · 별 · 바깥 온도 ----
+        setHtml('nav', el.nav, navHtml(s));
         setCls('navOn', el.nav, 'guide', s.engineOn && s.nav.on);
+        setText('modeBadge', el.modeBadge, s.autopilot.on ? '🤖' : MODE_ICONS[s.driveMode] || '');
+        setText('score', el.score, s.score ? String(s.score.points) : '');
+        var prog = Dash.progress && Dash.progress.stars;
+        setCls('starHide', el.starTile, 'hide', !prog);
+        if (prog) {
+          setText('stars', el.stars, String(Dash.progress.stars()));
+          setText('lv', el.lv, Dash.progress.level().emoji || '⭐');
+        }
+        setText('wx', el.wx, weatherIcon(s));
+        setText('temp', el.temp, Math.round(s.outsideTemp) + '°');
 
         // ---- 연료 (바늘은 오른쪽 계기 안, 남은 리터·갈 수 있는 거리는 아래 칸) ----
         setCls('fuelLow', el.fuelBox, 'low', s.fuel < Dash.vehicle.LOW_FUEL);

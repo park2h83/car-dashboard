@@ -1,7 +1,9 @@
 /* 계기판 + 도로 테마. 이 테마 전용 루트 클래스 .ck 아래에만 규칙을 둔다.
-   .ck-stage 안의 좌표는 1600x840 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
-   왼쪽 RPM 계기 중심 (268, 408), 오른쪽 속도 계기 중심 (1332, 408), 반지름 236.
-   가운데 위 도로 화면 x 498~1102, y 92~438, 지평선 y = 196. 가운데 아래 정보창 x 532~1068, y 450~746.
+   .ck-stage 안의 좌표는 1600x940 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
+   가운데 위 큰 도로 화면 x 346~1254, y 10~556, 지평선 y = 180.
+   양쪽 끝: 깜빡이·경고등(y 10~134), 바늘 계기(왼쪽 RPM 중심 170,318 / 오른쪽 속도 1430,318, 반지름 146),
+   작은 계기 4개(y ≈ 540~670), 기어·연료 칸(y 690~776), 별·바깥 온도(y 792~928).
+   가운데 아래 정보 콘솔 x 340~1260, y 566~934: 내비/시계 · 정보창 · 주행 모드/점수 + 큰 버튼 🧭 📄 🎨 ⚙.
    작은 글씨는 두지 않는다 (아이는 숫자·그림·색만 읽는다). */
 .ck {
   --accent: #4fc3ff;
@@ -39,7 +41,7 @@
   left: 0;
   top: 0;
   width: 1600px;
-  height: 840px;
+  height: 940px;
   transform-origin: 0 0;
 }
 .ck-svg { position: absolute; left: 0; top: 0; overflow: visible; }
@@ -47,36 +49,36 @@
 /* ---------- 바늘 계기 ---------- */
 .ck .ck-face0 { stop-color: var(--face0); }
 .ck .ck-face1 { stop-color: var(--face1); }
-.ck .ck-ring { fill: none; stroke: var(--accent); stroke-width: 4; opacity: 0.9; }
-.ck[data-mode="eco"] .ck-ring, .ck[data-mode="sport"] .ck-ring, .ck.ap .ck-ring { stroke-width: 8; }
-.ck .tick-major { stroke: #f2f4f7; stroke-width: 5; }
-.ck .tick-minor { stroke: #9aa4b0; stroke-width: 2.5; }
+.ck .ck-ring { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0.9; }
+.ck[data-mode="eco"] .ck-ring, .ck[data-mode="sport"] .ck-ring, .ck.ap .ck-ring { stroke-width: 6; }
+.ck .tick-major { stroke: #f2f4f7; stroke-width: 4; }
+.ck .tick-minor { stroke: #9aa4b0; stroke-width: 2; }
 .ck .tick-major.hot, .ck .tick-minor.hot { stroke: #ff3b30; }
-.ck .tick-label { fill: #f4f6f9; font-size: 36px; font-weight: 700; }
+.ck .tick-label { fill: #f4f6f9; font-size: 29px; font-weight: 800; }
 .ck .tick-label.hot { fill: #ff4a40; }
 .ck[data-mode="sport"] .tick-label { fill: #ffe0dc; font-style: italic; }
 .ck .ck-zone-red { fill: none; stroke: #c0141a; opacity: 0.9; }
-.ck .ck-dial-mode { font-size: 50px; }
-.ck .ck-digital { fill: #fff; font-size: 104px; font-weight: 900; letter-spacing: -3px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 6px; paint-order: stroke; }
+.ck .ck-dial-mode { font-size: 34px; }
+.ck .ck-digital { fill: #fff; font-size: 76px; font-weight: 900; letter-spacing: -2px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 5px; paint-order: stroke; }
 .ck[data-mode="sport"] .ck-digital { font-style: italic; }
 .ck .ck-digital.over { fill: #ff4a40; stroke: #ff3b30; stroke-opacity: 0.5; animation: ck-blink 0.6s steps(1) infinite; }
 /* RPM 계기 가운데의 큰 기어 글자 */
-.ck .ck-dial-gear { fill: #fff; font-size: 104px; font-weight: 900; letter-spacing: -3px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 6px; paint-order: stroke; }
+.ck .ck-dial-gear { fill: #fff; font-size: 76px; font-weight: 900; letter-spacing: -2px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 5px; paint-order: stroke; }
 .ck .ck-dial-gear.g-D { fill: var(--accent); stroke: #fff; stroke-opacity: 0.18; }
 .ck .ck-dial-gear.g-P { fill: #ff5a4f; stroke: #ff3b30; }
 .ck .ck-dial-gear.g-R { fill: #ffb020; stroke: #ffb020; }
 .ck .ck-dial-gear.g-N { fill: #e8ecf1; }
 .ck[data-mode="sport"] .ck-dial-gear { font-style: italic; }
 /* 계기 바깥 빛나는 테두리, 계기 안쪽 은은한 빛 */
-.ck .ck-bezel-glow { fill: none; stroke: var(--accent); stroke-width: 4; opacity: 0.55; }
+.ck .ck-bezel-glow { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0.55; }
 .ck .ck-halo0 { stop-color: var(--accent); }
 /* 바늘을 따라 차오르는 빛 띠 */
-.ck .ck-trail-wide { fill: none; stroke: var(--accent); stroke-width: 24; opacity: 0.22; }
-.ck .ck-trail { fill: none; stroke: var(--accent); stroke-width: 9; opacity: 0.95; }
+.ck .ck-trail-wide { fill: none; stroke: var(--accent); stroke-width: 16; opacity: 0.22; }
+.ck .ck-trail { fill: none; stroke: var(--accent); stroke-width: 6; opacity: 0.95; }
 .ck.redline #ck-trail-left, .ck.redline #ck-trailw-left { stroke: #ff3b30; }
 .ck.redline .ck-zone-red { animation: ck-blink 0.25s steps(1) infinite; }
 /* 빛나는 느낌은 반투명 테두리로 (흐림 필터는 바늘이 움직일 때마다 다시 그려서 느리다) */
-.ck .ck-needle path { fill: #ff4a1c; stroke: rgba(255, 90, 40, 0.35); stroke-width: 8; stroke-linejoin: round; paint-order: stroke; }
+.ck .ck-needle path { fill: #ff4a1c; stroke: rgba(255, 90, 40, 0.35); stroke-width: 6; stroke-linejoin: round; paint-order: stroke; }
 .ck .ck-limit-mark { fill: #ffb020; }
 .ck .ck-ap-mark { fill: #3d8bff; }
 /* 작은 바늘 계기 (냉각수·연료·오일) */
@@ -86,7 +88,6 @@
 .ck .ck-mini-tick.major { stroke: #f2f4f7; stroke-width: 4; }
 .ck .ck-mini-tick.hot { stroke: #ff3b30; }
 .ck .ck-mini-label { fill: #e8ecf1; font-size: 20px; font-weight: 800; }
-.ck .ck-mini-icon { color: #aeb7c2; }
 .ck .ck-mneedle path { fill: #ff6a2c; stroke: rgba(255, 90, 40, 0.3); stroke-width: 4; stroke-linejoin: round; paint-order: stroke; }
 .ck .ck-mini-hub { fill: #2a3038; stroke: #000; stroke-width: 2; }
 .ck .ck-oil-face { fill: #0b0e12; stroke: #59616c; stroke-width: 3; }
@@ -112,8 +113,8 @@
 .ck .ck-cloud { fill: #fff; will-change: transform; animation: ck-cloud 70s linear infinite; }
 .ck .ck-cloud.c2 { animation-duration: 95s; animation-delay: -50s; }
 @keyframes ck-cloud {
-  from { transform: translateX(-320px); }
-  to { transform: translateX(640px); }
+  from { transform: translateX(-420px); }
+  to { transform: translateX(960px); }
 }
 .ck .ck-dark { display: none; }
 .ck .ck-flash { fill: #fff; opacity: 0; pointer-events: none; }
@@ -136,7 +137,7 @@
 .ck.night .ck-sun, .ck.night .ck-cloud { display: none; }
 .ck.night .scn { opacity: 0.35; }
 /* 밤엔 계기 조명이 더 또렷하게 */
-.ck.night .ck-needle path { stroke: rgba(255, 90, 40, 0.5); stroke-width: 10; }
+.ck.night .ck-needle path { stroke: rgba(255, 90, 40, 0.5); stroke-width: 8; }
 .ck.night .tick-label { fill: #fff; }
 
 /* 비 */
@@ -226,18 +227,19 @@
 .ck .wiper-arm { stroke: #15181c; stroke-width: 7; stroke-linecap: round; }
 .ck .wiper-blade { stroke: #050607; stroke-width: 12; stroke-linecap: round; }
 
-/* ---------- 위: 깜빡이 화살표 · 경고등 ---------- */
+/* ---------- 양쪽 위 구석: 깜빡이 화살표 · 경고등 ---------- */
 .ck-turn {
   position: absolute;
-  top: 16px;
-  width: 128px;
-  height: 128px;
+  top: 18px;
+  width: 120px;
+  height: 120px;
   padding: 8px;
+  box-sizing: border-box;
   border-radius: 50%;
 }
 /* 빛나는 테두리(9px)까지 화면 안에 들어오게 가장자리에서 조금 띄운다 */
-.ck-turn.left { left: 18px; }
-.ck-turn.right { right: 18px; }
+.ck-turn.left { left: 22px; }
+.ck-turn.right { right: 22px; }
 .ck-turn svg { display: block; width: 100%; height: 100%; fill: rgba(255, 255, 255, 0.13); }
 .ck-turn.armed svg { fill: rgba(34, 197, 94, 0.3); }
 .ck-turn.on { background: rgba(10, 40, 20, 0.7); box-shadow: 0 0 0 9px rgba(46, 232, 106, 0.45), 0 0 46px 12px rgba(46, 232, 106, 0.55); }
@@ -246,18 +248,18 @@
 
 .ck-warns {
   position: absolute;
-  top: 12px;
-  width: 330px;
+  top: 14px;
+  width: 200px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 6px;
+  gap: 6px 5px;
 }
-.ck-warns.left { left: 144px; }
-.ck-warns.right { right: 144px; justify-content: flex-end; }
+.ck-warns.left { left: 140px; }
+.ck-warns.right { right: 140px; justify-content: flex-end; }
 .ck-ind {
   display: inline-flex;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   color: #fff;
   opacity: 0.08; /* 꺼진 경고등은 검은 유리 뒤에 희미하게 */
 }
@@ -269,45 +271,46 @@
 .ck-ind.on.blue { color: #4f9bff; }
 .ck-ind.on.white { color: #e8ecf1; }
 
-/* ---------- 가운데 화면 위쪽: 신호등·표지판·제한속도 ---------- */
+/* ---------- 도로 화면 위쪽: 신호등·표지판·제한속도 ---------- */
 .ck-signs {
   position: absolute;
-  left: 514px;
-  top: 104px;
+  left: 364px;
+  top: 24px;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
 }
 .ck-light, .ck-next { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .ck-light:empty, .ck-next:empty { display: none; }
-.ck-next svg { width: 80px; height: 80px; }
+.ck-next svg { width: 96px; height: 96px; }
 .ck-light span, .ck-next span {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  padding: 1px 10px;
+  padding: 1px 12px;
   border-radius: 999px;
   background: var(--panel);
 }
-.ck-lamps { display: flex; gap: 6px; padding: 8px 9px; border-radius: 14px; background: #111; border: 3px solid #333; }
-.ck-lamps i { width: 24px; height: 24px; border-radius: 50%; background: #2a2a2a; }
+.ck-lamps { display: flex; gap: 7px; padding: 9px 10px; border-radius: 16px; background: #111; border: 3px solid #333; }
+.ck-lamps i { width: 28px; height: 28px; border-radius: 50%; background: #2a2a2a; }
 .ck-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 12px #ff3b30; }
 .ck-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 12px #ffb020; }
 .ck-lamps i.green.on { background: #22c55e; box-shadow: 0 0 12px #22c55e; }
 
 .ck-limit {
   position: absolute;
-  left: 996px;
-  top: 102px;
-  width: 92px;
-  height: 92px;
+  left: 1124px;
+  top: 22px;
+  width: 112px;
+  height: 112px;
+  box-sizing: border-box;
   border-radius: 50%;
   background: #fff;
-  border: 11px solid #e0201b;
+  border: 13px solid #e0201b;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #111;
-  font-size: 40px;
+  font-size: 46px;
   font-weight: 900;
   letter-spacing: -1px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -319,13 +322,13 @@
 }
 .ck-camera {
   position: absolute;
-  left: 1042px;
-  top: 200px;
+  left: 1180px;
+  top: 144px;
   transform: translateX(-50%);
   padding: 2px 12px;
   border-radius: 999px;
   background: var(--panel);
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 800;
   color: #ffb020;
   white-space: nowrap;
@@ -337,7 +340,7 @@
 .ck-msgs {
   position: absolute;
   left: 470px;
-  top: 8px;
+  top: 16px;
   width: 660px;
   display: flex;
   flex-direction: column;
@@ -347,12 +350,12 @@
 }
 .ck-bubble {
   display: none;
-  max-width: 660px;
+  max-width: 640px;
   padding: 10px 28px;
   border-radius: 26px;
   background: #ffcf33;
   color: #1a1400;
-  font-size: 36px;
+  font-size: 40px;
   font-weight: 800;
   line-height: 1.25;
   text-align: center;
@@ -367,33 +370,31 @@
   border-radius: 24px;
   background: #1d4ed8;
   border: 3px solid #8ab4ff;
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 800;
   text-align: center;
   white-space: nowrap;
 }
 .ck-ap.show { display: block; }
-.ck-ap b { font-size: 44px; font-weight: 900; vertical-align: -3px; }
+.ck-ap b { font-size: 46px; font-weight: 900; vertical-align: -3px; }
 
-/* ---------- 아래: 기어 · 내비 · 연료 ---------- */
-.ck-gears {
+/* ---------- 양쪽 아래: 기어 · 연료 칸, 별 · 바깥 온도 ---------- */
+.ck-gears, .ck-fuel, .ck-side-tile {
   position: absolute;
-  left: 156px;
-  top: 756px;
-  width: 316px;
-  height: 78px;
+  width: 310px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   border-radius: 22px;
   background: var(--panel);
   border: 2px solid #232a33;
 }
+.ck-gears { left: 14px; top: 690px; height: 86px; gap: 8px; }
 .ck-gears span {
-  width: 56px;
+  width: 52px;
   text-align: center;
-  font-size: 54px;
+  font-size: 52px;
   font-weight: 900;
   line-height: 1;
   color: #3b444f;
@@ -402,59 +403,14 @@
 .ck-gears span[data-g="P"].on { color: #ff5a4f; }
 .ck-gears span[data-g="R"].on { color: #ffb020; }
 .ck-gears span[data-g="D"].on { color: var(--accent); }
-.ck-gears b { width: 34px; margin-left: -10px; align-self: flex-end; padding-bottom: 10px; font-size: 32px; font-weight: 800; color: var(--accent); }
+.ck-gears b { width: 32px; margin-left: -10px; align-self: flex-end; padding-bottom: 10px; font-size: 32px; font-weight: 800; color: var(--accent); }
 
-.ck-nav {
-  position: absolute;
-  left: 492px;
-  top: 756px;
-  width: 616px;
-  height: 82px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  overflow: hidden;
-}
-.ck-nav.guide { left: 600px; width: 400px; border-radius: 26px; background: var(--panel); border: 3px solid var(--accent); box-shadow: 0 0 18px -2px var(--accent); }
-.ck-nav .nav-arrow { flex: 0 0 auto; width: 72px; height: 72px; fill: none; stroke: #fff; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; }
-.ck-nav-dist { font-size: 58px; font-weight: 900; white-space: nowrap; line-height: 1; }
-.ck-nav-flag { font-size: 50px; line-height: 1; }
-/* 내비가 꺼져 있을 때: 주행 모드 그림 (🍃 😊 🔥 🤖) */
-.ck-mode-badge {
-  width: 72px;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 46px;
-  line-height: 1;
-  background: var(--panel);
-  border: 3px solid var(--accent);
-  box-shadow: 0 0 20px -2px var(--accent);
-}
-
-.ck-fuel {
-  position: absolute;
-  left: 1142px;
-  top: 756px;
-  width: 300px;
-  height: 78px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 0 16px;
-  box-sizing: border-box;
-  border-radius: 22px;
-  background: var(--panel);
-  border: 2px solid #232a33;
-}
-.ck-fuel-icon { font-size: 36px; line-height: 1; }
+.ck-fuel { left: 1276px; top: 690px; height: 86px; gap: 10px; padding: 0 12px; }
+.ck-fuel-icon { font-size: 32px; line-height: 1; }
+.ck-fuel-l { min-width: 56px; font-size: 44px; font-weight: 900; line-height: 1; text-align: right; }
 /* 연료 막대 게이지: 칸이 줄어드는 게 보이게 (2칸 이하면 주황). 칸이 오른쪽으로 갈수록 높아진다 */
-.ck-fuel-bars { display: flex; gap: 5px; align-items: flex-end; height: 52px; }
-.ck-fuel-bars i { width: 17px; height: 100%; border-radius: 4px; background: #252c35; }
+.ck-fuel-bars { display: flex; gap: 4px; align-items: flex-end; height: 52px; }
+.ck-fuel-bars i { width: 13px; height: 100%; border-radius: 4px; background: #252c35; }
 .ck-fuel-bars i:nth-child(1) { height: 46%; }
 .ck-fuel-bars i:nth-child(2) { height: 52%; }
 .ck-fuel-bars i:nth-child(3) { height: 58%; }
@@ -467,14 +423,113 @@
 .ck-fuel-bars i.on { background: linear-gradient(#e9f6ff, #8fd3ff); box-shadow: 0 0 6px rgba(143, 211, 255, 0.6); }
 .ck-fuel-bars i.low { background: #ffa000; box-shadow: 0 0 6px rgba(255, 160, 0, 0.7); }
 .ck-fuel.low { border-color: #ffa000; }
-.ck-fuel.low .ck-fuel-txt { color: #ffb020; }
+.ck-fuel.low .ck-fuel-l { color: #ffb020; }
+
+/* 별(모은 별 수 + 면허 등급 그림), 바깥 온도(날씨 그림 + 숫자) */
+.ck-side-tile { top: 792px; height: 136px; gap: 18px; border-radius: 26px; }
+.ck-star-tile { left: 14px; }
+.ck-star-tile.hide { visibility: hidden; }
+.ck-temp-tile { left: 1276px; }
+.ck-side-tile span { font-size: 64px; line-height: 1; }
+.ck-side-tile b { font-size: 70px; font-weight: 900; line-height: 1; letter-spacing: -2px; }
+.ck-star-tile b::before { content: '⭐'; font-size: 0.7em; margin-right: 6px; vertical-align: 0.12em; letter-spacing: 0; }
+
+/* ---------- 가운데 아래: 정보 콘솔 ---------- */
+.ck-console {
+  position: absolute;
+  left: 340px;
+  top: 566px;
+  width: 920px;
+  height: 368px;
+  box-sizing: border-box;
+  border-radius: 32px;
+  background: linear-gradient(#0c1118, #040609);
+  border: 2px solid #1e252e;
+  box-shadow: 0 0 0 3px #030405, 0 0 26px -10px var(--accent);
+}
+.ck-tile {
+  position: absolute;
+  top: 578px;
+  width: 210px;
+  height: 232px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 24px;
+  background: linear-gradient(#18212c, #0b1017);
+  border: 3px solid #2a323d;
+  overflow: hidden;
+}
+.ck-nav { left: 352px; }
+.ck-mode-tile { left: 1038px; }
+/* 내비: 큰 화살표 + 남은 거리 */
+.ck-nav.guide { border-color: var(--accent); box-shadow: 0 0 18px -2px var(--accent); }
+.ck-nav .nav-arrow { flex: 0 0 auto; width: 104px; height: 104px; fill: none; stroke: #fff; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; }
+.ck-nav-dist { font-size: 50px; font-weight: 900; white-space: nowrap; line-height: 1; }
+.ck-nav-flag { position: absolute; right: 12px; top: 10px; font-size: 44px; line-height: 1; }
+/* 내비가 꺼져 있을 때: 큰 시계 */
+.ck-clock-icon { font-size: 54px; line-height: 1; }
+.ck-clock { font-size: 66px; font-weight: 900; line-height: 1; letter-spacing: -2px; white-space: nowrap; }
+.ck-clock i { font-style: normal; display: inline-block; margin: 0 2px; animation: ck-colon 2s steps(1) infinite; }
+@keyframes ck-colon { 50% { opacity: 0.25; } }
+/* 주행 모드 그림 (🍃 😊 🔥 🤖) + 운전 점수 */
+.ck-mode-badge {
+  width: 118px;
+  height: 118px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 68px;
+  line-height: 1;
+  background: var(--panel);
+  border: 4px solid var(--accent);
+  box-shadow: 0 0 22px -2px var(--accent);
+}
+.ck-score { display: flex; align-items: center; gap: 6px; font-size: 50px; font-weight: 900; line-height: 1; }
+.ck-score i { font-style: normal; font-size: 38px; }
+.ck-score span:empty { display: none; }
+
+/* 콘솔 안의 큰 버튼 (js/core/controls.js 가 data-console 이름으로 연결한다) */
+.ck-cbtns {
+  position: absolute;
+  top: 820px;
+  width: 210px;
+  height: 104px;
+  display: flex;
+  gap: 10px;
+}
+.ck-cbtns.left { left: 352px; }
+.ck-cbtns.right { left: 1038px; }
+.ck-cbtn {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  font: inherit;
+  font-size: 58px;
+  line-height: 1;
+  color: #fff;
+  border-radius: 22px;
+  background: linear-gradient(#2a323d, #161b22);
+  border: 3px solid #3a4452;
+  box-shadow: 0 4px 0 #05070a;
+  touch-action: none;
+  cursor: pointer;
+}
+.ck-cbtn:active { transform: translateY(3px) scale(0.97); box-shadow: 0 1px 0 #05070a; }
+.ck-cbtn.active { border-color: #39d353; box-shadow: 0 0 16px rgba(57, 211, 83, 0.7); }
 
 /* 설정 팝업 */
 .ck-popup {
   position: absolute;
   left: 800px;
-  top: 160px;
-  min-width: 380px;
+  top: 200px;
+  min-width: 420px;
   padding: 16px 30px;
   border-radius: 26px;
   background: var(--panel);
@@ -484,8 +539,8 @@
   display: none;
 }
 .ck-popup.show { display: block; }
-.ck-popup .t { font-size: 26px; color: var(--muted); font-weight: 700; }
-.ck-popup .v { font-size: 54px; font-weight: 800; }
+.ck-popup .t { font-size: 30px; color: var(--muted); font-weight: 700; }
+.ck-popup .v { font-size: 60px; font-weight: 800; }
 
 /* ---------- 시동 꺼짐: 계기 조명이 꺼지고 화면이 흐려진다 ---------- */
 .ck .ck-ring, .ck [class^="tick"], .ck .ck-zone-red, .ck .ck-dial-mode, .ck .ck-dial-gear, .ck .ck-bezel-glow,
@@ -495,13 +550,13 @@
 .ck .ck-halo { transition: opacity 0.6s; }
 .ck.off .ck-bezel-glow, .ck.off .ck-halo { opacity: 0; }
 .ck.off .ck-world { opacity: 0.4; }
-.ck.off .ck-limit, .ck.off .ck-gears, .ck.off .ck-fuel { opacity: 0.35; }
+.ck.off .ck-limit, .ck.off .ck-gears, .ck.off .ck-fuel, .ck.off .ck-side-tile, .ck.off .ck-mode-tile { opacity: 0.35; }
 .ck-offcard {
   position: absolute;
-  left: 548px;
-  top: 470px;
-  width: 504px;
-  min-height: 250px;
+  left: 574px;
+  top: 578px;
+  width: 452px;
+  min-height: 344px;
   padding: 18px;
   box-sizing: border-box;
   border-radius: 28px;
@@ -543,12 +598,12 @@
    info-car(car-body, car-glass, tire, tire-psi, door), nav-arrow, nav-dist, nav-word, road-name, ap-state, clim-temps */
 .ck-info {
   position: absolute;
-  left: 532px;
-  top: 450px;
-  width: 536px;
-  height: 296px;
+  left: 574px;
+  top: 578px;
+  width: 452px;
+  height: 346px;
   box-sizing: border-box;
-  padding: 12px 26px 36px;
+  padding: 12px 18px 34px;
   display: flex;
   flex-direction: column;
   border-radius: 26px;
@@ -558,7 +613,7 @@
   color: #e8ecf1;
   overflow: hidden;
 }
-.ck-info-page { flex: 1; display: none; flex-direction: column; gap: 5px; min-height: 0; overflow: hidden; }
+.ck-info-page { flex: 1; display: none; flex-direction: column; justify-content: center; gap: 8px; min-height: 0; overflow: hidden; }
 .ck.info-on .ck-info-page { display: flex; }
 .ck-info-page > * { flex-shrink: 0; }
 .ck-info-dots {
@@ -605,8 +660,7 @@
 .ck .nav-word { font-size: 24px; font-weight: 700; text-align: center; color: #ffe066; }
 
 /* 위에서 본 내 차 (흰색): 타이어 공기압 · 문 열림 */
-.ck .info-car { flex: 0 0 auto; height: 192px; align-self: center; overflow: visible; }
-.ck-info[data-page="car"] .info-car { height: 160px; }
+.ck .info-car { flex: 0 0 auto; height: 224px; align-self: center; overflow: visible; }
 .ck .info-car .car-body { fill: #f5f7fa; stroke: var(--accent); stroke-width: 2.5; }
 .ck .info-car .car-glass { fill: #1b2230; }
 .ck .tire { fill: #59606b; stroke: #0b0e12; stroke-width: 1; }
@@ -638,14 +692,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px 6px 8px;
+  padding: 14px 6px 12px;
   border-radius: 22px;
   background: linear-gradient(#18212c, #0b1017);
   border: 3px solid var(--accent);
   box-shadow: 0 0 16px -4px var(--accent), inset 0 0 18px rgba(0, 0, 0, 0.6);
 }
 .ck .info-tile i { font-style: normal; font-size: 40px; line-height: 1.1; }
-.ck .info-tile b { font-size: 60px; font-weight: 900; line-height: 1; letter-spacing: -2px; color: #fff; white-space: nowrap; }
+.ck .info-tile b { font-size: 52px; font-weight: 900; line-height: 1; letter-spacing: -2px; color: #fff; white-space: nowrap; }
 .ck .info-tile b:empty { display: none; }
 .ck .info-tile small { font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1.1; }
 .ck .info-tile small:empty { display: none; }
@@ -663,4 +717,4 @@
 .ck .info-title.icon ~ .info-big + .info-tiles .info-tile i { font-size: 34px; }
 .ck .info-title.icon ~ .info-big + .info-tiles .info-tile b { font-size: 44px; }
 .ck .ck-info[data-page="score"] .info-title.icon ~ .info-big { font-size: 84px; }
-.ck-info[data-page="car"] .info-car { height: 184px; }
+.ck-info[data-page="car"] .info-car { height: 236px; }

@@ -1,30 +1,45 @@
-/* 쉬운 모드 (5살, js/easy.js): 계기판을 크게(70%), 버튼은 적고 크게. body.easy 아래에서만 */
-body.easy { --controls-height: 30vh; }
-body.easy #controls { gap: 1.4vw; padding: 1.2vh 1.4vw 1.4vh; }
+/* 쉬운 모드 (5살, js/easy.js): 계기판(도로 화면)을 크게(약 78%), 조작부는 낮은 한 줄. body.easy 아래에서만
+   한 줄: [시동] [P R D] [◀ ▲ ▶ 📯 🤖 (🧭 📄 🎨 ⚙) (🌧)] [브레이크 엑셀]
+   🧭 📄 🎨 ⚙ 는 테마가 콘솔 버튼으로 가지고 있으면(theme.consoleButtons, 계기판 + 도로) 여기서 숨는다 (.moved) */
+body.easy { --controls-height: 22vh; }
+/* 주차할 땐 조작부 자리에 핸들이 나오니 예전처럼 높게 (계기판은 주차 화면이 덮는다) */
+body.easy.parking { --controls-height: 30vh; }
+body.easy #controls { gap: 1.2vw; padding: 1vh 1.2vw 1.2vh; }
 
-/* 시동 버튼: 보통 크기 동그라미 (남는 자리는 가운데 그림 버튼에 준다) */
-body.easy .start-btn { width: min(13vh, 100px); height: min(13vh, 100px); min-width: 84px; min-height: 84px; font-size: 11px; border-width: 4px; }
+/* 시동 버튼: 보통 크기 동그라미 */
+body.easy .start-btn { width: min(14vh, 100px); height: min(14vh, 100px); min-width: 80px; min-height: 80px; font-size: 11px; border-width: 4px; }
 body.easy .ctrl-left { gap: 0.8vw; }
 
-/* 기어: P R D 만 (N 은 숨김), 크게 */
+/* 기어: P R D 만 (N 은 숨김), 가로로 한 줄 */
 body.easy .gear-selector [data-gear="N"] { display: none; }
-body.easy .gear-selector { gap: 6px; }
-body.easy .gear-selector button { min-width: 72px; max-height: none; font-size: 30px; border-radius: 14px; }
+body.easy .gear-selector { flex-direction: row; align-items: center; gap: 6px; }
+body.easy .gear-selector button {
+  flex: 0 0 auto;
+  width: max(58px, 5.4vw);
+  min-width: 58px;
+  height: 100%;
+  max-height: 128px;
+  font-size: 32px;
+  border-radius: 14px;
+}
 
-/* 가운데 큰 버튼들: 5칸 × 2줄 */
+/* 가운데 큰 버튼들: 한 줄 */
 .ctrl-quick.easy-grid {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  align-content: stretch;
+  align-items: center;
   gap: 10px;
   height: 100%;
 }
-body.easy .ctrl-quick.easy-grid .ctrl-btn { flex: 0 0 calc(20% - 8px); }
+body.easy .ctrl-quick.easy-grid .ctrl-btn { flex: 1 1 0; max-width: 132px; }
+body.easy .ctrl-quick .ctrl-btn.moved { display: none; }
 body.easy .ctrl-quick .ctrl-btn {
-  height: auto;
+  height: 100%;
+  max-height: 128px;
   min-height: 70px;
   min-width: 0;
+  padding: 2px 4px;
   border-radius: 16px;
   border-width: 3px;
   font-size: 34px;  /* 그림 아이콘 */
@@ -34,11 +49,15 @@ body.easy .ctrl-quick .ctrl-btn .val { font-size: 16px; font-weight: 700; color:
 body.easy .ctrl-quick .ctrl-btn.turn { font-size: 40px; }
 body.easy .ctrl-quick .ctrl-btn.hazard { font-size: 36px; }
 body.easy .ctrl-btn.nav.active { border-color: #39d353; box-shadow: 0 0 12px rgba(57, 211, 83, 0.6); }
+/* 테마에 콘솔 버튼이 없으면(다른 테마) 🧭 📄 🎨 ⚙ 까지 9~10개라 두 줄로 (한 줄 높이 58px 이상) */
+body.easy .ctrl-quick.easy-grid:not(.has-console) { flex-wrap: wrap; align-content: stretch; align-items: stretch; gap: 8px 10px; }
+body.easy .ctrl-quick.easy-grid:not(.has-console) .ctrl-btn { flex: 0 0 calc(20% - 8px); max-width: none; height: auto; max-height: none; min-height: 58px; }
 
-/* 페달: 크게 */
-body.easy .pedal { font-size: 19px; border-radius: 18px; }
-body.easy .pedal-brake { width: 17vh; height: 21vh; min-width: 110px; }
-body.easy .pedal-accel { width: 11vh; height: 26vh; min-width: 76px; }
+/* 페달: 조작부가 낮아져도 밟기 쉽게 넓게 (엑셀이 브레이크보다 길다) */
+body.easy .ctrl-pedals { gap: 1vw; }
+body.easy .pedal { font-size: 19px; border-radius: 18px; padding-bottom: 8px; }
+body.easy .pedal-brake { width: 14vh; height: 15.5vh; min-width: 104px; }
+body.easy .pedal-accel { width: 9.5vh; height: 19.6vh; min-width: 70px; }
 
 /* 안내 문구도 크게 */
 body.easy #toast { font-size: 24px; padding: 12px 26px; }
@@ -162,3 +181,6 @@ body.easy .ctrl-quick .ctrl-btn.wiper.active::after {
   to { background: #2f7fc0; border-color: #ffd23f; box-shadow: 0 0 22px rgba(255, 210, 63, 0.85); }
 }
 @keyframes wiper-sweep { 0%, 100% { transform: rotate(-70deg); } 50% { transform: rotate(70deg); } }
+
+/* 주차 핸들: 조작부(30vh) 안에 다 들어가게 */
+body.easy .st-wheel { width: min(290px, 27.5vh); height: min(290px, 27.5vh); }

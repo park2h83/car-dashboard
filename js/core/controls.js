@@ -8,6 +8,10 @@
 //     show: function(s) → false 면 버튼을 숨긴다 (쉬운 모드 🌧 처럼 필요할 때만 나오는 버튼) }
 //   { stepper: true, label, value, minus: function(s), plus: function(s) }  → [−] 값 [+]
 //
+// 테마 안의 버튼(콘솔 버튼): 테마가 consoleButtons: ['🧭', '📄', '🎨', '⚙'] 를 주고 그 이름의 버튼을
+//   data-console="🧭" 로 그리면, setTheme() 이 그 버튼에 같은 일을 연결하고 쉬운 모드 아래 조작부에서는 같은 버튼을 숨긴다.
+//   (예: 계기판 + 도로 테마의 정보 콘솔). find('🧭') 도 콘솔 버튼을 돌려줘서 운전 코치가 그 버튼을 반짝인다.
+//
 // 키보드: ↑/W 엑셀, ↓/S/Space 브레이크, Enter 시동, P R N D 기어, Q/E 깜빡이, H 비상등,
 //         G 경적, L 전조등, B 주차 브레이크, T 안전벨트, F 주유, M 주행 모드,
 //         A 자율주행, [ ] 정보창 넘기기
@@ -204,13 +208,24 @@
     el.addEventListener('lostpointercapture', release);
   }
 
+  var lastPress = null; // 마지막으로 누르는 즉시 반응한 곳 (아래 click 버리기에 쓴다)
   function bindPress(el, fn) {
     // click 대신 pointerdown: 한 손가락으로 페달을 밟은 채 다른 손가락으로 눌러도 바로 반응
     el.addEventListener('pointerdown', function (e) {
       e.preventDefault();
+      lastPress = { t: Date.now(), x: e.clientX, y: e.clientY };
       fn();
     });
   }
+  // 누르는 즉시 창(내비·더보기·테마 고르기)이 열리면, 같은 손가락을 뗄 때 따라오는 click 이
+  // 방금 열린 창의 카드를 대신 누를 수 있다 (화면 가운데 콘솔 버튼에서 특히). 그 click 하나는 버린다.
+  window.addEventListener('click', function (e) {
+    var p = lastPress;
+    if (!p || Date.now() - p.t > 800 || Math.abs(e.clientX - p.x) > 40 || Math.abs(e.clientY - p.y) > 40) return;
+    lastPress = null;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
 
   // 위아래로 넘겨 볼 수 있는 버튼판 안의 버튼: 손가락을 떼는 순간, 거의 안 움직였을 때만 누른 것으로 친다
   // (pointer 마다 따로 기억하므로 페달을 밟은 채 다른 손가락으로 눌러도 된다)
@@ -306,25 +321,34 @@
   var INFO_NAMES = { autopilot: 'AI 운전', nav: '길 안내', trip: '주행', score: '운전 점수', economy: '연비',
     tires: '타이어 공기압', engine: '엔진 상태', fuel: '기름', car: '차 상태', climate: '공조', road: '도로' };
 
-  // 쉬운 모드(5살): 눌렀을 때 화면에서 바로 보이는 큰 버튼 몇 개만 (부모님 설정에서 '모든 기능'으로 바꿀 수 있다)
-  function easyItems() {
-    // 큰 그림 아이콘 + 아래 작은 글씨
-    function words(t) { return function () { return t; }; }
+  function words(t) { return function () { return t; }; }
+
+  // 쉬운 모드 아래 조작부에도 있고, 테마 콘솔로 옮겨 갈 수도 있는 버튼들 (🧭 내비 · 📄 정보 넘기기 · 🎨 테마 · ⚙ 더보기)
+  function movableItems() {
     return [
-      QUICK[0], QUICK[1], QUICK[2],
-      { label: '📯', cls: 'horn', hold: 'horn', value: words('경적') },
-      { label: '🤖', cls: 'ap', act: v.toggleAutopilot, on: function (s) { return s.autopilot.on; },
-        value: function (s) { return s.autopilot.on ? 'AI 운전 중' : '자율주행'; } },
       { label: '🧭', cls: 'nav', act: function () { Dash.easy.openNav(); }, on: function (s) { return s.nav.on; },
         value: function (s) { return s.nav.on ? s.nav.destination.replace('⛽ ', '') : '내비'; } },
       { label: '📄', act: v.infoNext, value: function (s) { return INFO_NAMES[Dash.info.currentId(s)] || '정보'; } },
       { label: '🎨', act: function () { app.openThemePicker(); }, value: words('테마') },
-      { label: '⚙', act: function () { Dash.easy.openMore(); }, value: words('더보기') },
+      { label: '⚙', act: function () { Dash.easy.openMore(); }, value: words('더보기') }
+    ];
+  }
+  var movable = {}; // 이름 → 항목 (init 때 채운다)
+
+  // 쉬운 모드(5살): 눌렀을 때 화면에서 바로 보이는 큰 버튼 몇 개만 (부모님 설정에서 '모든 기능'으로 바꿀 수 있다)
+  function easyItems() {
+    // 큰 그림 아이콘 + 아래 작은 글씨
+    return [
+      QUICK[0], QUICK[1], QUICK[2],
+      { label: '📯', cls: 'horn', hold: 'horn', value: words('경적') },
+      { label: '🤖', cls: 'ap', act: v.toggleAutopilot, on: function (s) { return s.autopilot.on; },
+        value: function (s) { return s.autopilot.on ? 'AI 운전 중' : '자율주행'; } }
+    ].concat(movableItems()).concat([
       // 비 올 때만 나오는 와이퍼 버튼 (둘째 줄 끝, js/core/weather.js): 안 켜져 있으면 반짝반짝
       { label: '🌧', cls: 'wiper', act: function (s) { Dash.weather.pressWiper(s); },
         show: function () { return Dash.weather.wiperAsk(); }, on: function (s) { return s.wiper !== 'off'; },
         value: function (s) { return s.wiper !== 'off' ? '와이퍼 켬' : '와이퍼'; } }
-    ];
+    ]);
   }
 
   function buildEasy() {
@@ -395,6 +419,37 @@
     showTab(tabButtons[saved] ? saved : TABS[0].id);
   }
 
+  // ---- 테마 콘솔 버튼 ----
+  var consoleEls = {};      // 이름 → 테마 안의 버튼
+  var consoleEntries = [];  // synced 에 넣은 콘솔 버튼 (테마를 바꾸면 뺀다)
+
+  function setTheme(theme, root) {
+    consoleEntries.forEach(function (e) { var i = synced.indexOf(e); if (i >= 0) synced.splice(i, 1); });
+    consoleEntries = [];
+    consoleEls = {};
+    var labels = (theme && theme.consoleButtons) || [];
+    if (root) {
+      Array.prototype.forEach.call(root.querySelectorAll('[data-console]'), function (el) {
+        var label = el.getAttribute('data-console');
+        var item = movable[label];
+        if (!item || labels.indexOf(label) < 0) return;
+        bindPress(el, function () { item.act(state, input); });
+        consoleEls[label] = el;
+        // 불빛만 맞춘다 (콘솔 버튼은 그림만, 아래 작은 글씨 없음)
+        var entry = { item: { on: item.on }, el: el, lbl: null, val: null, last: {} };
+        consoleEntries.push(entry);
+        synced.push(entry);
+      });
+    }
+    // 쉬운 모드 아래 조작부: 콘솔로 옮겨 간 버튼은 숨긴다 (다른 테마에선 다시 보인다)
+    Object.keys(movable).forEach(function (label) {
+      var b = byLabel[label];
+      if (b && !b.tab) b.el.classList.toggle('moved', !!consoleEls[label]);
+    });
+    var quick = document.getElementById('ctrl-quick');
+    if (quick) quick.classList.toggle('has-console', Object.keys(consoleEls).length > 0);
+  }
+
   var wasOverlayOpen = false;
   function overlayOpen() {
     return (Dash.rest && Dash.rest.isOpen()) ||
@@ -438,6 +493,9 @@
   Dash.controls = {
     // 버튼 찾기: 이름(예: '◀', '전조등')으로. 탭 안에 있으면 그 탭 버튼도 같이 준다
     find: function (label) {
+      // 테마 콘솔로 옮겨 간 버튼 (쉬운 모드에서 주유소는 🧭 내비에서 고른다)
+      var c = consoleEls[label] || (state && state.easy && label === '⛽ 주유소' ? consoleEls['🧭'] : null);
+      if (c) return { el: c, tab: null, shown: true };
       var b = byLabel[label];
       if (!b) return null;
       return { el: b.el, tab: b.tab ? tabButtons[b.tab] : null, shown: !b.tab || b.tab === currentTab };
@@ -447,6 +505,7 @@
       state = s;
       input = inp;
       app = hooks;
+      movableItems().forEach(function (item) { movable[item.label] = item; });
       buildPanel();
 
       Array.prototype.forEach.call(document.querySelectorAll('[data-pedal]'), function (el) {
@@ -471,6 +530,8 @@
 
     releaseAll: releaseAll,
     overlayOpen: overlayOpen,
+    // 테마를 바꿀 때 (js/app.js, 테마를 그린 뒤): 테마 안의 콘솔 버튼을 연결하고 아래 조작부의 같은 버튼을 숨긴다
+    setTheme: setTheme,
 
     // 버튼 불빛·값·페달 눌림을 현재 상태에 맞춘다 (매 프레임)
     sync: function (s) {
