@@ -10,19 +10,22 @@
   var H = 840;
 
   // ---- 바늘 계기 ----
-  var R = 236;               // 계기 반지름 (크롬 테두리는 +18)
-  var LEFT = { cx: 268, cy: 408 };
-  var RIGHT = { cx: 1332, cy: 408 };
+  var R = 252;               // 계기 반지름 (크롬 테두리는 +18)
+  var LEFT = { cx: 272, cy: 404 };
+  var RIGHT = { cx: 1328, cy: 404 };
   var A0 = -135;             // 바늘 시작 각도 (12시 = 0°)
   var A1 = 135;
-  // 큰 계기 아래쪽 빈 곳의 작은 바늘 계기 (냉각수·연료), 왼쪽 아래 구석의 오일 온도 계기
-  var MINI_DY = 192;         // 큰 계기 중심에서 작은 계기 축까지
+  // 큰 계기 아래쪽 빈 곳의 작은 바늘 계기 (냉각수·배터리 전압), 아래 구석의 오일 온도(왼쪽)·연료(오른쪽) 계기
+  var MINI_DY = 200;         // 큰 계기 중심에서 작은 계기 축까지
   var MINI_R = 64;
   var MINI_A = 60;           // 작은 계기 바늘이 움직이는 각도 ±
   var COOLANT = { min: 50, max: 130, hotFrom: 115, ticks: [[50, 'C'], [90, ''], [130, 'H']] };
   var FUEL = { min: 0, max: 1, lowTo: 0.12, ticks: [[0, 'E'], [0.5, '½'], [1, 'F']] };
   var OIL = { min: 50, max: 150, hotFrom: 130, ticks: [[50, ''], [100, ''], [150, '']] };
   var OIL_POS = { px: 78, py: 764, r: 54, a: 70 };
+  var VOLT = { min: 10, max: 16, lowTo: 11.5, ticks: [[10, '−'], [13, ''], [16, '+']] };
+  var FUEL_POS = { px: 1522, py: 764, r: 54, a: 70 };
+  var FUEL_BARS = 10;        // 아래 연료 칸의 막대 수
   var SWEEP_SECONDS = 1.5;   // 시동 때 바늘이 끝까지 갔다 오는 시간
 
   var SPEED = { min: 0, max: 220, major: 20, minor: 10, labelEvery: 20 };
@@ -207,6 +210,14 @@
       '<text class="ck-oil-txt" id="ck-oil-txt" x="' + o.px + '" y="' + (o.py + 34) + '" text-anchor="middle">오일</text>';
   }
 
+  // 연료: 오른쪽 아래 구석의 바늘 계기 (E ½ F) + '37 L'
+  function fuelDial() {
+    var o = FUEL_POS;
+    return '<circle class="ck-oil-face" cx="' + o.px + '" cy="' + (o.py - 4) + '" r="' + (o.r + 12) + '"/>' +
+      miniDial('fuel', o.px, o.py, o.r, o.a, FUEL, null) +
+      '<text class="ck-oil-txt" id="ck-fuel-l" x="' + o.px + '" y="' + (o.py + 34) + '" text-anchor="middle">⛽</text>';
+  }
+
   function needleAndHub(c, id) {
     return '<g id="ck-needle-' + id + '">' + G.needle(c.cx, c.cy, R - 22, 32, 14, 'ck-needle') + '</g>' +
       '<circle cx="' + c.cx + '" cy="' + c.cy + '" r="24" fill="url(#ck-hub)" stroke="#000" stroke-width="2"/>' +
@@ -230,7 +241,7 @@
       scale(c, SPEED) +
       '<text class="ck-unit" x="' + c.cx + '" y="' + (c.cy - 88) + '" text-anchor="middle">km/h</text>' +
       '<text class="ck-digital" id="ck-digital" x="' + c.cx + '" y="' + (c.cy + 104) + '" text-anchor="middle">0</text>' +
-      miniDial('fuel', c.cx, c.cy + MINI_DY, MINI_R, MINI_A, FUEL, 'fuel') +
+      miniDial('volt', c.cx, c.cy + MINI_DY, MINI_R, MINI_A, VOLT, 'battery') +
       // 속도 눈금 바깥의 표시: 제한속도(주황), 자율주행 목표 속도(파랑)
       '<g id="ck-limit-mark"><path class="ck-limit-mark" d="M' + c.cx + ' ' + (c.cy - R + 4) + 'l-11 -17h22z"/></g>' +
       '<g id="ck-ap-mark"><path class="ck-ap-mark" d="M' + c.cx + ' ' + (c.cy - R + 30) + 'l-10 -16h20z"/></g>' +
@@ -264,7 +275,7 @@
     var root, svg, el = {}, warnIcons = {}, unfit;
     var last = {};
     var scene = null;
-    var shown = { left: 0, right: 0, temp: 50, fuel: 0, oil: 50 };
+    var shown = { left: 0, right: 0, temp: 50, fuel: 0, oil: 50, volt: 10 };
     var lastFrame = 0;
     // 느린 아이패드: 도로 그림을 그리는 데 걸린 시간을 재서, 계속 오래 걸리면 두 프레임에 한 번만 그린다
     // (바늘·숫자·경고등은 매 프레임). play 테마와 같은 방법.
@@ -362,7 +373,7 @@
           '    <svg class="ck-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + defs() +
           '      ' + screenSvg() +
           '      <g class="ck-dial">' + leftDial() + '</g><g class="ck-dial">' + rightDial() + '</g>' +
-      '      <g class="ck-dial">' + oilDial() + '</g>' +
+      '      <g class="ck-dial">' + oilDial() + '</g><g class="ck-dial">' + fuelDial() + '</g>' +
           '    </svg>' +
 
           // 위: 깜빡이 화살표 · 경고등
@@ -379,7 +390,7 @@
           // 아래: 기어 · 내비 · 연료
           '    <div class="ck-gears"><span data-g="P">P</span><span data-g="R">R</span><span data-g="N">N</span><span data-g="D">D</span><b></b></div>' +
           '    <div class="ck-nav"></div>' +
-          '    <div class="ck-fuel"><span class="ck-fuel-icon">⛽</span><b class="ck-fuel-txt"></b></div>' +
+          '    <div class="ck-fuel"><span class="ck-fuel-icon">⛽</span><span class="ck-fuel-bars">' + new Array(FUEL_BARS + 1).join('<i></i>') + '</span><b class="ck-fuel-txt"></b></div>' +
           '    <div class="ck-clock"></div>' +
           // 가운데 아래: 정보창 (📄 정보 버튼으로 넘긴다)
           '    <div class="ck-info"><div class="ck-info-page"></div><div class="ck-info-dots"></div></div>' +
@@ -403,6 +414,9 @@
         el.digital = svg.querySelector('#ck-digital');
         el.tempNeedle = svg.querySelector('#ck-mneedle-temp');
         el.fuelNeedle = svg.querySelector('#ck-mneedle-fuel');
+        el.voltNeedle = svg.querySelector('#ck-mneedle-volt');
+        el.fuelL = svg.querySelector('#ck-fuel-l');
+        el.fuelBars = root.querySelectorAll('.ck-fuel-bars i');
         el.oilNeedle = svg.querySelector('#ck-mneedle-oil');
         el.oilTxt = svg.querySelector('#ck-oil-txt');
         el.fuelTxt = q('.ck-fuel-txt');
@@ -449,6 +463,7 @@
         shown.left = shown.right = shown.fuel = 0;
         shown.temp = COOLANT.min;
         shown.oil = OIL.min;
+        shown.volt = VOLT.min;
         unfit = Dash.themes.fitStage(root, q('.ck-stage'), W, H);
       },
 
@@ -513,11 +528,22 @@
         shown.oil += ((on ? oilT : OIL.min) - shown.oil) * km;
         var md = MINI_DY;
         miniRotate('mt', el.tempNeedle, shown.temp, COOLANT, LEFT.cx, LEFT.cy + md, MINI_A);
-        miniRotate('mf', el.fuelNeedle, shown.fuel, FUEL, RIGHT.cx, RIGHT.cy + md, MINI_A);
+        miniRotate('mf', el.fuelNeedle, shown.fuel, FUEL, FUEL_POS.px, FUEL_POS.py, FUEL_POS.a);
+        // 배터리 전압: 시동 끄면 12.4V, 시동 거는 순간 뚝, 달리면 14V 언저리 (진짜 차처럼)
+        var volt = !on ? (s.ignition || s.accessory ? 12.4 : VOLT.min) : s.startTimer < 0.6 ? 10.8 : 13.9 + Math.min(0.4, s.rpm / 12000);
+        if (s.faults && s.faults.battery && on) volt = 12.0;
+        shown.volt += (volt - shown.volt) * km;
+        miniRotate('mv', el.voltNeedle, shown.volt, VOLT, RIGHT.cx, RIGHT.cy + md, MINI_A);
+        setText('fuelL', el.fuelL, on || s.refueling ? Math.round(liters) + ' L' : '⛽');
+        var bars = Math.ceil(shown.fuel * FUEL_BARS - 0.001);
+        for (var bi = 0; bi < el.fuelBars.length; bi++) {
+          var bc = bi < bars ? (bars <= 2 ? 'low' : 'on') : '';
+          if (el.fuelBars[bi].className !== bc) el.fuelBars[bi].className = bc;
+        }
         miniRotate('mo', el.oilNeedle, shown.oil, OIL, OIL_POS.px, OIL_POS.py, OIL_POS.a);
         setText('oilTxt', el.oilTxt, on ? '오일 ' + Math.round(oilT) + '°C' : '오일');
         setAttr('oilCls', el.oilTxt, 'class', 'ck-oil-txt' + (on && oilT >= OIL.hotFrom ? ' hot' : ''));
-        setText('fuelTxt', el.fuelTxt, Math.round(liters) + ' L · ' + Math.round(s.range || 0) + ' km');
+        setText('fuelTxt', el.fuelTxt, Math.round(s.range || 0) + ' km');
         var d = new Date();
         setText('clock', el.clock, Dash.info.pad(d.getHours()) + ':' + Dash.info.pad(d.getMinutes()) + '\n' + s.outsideTemp + '°C');
 

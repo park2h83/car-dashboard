@@ -409,30 +409,35 @@
 
 .ck-fuel {
   position: absolute;
-  left: 1146px;
+  left: 1142px;
   top: 756px;
-  width: 360px;
+  width: 300px;
   height: 78px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 0 18px;
+  gap: 8px;
+  padding: 0 12px;
   box-sizing: border-box;
   border-radius: 22px;
   background: var(--panel);
   border: 2px solid #232a33;
 }
-.ck-fuel-icon { font-size: 40px; line-height: 1; }
-.ck-fuel-txt { font-size: 40px; font-weight: 800; white-space: nowrap; }
+.ck-fuel-icon { font-size: 30px; line-height: 1; }
+.ck-fuel-txt { font-size: 28px; font-weight: 800; white-space: nowrap; }
+/* 연료 막대 게이지: 칸이 줄어드는 게 보이게 (2칸 이하면 주황) */
+.ck-fuel-bars { display: flex; gap: 3px; align-items: flex-end; height: 44px; }
+.ck-fuel-bars i { width: 9px; height: 100%; border-radius: 3px; background: #252c35; }
+.ck-fuel-bars i.on { background: linear-gradient(#e9f6ff, #8fd3ff); box-shadow: 0 0 6px rgba(143, 211, 255, 0.6); }
+.ck-fuel-bars i.low { background: #ffa000; box-shadow: 0 0 6px rgba(255, 160, 0, 0.7); }
 .ck-fuel.low { border-color: #ffa000; }
 .ck-fuel.low .ck-fuel-txt { color: #ffb020; }
 
 /* 오른쪽 아래 구석: 시계 · 바깥 온도 */
 .ck-clock {
   position: absolute;
-  right: 16px;
-  top: 676px;
+  right: 14px;
+  top: 600px;
   font-size: 24px;
   font-weight: 700;
   line-height: 1.25;
