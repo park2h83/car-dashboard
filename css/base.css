@@ -40,11 +40,12 @@ html, body {
   overflow: hidden;
 }
 
+/* 안내 문구: 늘 화면 위쪽 (아래 가운데는 내 차·바늘 자리라 가리지 않게) */
 #toast {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--controls-height) + 12px);
-  transform: translate(-50%, 20px);
+  top: max(12px, env(safe-area-inset-top));
+  transform: translate(-50%, -20px);
   z-index: 20;
   padding: 10px 20px;
   border-radius: 999px;
@@ -59,7 +60,8 @@ html, body {
   pointer-events: none;
   transition: opacity 0.2s, transform 0.2s;
 }
-#toast.top { bottom: auto; top: max(12px, env(safe-area-inset-top)); }
+/* 코치 띠가 떠 있으면 그 아래에 */
+#toast.under-coach { top: calc(max(8px, env(safe-area-inset-top)) + 130px); }
 #toast.show {
   opacity: 1;
   transform: translate(-50%, 0);
