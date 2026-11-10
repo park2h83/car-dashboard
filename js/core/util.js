@@ -3,6 +3,7 @@
   'use strict';
 
   var MESSAGE_SECONDS = 2.5;
+  var lastSpoken = { text: '', at: 0 };
   var POPUP_SECONDS = 2;
 
   Dash.util = {
@@ -39,15 +40,45 @@
     },
 
     // 화면에 안내 문구를 잠깐 띄운다
-    say: function (s, text, seconds) {
-      s.message = text;
+    // 쉬운 모드: 아이가 아직 글씨를 못 읽어서 안내 문구도 말로 읽어 준다 (같은 말은 잠깐 동안 다시 안 함)
+    say: function (s, text, seconds, silent) {
+      s.messageFull = text;
+      // 쉬운 모드: 화면엔 그림 문자·숫자만 크게 (글은 말로 읽어 준다)
+      s.message = s.easy && text ? Dash.util.shortText(text) : text;
       s.messageTimer = seconds || MESSAGE_SECONDS;
+      if (s.easy && !silent && text) {
+        var speech = Dash.util.speechOf(text);
+        var now = Date.now();
+        if (speech && (speech !== lastSpoken.text || now - lastSpoken.at > 8000)) {
+          lastSpoken.text = speech;
+          lastSpoken.at = now;
+          Dash.util.emit(s, 'speak', { text: speech, queue: true });
+        }
+      }
     },
 
     // 안내 문구 + 음성 (AI·내비가 말하는 것)
     announce: function (s, text, speech) {
-      Dash.util.say(s, text, 3);
-      Dash.util.emit(s, 'speak', { text: speech || text.replace(/[^가-힣\w\s.,!?]/g, '').trim() });
+      Dash.util.say(s, text, 3, true);
+      var spoken = speech || Dash.util.speechOf(text);
+      lastSpoken.text = Dash.util.speechOf(text);
+      lastSpoken.at = Date.now();
+      Dash.util.emit(s, 'speak', { text: spoken });
+    },
+
+    // 글씨를 못 읽는 아이용 짧은 표시: 그림 문자와 숫자(단위 포함)만 남긴다. 둘 다 없으면 🔊
+    shortText: function (text) {
+      var out = [];
+      String(text).replace(/(\p{Extended_Pictographic}(?:\uFE0F|\u20E3|\u200D\p{Extended_Pictographic})*)|(\d+(?:[.,]\d+)?\s*(?:km\/h|km|m|L|%|점|번)?)/gu, function (m) {
+        out.push(m.trim());
+        return m;
+      });
+      return out.length ? out.join(' ') : '🔊';
+    },
+
+    // 말로 읽을 글: 그림 문자(이모지)는 빼고 한글·숫자·문장부호만
+    speechOf: function (text) {
+      return String(text).replace(/[^가-힣0-9a-zA-Z\s.,!?~]/g, ' ').replace(/\s+/g, ' ').trim();
     },
 
     // 설정값을 계기판에 잠깐 띄운다 (온도 변경 등)

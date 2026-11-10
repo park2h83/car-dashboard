@@ -1,0 +1,86 @@
+/* 모으기 (js/progress.js): 도장 쾅! · 레벨 업 축하 창, 다녀온 곳 도장판 */
+
+/* 큰 축하 창: 화면 가운데에 잠깐 떴다 사라진다. 운전을 막지 않게 눌리지 않는다. */
+#progress-toast {
+  position: fixed;
+  left: 50%;
+  top: 46%;
+  z-index: 75; /* 큰 카드 창·면허증 위, 쉬는 시간 화면 아래 */
+  min-width: min(440px, 86vw);
+  max-width: 90vw;
+  padding: 22px 40px 26px;
+  border-radius: 32px;
+  border: 6px solid #fff;
+  background: #fff7d6;
+  color: #1d2430;
+  text-align: center;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.5);
+  transition: opacity 0.25s, transform 0.25s;
+}
+#progress-toast.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  animation: pg-pop 0.5s ease-out;
+}
+#progress-toast.stamp { background: #fff1ef; border-color: #e0201b; }
+#progress-toast.level.lv0 { background: #eaf9ee; border-color: #2a9d5c; }
+#progress-toast.level.lv1 { background: #e8f3ff; border-color: #3a8bff; }
+#progress-toast.level.lv2 { background: #fff6d6; border-color: #e0a400; }
+#progress-toast.level.lv3 { background: #f4ebff; border-color: #8a4fe0; }
+
+.pg-toast-emoji { font-size: 110px; line-height: 1.1; }
+#progress-toast.stamp .pg-toast-emoji { animation: pg-stamp 0.6s ease-out; }
+.pg-toast-title { margin-top: 6px; font-size: 44px; font-weight: 900; }
+.pg-toast-sub { margin-top: 6px; font-size: 26px; font-weight: 700; color: #5f6b77; }
+
+@keyframes pg-pop {
+  0% { transform: translate(-50%, -50%) scale(0.5); }
+  60% { transform: translate(-50%, -50%) scale(1.08); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes pg-stamp {
+  0% { transform: scale(2.2) rotate(-20deg); opacity: 0; }
+  60% { transform: scale(0.9) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* 도장판 카드 (큰 카드 창 안): 간 곳은 빨간 도장, 안 간 곳은 흐릿하게 */
+.sheet-card .pg-stamp {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 5px solid #e0201b;
+  background: #fff;
+  transform: rotate(-10deg);
+}
+.sheet-card .pg-stamp i {
+  position: absolute;
+  right: -14px;
+  bottom: -8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #e0201b;
+  color: #fff;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.3;
+}
+.sheet-card .pg-nostamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 4px dashed #c9c2b2;
+  filter: grayscale(1);
+  opacity: 0.45;
+}

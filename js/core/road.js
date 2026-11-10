@@ -187,6 +187,7 @@
 
   function arrive(s) {
     var name = s.nav.destination;
+    if (Dash.progress) Dash.progress.recordVisit(s, s.nav.destId); // 📍 도장판 (js/progress.js)
     s.nav.on = false;
     s.nav.turn = null;
     U.emit(s, 'arrive');

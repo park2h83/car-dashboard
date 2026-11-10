@@ -1,0 +1,107 @@
+/* 계기판 놀이 (js/games.js) · 아빠 차 따라가기 (js/follow.js) */
+
+/* 🎯 바늘 맞추기: 위쪽 띠 (코치 카드 자리, 놀이 중엔 코치가 쉰다) */
+#game-banner {
+  position: absolute;
+  left: 50%;
+  top: max(8px, env(safe-area-inset-top));
+  z-index: 22;
+  transform: translateX(-50%);
+  width: min(820px, calc(100% - 24px));
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px 10px 20px;
+  border-radius: 20px;
+  border: 5px solid #ffb020;
+  background: rgba(255, 250, 240, 0.96);
+  color: #1d2430;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --hold: 0;
+}
+#game-banner[hidden] { display: none; }
+#game-banner.hit { border-color: #22c55e; }
+.gb-target { font-size: 26px; font-weight: 800; white-space: nowrap; }
+.gb-target b { font-size: 46px; color: #e2332b; margin: 0 4px; }
+.gb-target small { font-size: 20px; }
+.gb-bar { position: relative; height: 26px; border-radius: 13px; background: #e8e2d4; overflow: hidden; }
+.gb-zone { position: absolute; top: 0; bottom: 0; background: rgba(34, 197, 94, calc(0.35 + var(--hold) * 0.65)); border-radius: 13px; }
+.gb-now { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; }
+.gb-now::after { content: ''; position: absolute; left: -4px; top: -2px; width: 8px; height: 30px; border-radius: 4px; background: #e2332b; }
+.gb-stars { font-size: 26px; white-space: nowrap; }
+.gb-stop { width: 58px; height: 58px; border-radius: 50%; border: 2px solid #d8d2c4; background: #fff; font-size: 22px; color: #444; }
+
+/* ✨ 시동 쇼: 계기판 위로 빛이 쫙 지나가며 큰 글씨 */
+#start-show {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: calc(var(--controls-height) + env(safe-area-inset-bottom));
+  z-index: 19;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 24px #4fc3ff, 0 0 48px #4fc3ff;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(120, 200, 255, 0.35) 50%, transparent 70%) no-repeat;
+  background-size: 200% 100%;
+}
+#start-show.go { animation: start-show 2s ease-out; }
+@keyframes start-show {
+  0% { opacity: 0; background-position: 150% 0; transform: scale(0.9); }
+  15% { opacity: 1; transform: scale(1.04); }
+  30% { transform: scale(1); }
+  75% { opacity: 1; background-position: -50% 0; }
+  100% { opacity: 0; background-position: -50% 0; }
+}
+
+/* 💡 무드등: 계기판 아래쪽 가장자리의 은은한 빛 */
+#ambient {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--controls-height) + env(safe-area-inset-bottom));
+  height: 10px;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+#ambient.on {
+  opacity: 1;
+  background: linear-gradient(90deg, transparent, rgba(var(--amb), 0.9) 20%, rgba(var(--amb), 0.9) 80%, transparent);
+  box-shadow: 0 -6px 24px rgba(var(--amb), 0.55);
+}
+
+/* 🚗 아빠 차 따라가기 표시 */
+#follow-chip {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  top: max(10px, env(safe-area-inset-top));
+  z-index: 21;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(57, 211, 83, 0.95);
+  color: #052b0f;
+  font-size: 18px;
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#follow-chip.show { opacity: 1; }
+
+/* 🔍 경고등 도감 카드의 아이콘 */
+.dex-icon { display: inline-flex; width: 64px; height: 64px; padding: 6px; border-radius: 14px; background: #1d232b; }
+.dex-icon svg { width: 100%; height: 100%; }
+.dex-icon.red { color: #ff4d4d; }
+.dex-icon.amber { color: #ffb020; }
+.dex-icon.green { color: #39d353; }
+.dex-icon.blue { color: #4d98ff; }
+.dex-icon.white { color: #f2f4f6; }

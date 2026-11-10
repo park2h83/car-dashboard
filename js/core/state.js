@@ -163,6 +163,12 @@
       driveView: false,   // 위에 앞유리, 아래에 계기판
       steer: 0,           // 핸들 (-1 왼쪽 끝 ~ 1 오른쪽 끝). 앞유리 화면에서 돌리면 차선을 한 칸씩 옮긴다
 
+      // ---- 아빠 차 따라가기 (js/follow.js): GPS 진짜 속도로 계기판이 움직인다 ----
+      follow: { on: false, target: 0, fixAge: 0, status: '' },
+
+      // ---- 놀이 (js/games.js): 바늘 맞추기 ----
+      game: null,             // { target, holdT, stars, round }
+
       // ---- 주차 (js/core/parking.js) ----
       // mode: 'mission' 도착해서 주차 미션 | 'ai' AI 가 주차 | 'free' 후진(R)할 때 둘러보기
       parking: {
@@ -184,6 +190,7 @@
 
       // ---- 표시 ----
       popup: { title: '', value: '', timer: 0 }, // 계기판에 잠깐 뜨는 설정값 (온도 변경 등)
+      messageFull: '',    // 줄이기 전 문구 (쉬운 모드는 message 에 그림·숫자만)
       message: '',        // 안내 문구 (아이용 힌트, AI 가 하는 말)
       messageTimer: 0,
       events: []          // 소리 낼 일들 (sound.js 가 꺼내 쓰고 비운다)

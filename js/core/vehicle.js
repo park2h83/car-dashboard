@@ -594,13 +594,15 @@
       updatePedals(s, input, dt);
       Dash.weather.update(s, dt);
       // 주차하는 동안은 도로·다른 차·길 이벤트·자율주행을 멈춘다 (js/core/parking.js)
-      if (!s.parking.on) {
+      // 아빠 차 따라가기 중에도 가상의 신호등·다른 차는 멈춘다 (진짜 길과 맞지 않으니까)
+      if (!s.parking.on && !s.follow.on) {
         Dash.roadside.update(s, dt);
         Dash.traffic.update(s, dt);
         Dash.autopilot.update(s, dt);
       }
       combineControls(s);
       updateSpeed(s, dt);
+      if (s.follow.on) Dash.follow.drive(s, dt); // 엑셀·브레이크 대신 GPS 속도
       Dash.parking.limitSpeed(s);
       updateGear(s, dt);
       updateRpm(s, dt);
@@ -608,12 +610,13 @@
       updateTemps(s, dt);
       updateTires(s, dt);
       updateTrip(s, dt);
+      if (s.follow.on) s.overspeed = false; // 진짜 길의 제한속도는 모르니까
       Dash.parking.update(s, input, dt);
       updateWipers(s, dt);
       updateBlink(s, dt);
       updateAlerts(s, dt);
       updateTimers(s, dt);
-      Dash.score.update(s, dt);
+      if (!s.follow.on) Dash.score.update(s, dt);
     },
 
     // 주행

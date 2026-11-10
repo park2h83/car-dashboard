@@ -16,7 +16,7 @@
   var engine = null;
   var loops = {};  // 계속 나는 소리들: { gain, ... }
   var muted = false;
-  var prev = { blinkOn: false };
+  var prev = { blinkOn: false, horn: false, hornAt: 0, throttle: 0, brakePressed: false, popAt: -9, hissAt: -9, revAt: -9 };
 
   function now() { return ctx.currentTime; }
 
@@ -53,29 +53,277 @@
     return buf;
   }
 
-  function createEngine() {
-    var gain = gainNode(0);
-    var filter = filterNode('lowpass', 800, 4, gain);
-    // 4기통 폭발 주파수(rpm/30)를 기준으로 배음을 겹쳐 엔진 같은 소리를 만든다.
+  // ── 엔진 소리 종류 ──────────────────────────────────────────────
+  // 아이가 고르는 엔진 소리. 각 종류는 엔진 소리(engine)와 경적(horn) 만드는 법을 갖는다.
+  //  engine.div    : 기본음 = rpm / div (4기통 = 30, 6기통 = 20, 1기통 4행정 = 120)
+  //  engine.parts  : 기본음의 몇 배 음을 어떤 파형으로 얼마나 섞을지
+  //  engine.filter : 걸러 내는 필터. 주파수 = base + rpm*rpm + 엑셀*thr (+ 주행 모드)
+  //  engine.shaper : 소리를 살짝 찌그러뜨려 거칠게 (값이 클수록 거칠다)
+  //  engine.am     : 기본음 빠르기로 소리 크기를 흔든다 (톱니파를 뒤집어 '탁—' 하고 줄어드는 펄스)
+  //  engine.clatter: 걸러 낸 잡음을 폭발마다 '딱딱' 끊어 디젤 노킹처럼
+  //  horn.pulse    : 누르고 있으면 '빵빵' 끊어서 울린다
+  var PROFILES = {
+    normal: {
+      name: '보통 차', emoji: '🚗',
+      engine: {
+        div: 30, vol: 1,
+        parts: [
+          { type: 'sawtooth', mult: 1, level: 0.5 },
+          { type: 'sawtooth', mult: 2.01, level: 0.35 },
+          { type: 'square', mult: 0.5, level: 0.25 },
+          { type: 'triangle', mult: 3, level: 0.15 }
+        ],
+        filter: { type: 'lowpass', q: 4, base: 300, rpm: 0.25, thr: 1500 }
+      },
+      horn: { type: 'square', freqs: [415, 494], lp: 2500, q: 1, level: 0.5, vol: 0.22 }
+    },
+    sport: {
+      name: '스포츠카', emoji: '🏎️',
+      engine: {
+        div: 20, vol: 1.2,
+        parts: [
+          { type: 'sawtooth', mult: 1, level: 0.42 },
+          { type: 'square', mult: 2, level: 0.26 },
+          { type: 'sawtooth', mult: 3.02, level: 0.2 },
+          { type: 'sawtooth', mult: 0.5, level: 0.22 }
+        ],
+        shaper: 3,
+        filter: { type: 'lowpass', q: 6, base: 500, rpm: 0.4, thr: 2500 }
+      },
+      horn: { type: 'square', freqs: [466, 554], lp: 3000, q: 1, level: 0.5, vol: 0.22 },
+      liftPop: true
+    },
+    bus: {
+      name: '버스', emoji: '🚌',
+      engine: {
+        div: 60, vol: 1.15,
+        parts: [
+          { type: 'sawtooth', mult: 1, level: 0.45 },
+          { type: 'sawtooth', mult: 2, level: 0.5 },
+          { type: 'square', mult: 3, level: 0.15 }
+        ],
+        am: { mult: 1, depth: 0.35 },
+        filter: { type: 'lowpass', q: 3, base: 260, rpm: 0.12, thr: 600 }
+      },
+      horn: { type: 'sawtooth', freqs: [311, 370], lp: 1600, q: 1, level: 0.5, vol: 0.24 },
+      airBrake: true
+    },
+    truck: {
+      name: '트럭', emoji: '🚚',
+      engine: {
+        div: 40, vol: 1.1,
+        parts: [
+          { type: 'sawtooth', mult: 1, level: 0.45 },
+          { type: 'square', mult: 2, level: 0.3 },
+          { type: 'triangle', mult: 0.5, level: 0.3 }
+        ],
+        shaper: 2,
+        clatter: { mult: 1, freq: 2200, q: 2, level: 0.5 },
+        filter: { type: 'lowpass', q: 3, base: 250, rpm: 0.18, thr: 900 }
+      },
+      horn: { type: 'sawtooth', freqs: [185, 233, 277], lp: 1800, q: 1.5, level: 0.4, vol: 0.32 }
+    },
+    retro: {
+      name: '옛날 차', emoji: '🚙',
+      engine: {
+        div: 120, vol: 1,
+        parts: [
+          { type: 'square', mult: 8, level: 0.4 },
+          { type: 'sawtooth', mult: 12, level: 0.3 },
+          { type: 'triangle', mult: 16, level: 0.2 }
+        ],
+        am: { mult: 1, depth: 0.95 },
+        filter: { type: 'lowpass', q: 2, base: 400, rpm: 0.15, thr: 800 }
+      },
+      horn: { type: 'square', freqs: [587, 740], lp: 3000, q: 1, level: 0.45, vol: 0.2, pulse: [0.3, 0.17] }
+    }
+  };
+  var PROFILE_ORDER = ['normal', 'sport', 'bus', 'truck', 'retro'];
+  var profileId = 'normal';
+  var lastRpm = 800;          // 엔진을 새로 만들 때 지금 음높이에서 바로 시작하려고
+  var duckUntil = 0;          // 미리 듣기 동안 달리는 엔진 소리를 줄여 둔다
+  var preview = null;
+  var swaps = 0;              // 엔진·경적을 새로 만든 횟수 (확인용)
+
+  function shaperCurve(k) {
+    var n = 256, curve = new Float32Array(n), norm = Math.tanh(k);
+    for (var i = 0; i < n; i++) {
+      var x = i * 2 / (n - 1) - 1;
+      curve[i] = Math.tanh(k * x) / norm;
+    }
+    return curve;
+  }
+
+  // 만든 노드를 모두 기억해 두었다가 바꿀 때 멈추고 떼어 낸다
+  function track(set, node) { set.nodes.push(node); return node; }
+  function trackSource(set, node) { set.nodes.push(node); set.sources.push(node); return node; }
+
+  // 기본음 빠르기로 소리 크기를 흔드는 장치: 1(폭발 순간) → 1-depth 로 줄어드는 톱니
+  function pulseAmp(set, list, mult, depth, dest) {
+    var amp = track(set, ctx.createGain());
+    amp.gain.value = 1 - depth / 2;
+    amp.connect(dest);
+    var lfoGain = track(set, ctx.createGain());
+    lfoGain.gain.value = -depth / 2;
+    lfoGain.connect(amp.gain);
+    var lfo = trackSource(set, osc('sawtooth', 10, lfoGain));
+    list.push({ osc: lfo, mult: mult });
+    return amp;
+  }
+
+  function createEngine(id, dest) {
+    var p = PROFILES[id].engine;
+    var set = { nodes: [], sources: [], oscs: [], lfos: [], profile: id };
+    var gain = track(set, gainNode(0, dest));
+    var out = gain;
+    if (p.am) out = pulseAmp(set, set.lfos, p.am.mult, p.am.depth, gain);
+    var filter = track(set, filterNode(p.filter.type, 800, p.filter.q, out));
+    var input = filter;
+    if (p.shaper) {
+      var ws = track(set, ctx.createWaveShaper());
+      ws.curve = shaperCurve(p.shaper);
+      ws.connect(filter);
+      input = ws;
+    }
+    var base = Math.max(lastRpm, 1) / p.div;
     // 아이패드 스피커는 저음이 약해서 2·3배음을 섞어야 들린다.
-    var parts = [
-      { type: 'sawtooth', mult: 1, level: 0.5 },
-      { type: 'sawtooth', mult: 2.01, level: 0.35 },
-      { type: 'square', mult: 0.5, level: 0.25 },
-      { type: 'triangle', mult: 3, level: 0.15 }
-    ];
-    var oscs = parts.map(function (p) {
-      return { osc: osc(p.type, 50, gainNode(p.level, filter)), mult: p.mult };
+    p.parts.forEach(function (part) {
+      var o = trackSource(set, osc(part.type, base * part.mult, track(set, gainNode(part.level, input))));
+      set.oscs.push({ osc: o, mult: part.mult });
     });
-    return { gain: gain, filter: filter, oscs: oscs };
+    if (p.clatter) {
+      var c = p.clatter;
+      var cl = pulseAmp(set, set.lfos, c.mult, 1, track(set, gainNode(c.level, gain)));
+      var src = trackSource(set, ctx.createBufferSource());
+      src.buffer = noiseBuffer;
+      src.loop = true;
+      src.connect(track(set, filterNode('bandpass', c.freq, c.q, cl)));
+      src.start();
+    }
+    set.lfos.forEach(function (l) { l.osc.frequency.value = base * l.mult; });
+    set.gain = gain;
+    set.filter = filter;
+    set.def = p;
+    return set;
+  }
+
+  function createHorn(id) {
+    var h = PROFILES[id].horn;
+    var set = { nodes: [], sources: [], def: h, profile: id };
+    set.gain = track(set, gainNode(0));
+    var fl = track(set, filterNode('lowpass', h.lp, h.q, set.gain));
+    h.freqs.forEach(function (f) {
+      trackSource(set, osc(h.type, f, track(set, gainNode(h.level, fl))));
+    });
+    return set;
+  }
+
+  // 다 쓴 소리: 부드럽게 줄이고 멈춘 뒤 떼어 낸다 (딸깍 소리·메모리 새는 것 없이)
+  function retire(set) {
+    if (!set) return;
+    var t = now();
+    var g = set.gain.gain;
+    if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t);
+    g.setTargetAtTime(0, t, 0.03);
+    set.sources.forEach(function (s) { try { s.stop(t + 0.25); } catch (e) { /* 이미 멈춤 */ } });
+    setTimeout(function () {
+      set.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) { /* 이미 떨어짐 */ } });
+      set.nodes = [];
+      set.sources = [];
+    }, 400);
+  }
+
+  function rebuildProfile() {
+    if (!ctx) return;
+    var oldEngine = engine, oldHorn = loops.horn;
+    engine = createEngine(profileId);
+    loops.horn = createHorn(profileId);
+    retire(oldEngine);
+    retire(oldHorn);
+    swaps++;
+  }
+
+  // 엔진 소리 계산 (달릴 때와 미리 듣기가 같이 쓴다)
+  function engineBase(p, rpm) { return Math.max(rpm, 1) / p.div; }
+  function engineFilterFreq(p, rpm, throttle, modeTone) {
+    return Math.max(60, p.filter.base + (modeTone || 0) + rpm * p.filter.rpm + throttle * p.filter.thr);
+  }
+  function engineVolume(p, rpm, throttle, modeVol) {
+    return (0.18 + throttle * 0.25 + (rpm / Dash.vehicle.LIMIT_RPM) * 0.15) * (modeVol || 1) * p.vol;
+  }
+
+  // 스포츠카: 엑셀에서 발을 떼면 "타닥 탁"
+  function crackle(delay) {
+    var d = delay || 0;
+    noise('bandpass', 900, 0.05, 0.45, d, 1);
+    noise('bandpass', 1300, 0.04, 0.35, d + 0.08 + Math.random() * 0.04, 1);
+    noise('bandpass', 700, 0.06, 0.4, d + 0.17 + Math.random() * 0.05, 1);
+  }
+
+  // 버스: 브레이크를 놓으면 공기 빠지는 "치익"
+  function airHiss(delay) {
+    var t = now() + (delay || 0);
+    var src = ctx.createBufferSource();
+    src.buffer = noiseBuffer;
+    var g = gainNode(0);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.1, t + 0.02);
+    g.gain.setTargetAtTime(0, t + 0.08, 0.09);
+    var fl = filterNode('highpass', 3500, 0.7, g);
+    src.connect(fl);
+    src.start(t);
+    src.stop(t + 0.5);
+    src.onended = function () { src.disconnect(); fl.disconnect(); g.disconnect(); };
+  }
+
+  // 고르는 화면에서 들려주는 "부릉부릉" (약 1초). 달리는 엔진 소리는 그대로 두고 잠깐 작게만 한다.
+  var REV = [ // [시간(초), rpm, 엑셀]
+    [0, 900, 0.2], [0.22, 4500, 1], [0.45, 1500, 0], [0.68, 5200, 1], [1.0, 1000, 0], [1.1, 900, 0]
+  ];
+  function revAt(time) {
+    for (var i = 1; i < REV.length; i++) {
+      if (time <= REV[i][0]) {
+        var a = REV[i - 1], b = REV[i], k = (time - a[0]) / (b[0] - a[0]);
+        return { rpm: a[1] + (b[1] - a[1]) * k, throttle: a[2] + (b[2] - a[2]) * k };
+      }
+    }
+    var last = REV[REV.length - 1];
+    return { rpm: last[1], throttle: last[2] };
+  }
+
+  function playPreview(id) {
+    if (preview) { retire(preview); preview = null; }
+    var p = PROFILES[id].engine;
+    var keepRpm = lastRpm;
+    lastRpm = REV[0][1];
+    var set = createEngine(id);
+    lastRpm = keepRpm;
+    var t0 = now() + 0.02, end = REV[REV.length - 1][0];
+    var g = set.gain.gain;
+    g.setValueAtTime(0, t0);
+    for (var x = 0; x <= end + 0.001; x += 0.04) {
+      var r = revAt(x), at = t0 + x, base = engineBase(p, r.rpm);
+      var ramp = x === 0 ? 'setValueAtTime' : 'linearRampToValueAtTime';
+      set.oscs.forEach(function (o) { o.osc.frequency[ramp](base * o.mult, at); });
+      set.lfos.forEach(function (l) { l.osc.frequency[ramp](base * l.mult, at); });
+      set.filter.frequency[ramp](engineFilterFreq(p, r.rpm, r.throttle, 0), at);
+      if (x > 0) g.linearRampToValueAtTime(engineVolume(p, r.rpm, r.throttle, 1) * engineLevel, at);
+    }
+    g.setTargetAtTime(0, t0 + end, 0.05);
+    set.sources.forEach(function (s) { s.stop(t0 + end + 0.4); });
+    if (PROFILES[id].liftPop) { crackle(0.47); crackle(1.02); }
+    if (PROFILES[id].airBrake) airHiss(1.15);
+    duckUntil = t0 + end + 0.2;
+    preview = set;
+    setTimeout(function () {
+      if (preview === set) preview = null;
+      set.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) { /* 이미 떨어짐 */ } });
+    }, (end + 0.7) * 1000);
   }
 
   function createLoops() {
-    // 경적: 두 음을 겹친 "빵—"
-    loops.horn = gainNode(0);
-    var hornFilter = filterNode('lowpass', 2500, 1, loops.horn);
-    osc('square', 415, gainNode(0.5, hornFilter));
-    osc('square', 494, gainNode(0.5, hornFilter));
+    // 경적: 엔진 소리 종류마다 다르다 (보통 차는 두 음을 겹친 "빵—")
+    loops.horn = createHorn(profileId);
 
     // 공조 바람: 잡음을 걸러서 "쉬—"
     loops.fan = gainNode(0);
@@ -232,7 +480,7 @@
     'mirror': function () { motor(0.9); },
     'pop': function () { noise('lowpass', 700, 0.35, 0.9, 0, 0.7); },
     'arrive': function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, 0.4, 0.2, 'triangle', i * 0.13); }); },
-    'speak': function (e) { speak(e.text); },
+    'speak': function (e) { speak(e.text, e.queue); },
     'coach': function () { [659, 784, 1046].forEach(function (f, i) { tone(f, 0.25, 0.16, 'triangle', i * 0.09); }); },
     // 주행 모드 바꿀 때: 스포츠는 부릉부릉 힘차게, 에코는 부드럽게
     'mode': function (e) {
@@ -250,7 +498,8 @@
   // 내비 음성 안내 (아이패드 Safari 는 한국어 음성을 기본으로 갖고 있다)
   var speakTimer = 0;
   var utterance = null; // Safari 는 말하는 도중 이 객체가 지워지면 말이 끊겨서 붙잡아 둔다
-  function speak(text) {
+  // queue: 앞 말(코치·도착 안내)을 끊지 않고 뒤에 이어서 말한다 (화면 알림을 읽어 주는 말)
+  function speak(text, queue) {
     if (muted || !voiceOn || document.hidden || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
     var synth = window.speechSynthesis;
     function say() {
@@ -262,6 +511,8 @@
         synth.speak(utterance);
       } catch (e) { /* 음성 합성 미지원 */ }
     }
+    if (queue && synth.pending) return;   // 이미 기다리는 말이 있으면 쌓지 않는다
+    if (queue && synth.speaking) { say(); return; }
     clearTimeout(speakTimer);
     // 앞 말을 끊고 바로 새 말을 시키면 Safari 가 새 말까지 버릴 때가 있어 조금 쉬었다 말한다
     if (synth.speaking || synth.pending) {
@@ -276,19 +527,46 @@
     var t = now();
 
     // 엔진
-    var base = Math.max(s.rpm, 1) / 30;
+    var p = engine.def;
+    lastRpm = s.rpm;
+    var base = engineBase(p, s.rpm);
     // 스포츠는 엔진 소리가 더 크고 우렁차게, 에코는 조용하게
     var modeVol = s.driveMode === 'sport' ? 1.3 : s.driveMode === 'eco' ? 0.8 : 1;
     var modeTone = s.driveMode === 'sport' ? 700 : s.driveMode === 'eco' ? -150 : 0;
     engine.oscs.forEach(function (o) {
       o.osc.frequency.setTargetAtTime(base * o.mult, t, 0.03);
     });
-    engine.filter.frequency.setTargetAtTime(300 + modeTone + s.rpm * 0.25 + s.throttle * 1500, t, 0.05);
-    var engineVol = s.engineOn ? (0.18 + s.throttle * 0.25 + (s.rpm / Dash.vehicle.LIMIT_RPM) * 0.15) * modeVol : 0;
+    engine.lfos.forEach(function (l) {
+      l.osc.frequency.setTargetAtTime(base * l.mult, t, 0.03);
+    });
+    engine.filter.frequency.setTargetAtTime(engineFilterFreq(p, s.rpm, s.throttle, modeTone), t, 0.05);
+    var engineVol = s.engineOn ? engineVolume(p, s.rpm, s.throttle, modeVol) : 0;
+    if (t < duckUntil) engineVol *= 0.35;
     engine.gain.gain.setTargetAtTime(engineVol * engineLevel, t, s.engineOn ? 0.05 : 0.25);
 
-    // 경적, ABS
-    loops.horn.gain.setTargetAtTime(s.horn ? 0.22 : 0, t, 0.015);
+    // 경적 (옛날 차는 누르고 있으면 "빵빵" 끊어서)
+    var h = loops.horn.def;
+    if (s.horn && !prev.horn) prev.hornAt = t;
+    var hornOn = s.horn && (!h.pulse || ((t - prev.hornAt) % h.pulse[0]) < h.pulse[1]);
+    loops.horn.gain.gain.setTargetAtTime(hornOn ? h.vol : 0, t, 0.015);
+    prev.horn = s.horn;
+
+    // 엔진 소리 종류별 덤: 스포츠카 "타닥", 버스 "치익"
+    var prof = PROFILES[profileId];
+    // (엑셀 값은 몇 프레임에 걸쳐 내려가서, 조금 전에 세게 밟았다가 이제 거의 놓았는지로 본다)
+    if (s.throttle > 0.5) prev.revAt = t;
+    if (prof.liftPop && s.engineOn && prev.throttle >= 0.15 && s.throttle < 0.15 && t - prev.revAt < 0.6 &&
+        s.rpm > 2500 && t - prev.popAt > 0.8) {
+      crackle(0.03);
+      prev.popAt = t;
+    }
+    if (prof.airBrake && s.engineOn && prev.brakePressed && !s.brakePressed && t - prev.hissAt > 1) {
+      airHiss(0);
+      prev.hissAt = t;
+    }
+    prev.throttle = s.throttle;
+    prev.brakePressed = s.brakePressed;
+
     loops.abs.gain.setTargetAtTime(s.absActive ? 0.25 : 0, t, 0.03);
     loops.rain.gain.setTargetAtTime(s.rainLevel * (s.inTunnel ? 0.02 : 0.14), t, 0.4);
     loops.sensor.gain.setTargetAtTime(sensorGain(s, t), t, 0.005);
@@ -328,7 +606,7 @@
         master.gain.value = muted ? 0 : MASTER_VOLUME;
         master.connect(ctx.destination);
         noiseBuffer = createNoiseBuffer(0.5);
-        engine = createEngine();
+        engine = createEngine(profileId);
         createLoops();
         // iOS 는 음성 합성도 터치 안에서 한 번 시작해 둬야 나중에 내비 안내가 나온다
         try {
@@ -360,6 +638,29 @@
     setVoice: function (on) {
       voiceOn = on;
       if (!on && window.speechSynthesis) window.speechSynthesis.cancel();
+    },
+
+    // 엔진 소리 종류 (고르는 화면·저장은 다른 곳에서)
+    ENGINE_PROFILES: PROFILE_ORDER.map(function (id) {
+      return { id: id, name: PROFILES[id].name, emoji: PROFILES[id].emoji };
+    }),
+    setEngineProfile: function (id) {
+      if (!PROFILES.hasOwnProperty(id) || id === profileId) return;
+      profileId = id;
+      rebuildProfile();  // 소리를 아직 못 켰으면 unlock() 때 이 종류로 만든다
+    },
+    getEngineProfile: function () { return profileId; },
+    // 고를 때 "부릉부릉" 들려주기 (시동이 꺼져 있어도)
+    previewEngine: function (id) {
+      if (!PROFILES.hasOwnProperty(id)) return;
+      if (!ctx) Dash.sound.unlock();
+      if (!ctx) return;
+      if (ctx.state !== 'running' && ctx.state !== 'closed' && !document.hidden) resume();
+      playPreview(id);
+    },
+    _debug: function () {
+      return { swaps: swaps, engine: engine && engine.profile, horn: loops.horn && loops.horn.profile,
+        engineNodes: engine ? engine.nodes.length : 0, preview: !!preview };
     },
 
     update: function (s) {

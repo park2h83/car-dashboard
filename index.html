@@ -20,6 +20,8 @@
   <link rel="stylesheet" href="css/windshield.css">
   <link rel="stylesheet" href="css/coach.css">
   <link rel="stylesheet" href="css/easy.css">
+  <link rel="stylesheet" href="css/progress.css">
+  <link rel="stylesheet" href="css/games.css">
   <!-- 테마 스타일: 테마를 추가하면 여기에 한 줄 추가 -->
   <link rel="stylesheet" href="themes/cockpit/theme.css">
   <link rel="stylesheet" href="themes/play/theme.css">
@@ -60,6 +62,12 @@
     <!-- 쉬운 모드 (js/easy.js): 목적지·더보기 큰 카드 창, 경적 말풍선 -->
     <div id="sheet" hidden></div>
     <div id="honk" aria-hidden="true">📯 빵빵!</div>
+
+    <!-- 아빠 차 따라가기 표시 (js/follow.js), 바늘 맞추기 놀이·시동 쇼·무드등 (js/games.js) -->
+    <div id="follow-chip" aria-live="polite"></div>
+    <div id="game-banner" hidden></div>
+    <div id="start-show" aria-hidden="true"></div>
+    <div id="ambient" aria-hidden="true"></div>
 
     <!-- 테마 고르기 화면 (🎨 테마 버튼으로 연다. 내용은 app.js 가 만든다) -->
     <div id="theme-picker" hidden></div>
@@ -151,6 +159,9 @@
   <script src="js/windshield.js"></script>
   <script src="js/prefs.js"></script>
   <script src="js/easy.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/follow.js"></script>
+  <script src="js/games.js"></script>
   <script src="js/coach.js"></script>
   <script src="js/parkview.js"></script>
   <script src="js/scorecard.js"></script>

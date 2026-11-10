@@ -207,6 +207,7 @@
     } else {
       var bonus = stars >= 3 ? 5 : stars === 2 ? 4 : 3;
       Dash.score.add(s, bonus, '주차를 잘했어요 ' + '⭐'.repeat(stars));
+      if (Dash.progress) Dash.progress.addStars(s, stars, 'parking');
       U.announce(s, '🅿️ 주차 성공! ' + '⭐'.repeat(stars), U.kidCall() + ', 주차 성공! 별 ' + stars + '개');
     }
   }

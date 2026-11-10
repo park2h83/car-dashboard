@@ -12,8 +12,8 @@
     lastPop = p;
     if (!p) { pop.classList.remove('show'); return; }
     pop.className = 'show ' + (p.delta > 0 ? 'good' : 'oops');
-    pop.innerHTML = '<b>' + (p.delta > 0 ? '+' : '') + p.delta + '</b> ' + (p.delta > 0 ? '👍 ' : '') + p.text +
-      ' <span>· ' + p.points + '점</span>';
+    pop.innerHTML = '<b>' + (p.delta > 0 ? '+' : '') + p.delta + '</b> ' + (p.delta > 0 ? '👍 ' : '') + (s.easy ? '' : p.text) +
+      ' <span>· ' + p.points + (s.easy ? '' : '점') + '</span>';
   }
 
   function list(items, good) {

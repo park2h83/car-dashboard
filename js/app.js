@@ -138,6 +138,7 @@
   Dash.coach.init(state);
   Dash.parkview.init(state);
   Dash.scorecard.init(state);
+  if (Dash.progress) Dash.progress.init(state);
 
   var hooks = {
     openThemePicker: openThemePicker,
@@ -148,6 +149,8 @@
     isMuted: function () { return Dash.sound.isMuted(); }
   };
   Dash.easy.init(state, hooks);
+  Dash.follow.init(state);
+  Dash.games.init(state);
   Dash.controls.init(state, input, hooks);
   // 쉬운 모드에는 '계기판 + 도로' 화면을 한 번 보여 준다 (아이가 가장 좋아하는 바늘 계기 + 달리는 차, 그 뒤엔 고른 테마를 기억)
   if (state.easy && load('dash.cockpitIntro') !== '1' && Dash.themes.get('cockpit')) {
@@ -234,6 +237,8 @@
     safely(function () { Dash.windshield.update(state); });
     safely(function () { Dash.coach.update(state, dt); });
     safely(function () { Dash.easy.update(state); });
+    safely(function () { Dash.follow.update(state); });
+    safely(function () { Dash.games.update(state, dt); });
     safely(function () { Dash.parkview.update(state); });
     safely(function () { Dash.scorecard.update(state); });
     if (state.engineOn !== wakeWanted) safely(function () { keepAwake(state.engineOn); });

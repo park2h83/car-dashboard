@@ -72,6 +72,7 @@
       stars: s.parking.stars
     };
     sc.pop = null;
+    if (sc.points >= 100 && Dash.progress) Dash.progress.addStars(s, 1, 'score100');
     if (s.restDue) return; // 쉬는 시간 안내 말이 먼저 (성적표는 쉬는 시간 화면 뒤에 조용히 기다린다)
     U.emit(s, 'arrive');
     U.emit(s, 'speak', { text: U.kid() + '의 운전 점수는 ' + sc.points + '점! ' + g.say });
@@ -109,7 +110,7 @@
 
       var ai = s.autopilot.on;
       s.events.forEach(function (e) {
-        if (e.type === 'good') add(s, 3, label(s.message));
+        if (e.type === 'good') add(s, 3, label(s.messageFull || s.message));
         else if (ai) return; // 자율주행 중 일은 아이 탓이 아니다
         else if (e.type === 'shutter') add(s, -3, '단속 카메라에 찍혔어요', 'shutter', 3);
         else if (e.type === 'redlight') add(s, -3, '빨간불에 지나갔어요', 'red', 3);

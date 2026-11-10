@@ -101,12 +101,26 @@
     var answers = shuffle(item.a.map(function (text, idx) { return { text: text, ok: idx === 0 }; }));
     quiz.tried = false;
     show(
-      '<div class="lic-progress">📝 필기시험 ' + (quiz.i + 1) + ' / ' + quiz.list.length + '</div>' +
-      '<div class="lic-question">' + picture + '<p>' + item.q + '</p></div>' +
-      '<div class="lic-answers">' + answers.map(function (a) {
-        return '<button type="button" class="lic-btn answer" data-ok="' + (a.ok ? 1 : 0) + '">' + a.text + '</button>';
+      '<div class="lic-progress">📝 ' + (quiz.i + 1) + ' / ' + quiz.list.length + '</div>' +
+      '<div class="lic-question">' + picture + '<p>' + item.q + '</p>' +
+      '<button type="button" class="lic-listen" aria-label="다시 듣기">🔊</button></div>' +
+      '<div class="lic-answers">' + answers.map(function (a, i) {
+        return '<button type="button" class="lic-btn answer" data-ok="' + (a.ok ? 1 : 0) + '"><span class="ans-num">' + (i + 1) + '</span>' + a.text + '</button>';
       }).join('') + '</div>' +
       '<div class="lic-feedback"></div>');
+    quiz.answers = answers;
+    readQuestion();
+  }
+
+  // 아이가 아직 글씨를 못 읽어서 문제와 답을 번호와 함께 읽어 준다
+  function readQuestion() {
+    if (!state || !quiz) return;
+    var item = quiz.list[quiz.i];
+    var NUM = ['1번', '2번', '3번', '4번'];
+    var text = Dash.util.speechOf(item.q) + '. ' + quiz.answers.map(function (a, i) {
+      return NUM[i] + ', ' + Dash.util.speechOf(a.text);
+    }).join('. ');
+    Dash.util.emit(state, 'speak', { text: text });
   }
 
   function answer(btn) {
@@ -114,8 +128,9 @@
     if (btn.getAttribute('data-ok') === '1') {
       if (!quiz.tried) quiz.firstTry++;
       btn.classList.add('right');
-      fb.textContent = '딩동댕! ⭕ 정답이에요';
+      fb.textContent = '⭕';
       sound('good');
+      if (state) Dash.util.emit(state, 'speak', { text: '딩동댕! 정답이에요' });
       Array.prototype.forEach.call(root.querySelectorAll('.answer'), function (b) { b.disabled = true; });
       setTimeout(function () {
         if (root.hidden || !quiz) return; // 그사이 닫았으면 다시 열지 않는다
@@ -127,8 +142,9 @@
       quiz.tried = true;
       btn.classList.add('wrong');
       btn.disabled = true;
-      fb.textContent = '음… 다시 생각해 볼까? 🤔';
+      fb.textContent = '🤔';
       sound('chime');
+      if (state) Dash.util.emit(state, 'speak', { text: '음, 다시 골라 볼까?' });
     }
   }
 
@@ -272,6 +288,9 @@
     var ctx = canvas.getContext('2d');
     var font = '-apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
     var W = CARD_W, H = CARD_H;
+    // 모은 별로 오르는 운전사 레벨 (js/progress.js): 머리띠 색과 이름표
+    var level = Dash.progress ? Dash.progress.level() : null;
+    var colors = level ? level.color : ['#3a8bff', '#22c3a6'];
 
     // 바탕
     roundRect(ctx, 0, 0, W, H, 36);
@@ -289,8 +308,8 @@
     ctx.globalAlpha = 1;
     // 머리띠
     var head = ctx.createLinearGradient(0, 0, W, 0);
-    head.addColorStop(0, '#3a8bff');
-    head.addColorStop(1, '#22c3a6');
+    head.addColorStop(0, colors[0]);
+    head.addColorStop(1, colors[1]);
     ctx.fillStyle = head;
     ctx.fillRect(0, 0, W, 110);
     ctx.restore();
@@ -300,8 +319,25 @@
     ctx.fillText('어린이 운전면허증', 40, 68);
     ctx.font = 'bold 20px ' + font;
     ctx.fillText("KIDS DRIVER'S LICENSE · 장난감", 44, 96);
-    ctx.font = '64px ' + font;
-    ctx.fillText('🚗', W - 120, 80);
+    if (level) {
+      // 머리띠 오른쪽: 흰 이름표에 레벨 그림·이름, 그 아래 모은 별
+      var tag = level.emoji + ' ' + level.name;
+      ctx.font = 'bold 34px ' + font;
+      var tw = ctx.measureText(tag).width + 44, tx0 = W - 36 - tw;
+      ctx.fillStyle = '#fff';
+      roundRect(ctx, tx0, 18, tw, 56, 28);
+      ctx.fill();
+      ctx.fillStyle = colors[0];
+      ctx.fillText(tag, tx0 + 22, 58);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 20px ' + font;
+      ctx.textAlign = 'right';
+      ctx.fillText('⭐ ' + Dash.progress.stars() + '개 모았어요', W - 44, 98);
+      ctx.textAlign = 'left';
+    } else {
+      ctx.font = '64px ' + font;
+      ctx.fillText('🚗', W - 120, 80);
+    }
 
     // 사진
     var px = 44, py = 140, pw = 240, ph = 320;
@@ -313,7 +349,7 @@
       ctx.drawImage(img, px, py, pw, ph);
       ctx.restore();
       ctx.lineWidth = 5;
-      ctx.strokeStyle = '#3a8bff';
+      ctx.strokeStyle = colors[0];
       roundRect(ctx, px, py, pw, ph, 18);
       ctx.stroke();
 
@@ -459,6 +495,7 @@
         var go = e.target.closest('[data-go]');
         // 배경을 잘못 눌러 닫히지 않게 ✕ 버튼으로만 닫는다
         if (e.target.closest('.lic-close')) return close();
+        if (e.target.closest('.lic-listen')) return readQuestion();
         if (e.target.closest('.answer')) return answer(e.target.closest('.answer'));
         if (!go) return;
         var to = go.getAttribute('data-go');

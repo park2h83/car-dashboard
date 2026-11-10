@@ -312,6 +312,20 @@
   function stepText(st, ctx) { return typeof st.text === 'function' ? st.text(ctx) : st.text; }
   function stepGlow(st, ctx) { return typeof st.glow === 'function' ? st.glow(ctx) : (st.glow || []); }
 
+  // 아이는 아직 글씨를 못 읽어서: 할 일마다 누를 버튼 그림을 크게 (반짝이는 버튼과 같은 모양)
+  var PEDAL = function (cls, label) { return '<span class="si-pedal ' + cls + '">' + label + '</span>'; };
+  var STEP_ICONS = {
+    brake: PEDAL('brake', '브레이크'), accel: PEDAL('accel', '엑셀'),
+    start: '<span class="si-start">START</span>', 'gear:D': '<span class="si-gear">D</span>',
+    '◀': '<span class="si-turn">◀</span>', '▶': '<span class="si-turn">▶</span>',
+    wheel: '<span class="si-emoji">🎡</span>', '전조등': '<span class="si-emoji">💡</span>', '와이퍼': '<span class="si-emoji">🌧️</span>',
+    '안전벨트': '<span class="si-emoji">🔔</span>', '⛽ 주유소': '<span class="si-emoji">🧭</span>', '⛽ 주유': '<span class="si-emoji">⛽</span>'
+  };
+  function stepIcon(st, ctx) {
+    var g = stepGlow(st, ctx).filter(function (x) { return STEP_ICONS[x]; });
+    return g.length ? '<span class="step-icon">' + g.map(function (x) { return STEP_ICONS[x]; }).join('') + '</span>' : '';
+  }
+
   function open(sit, ctx) {
     var steps = (state.easy && sit.easySteps) || sit.steps;
     card = { sit: sit, ctx: ctx, steps: steps, done: steps.map(function () { return false; }), finished: false, t: 0 };
@@ -319,13 +333,13 @@
     root.innerHTML =
       '<div class="coach-art">' + sit.art(s, ctx) + '</div>' +
       '<div class="coach-body">' +
-      '  <div class="coach-title">' + sit.title(s, ctx) + '<span class="coach-count"></span></div>' +
+      '  <div class="coach-title">' + (s.easy ? U.shortText(sit.title(s, ctx)) : sit.title(s, ctx)) + '<span class="coach-count"></span></div>' +
       '  <ol class="coach-steps">' + steps.map(function (st, i) {
-        return '<li data-i="' + i + '"><span class="num">' + (i + 1) + '</span>' + stepText(st, ctx) + '</li>';
+        return '<li data-i="' + i + '"><span class="num">' + (i + 1) + '</span>' + stepIcon(st, ctx) + '<span class="step-text">' + stepText(st, ctx) + '</span></li>';
       }).join('') + '</ol>' +
       '</div>' +
       (sit.wheel ? '<div class="coach-wheel" hidden></div>' : '');
-    root.className = sit.urgent ? 'urgent' : '';
+    root.className = (sit.urgent ? 'urgent' : '') + (s.easy ? ' few-words' : '');
     root.hidden = false;
     card.items = root.querySelectorAll('.coach-steps li');
     card.counter = root.querySelector('.coach-count');
@@ -368,7 +382,7 @@
   }
 
   function blocked(s) {
-    return !enabled() || s.parking.on || s.autopilot.on || s.restDue ||
+    return !enabled() || s.parking.on || s.follow.on || !!s.game || s.autopilot.on || s.restDue ||
       (Dash.rest && Dash.rest.isOpen()) || ['license', 'theme-picker', 'setup', 'scorecard', 'sheet'].some(function (id) {
         var el = document.getElementById(id); return el && !el.hidden;
       });
@@ -384,6 +398,7 @@
     U.say(s, '👍 ' + U.kid() + ' 최고! ' + praise);
     U.emit(s, 'coach');
     Dash.score.add(s, 2, praise, 'coach-' + sit.id, 15);
+    if (Dash.progress) Dash.progress.addStars(s, 1, 'coach');
     setGlow([]);
   }
 

@@ -271,3 +271,19 @@
 }
 .setup-btn.primary { background: #3a8bff; border-color: #3a8bff; color: #fff; }
 .setup-btn:active { transform: scale(0.97); }
+
+/* 답 번호: 아이가 숫자는 읽으니 크게 */
+.lic-btn.answer { display: flex; align-items: center; gap: 14px; text-align: left; }
+.lic-btn.answer .ans-num {
+  flex: none; width: 52px; height: 52px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #2f7cf6; color: #fff; font-size: 32px; font-weight: 900;
+}
+.lic-btn.answer.right .ans-num { background: #fff; color: #22c55e; }
+.lic-btn.answer.wrong .ans-num { background: #ff9a92; }
+.lic-question { position: relative; }
+.lic-listen {
+  position: absolute; top: 0; left: 0; width: 64px; height: 64px; border-radius: 50%;
+  border: 0; background: #ffd23f; font-size: 32px; cursor: pointer;
+}
+.lic-feedback { font-size: 44px; }

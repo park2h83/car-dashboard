@@ -115,3 +115,13 @@ body.easy .coach-wheel { width: 150px; height: 150px; }
 .sheet-emoji { font-size: 60px; line-height: 1; }
 .sheet-card b { font-size: 22px; }
 .sheet-card small { font-size: 16px; color: #7a7466; }
+
+/* 글씨는 최소로 (아이가 아직 한글을 못 읽는다): 버튼 아래 이름·페달 글씨를 숨기고 그림·색으로 */
+body.easy .ctrl-quick .ctrl-btn .val { display: none; }
+body.easy .ctrl-quick .ctrl-btn { font-size: 46px; }
+body.easy .ctrl-quick .ctrl-btn.turn { font-size: 54px; }
+body.easy .pedal { font-size: 0; }
+body.easy .pedal-brake { border-color: #ff5a4f; box-shadow: inset 0 -10px 0 rgba(255, 90, 79, 0.75); }
+body.easy .pedal-accel { border-color: #39d353; box-shadow: inset 0 -10px 0 rgba(57, 211, 83, 0.75); }
+body.easy #toast { font-size: 44px; padding: 8px 28px; }
+body.easy #score-pop span { font-size: 0.9em; }

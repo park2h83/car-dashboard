@@ -84,3 +84,28 @@
 #coach.done .coach-steps li:last-child { display: flex; }
 .coach-count { margin-left: 10px; padding: 2px 10px; border-radius: 999px; background: #e8eefc; color: #3a8bff; font-size: 0.6em; vertical-align: middle; }
 .coach-count:empty { display: none; }
+
+/* 누를 버튼 그림 (아이는 글씨 대신 그림을 본다) */
+.step-icon { display: inline-flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+.si-pedal { display: inline-flex; align-items: flex-end; justify-content: center; width: 40px; height: 56px; padding-bottom: 4px; border-radius: 8px;
+  background: repeating-linear-gradient(0deg, transparent 0 6px, rgba(0,0,0,0.35) 6px 8px), linear-gradient(#5a636e, #2a3038); color: #fff; font-size: 9px; font-weight: 800; }
+.si-pedal.brake { width: 54px; height: 44px; }
+.si-start { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%;
+  border: 3px solid #ff9a1f; background: radial-gradient(circle at 50% 40%, #2b323c, #12161b); color: #fff; font-size: 10px; font-weight: 800; }
+.si-gear { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; background: #4fc3ff; color: #001521; font-size: 28px; font-weight: 900; }
+.si-turn { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 46px; border-radius: 10px; background: #1d232b; color: #39d353; font-size: 30px; }
+.si-emoji { font-size: 40px; line-height: 1; }
+
+/* 쉬운 모드: 글씨 대신 그림 (말로 읽어 준다) */
+#coach.few-words .step-text { display: none; }
+#coach.few-words li:not(:has(.step-icon)) .step-text { display: inline; }
+#coach.few-words .coach-title { font-size: 40px; }
+#coach.few-words .si-pedal { font-size: 0; }
+#coach.few-words .si-pedal.brake { box-shadow: inset 0 -6px 0 rgba(255, 90, 79, 0.85); }
+#coach.few-words .si-pedal.accel { box-shadow: inset 0 -6px 0 rgba(57, 211, 83, 0.85); }
+#coach.few-words .si-pedal { width: 52px; height: 70px; }
+#coach.few-words .si-pedal.brake { width: 70px; height: 54px; }
+#coach.few-words .si-emoji, #coach.few-words .si-gear, #coach.few-words .si-turn { transform: scale(1.25); }
+body.easy #coach.few-words { width: auto; min-width: 300px; max-width: calc(100% - 24px); }
+#coach.few-words .coach-body { display: flex; align-items: center; gap: 18px; }
+#coach.few-words .coach-title { margin-bottom: 0; }

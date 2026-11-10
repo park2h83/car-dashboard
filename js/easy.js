@@ -44,6 +44,10 @@
       hooks = h;
       sheet = document.getElementById('sheet');
       honk = document.getElementById('honk');
+      try {
+        var eng = localStorage.getItem('dash.engineSound');
+        if (eng && Dash.sound.setEngineProfile) Dash.sound.setEngineProfile(eng);
+      } catch (e) { /* 무시 */ }
       if (s.easy) {
         if (s.headlights === 'off') s.headlights = 'auto';
         if (s.wiper === 'off') s.wiper = 'auto';
@@ -52,6 +56,10 @@
     },
 
     isOpen: function () { return sheet && !sheet.hidden; },
+
+    // 큰 카드 창 (다른 기능도 같이 쓴다): items = [{ emoji, name, sub, on, act }]
+    openSheet: function (title, items) { openSheet(title, items); },
+    closeSheet: function () { close(); },
 
     openNav: function () {
       var s = state;
@@ -70,12 +78,32 @@
     openMore: function () {
       var s = state;
       openSheet('⚙ 더보기', [
+        { emoji: '🎯', name: '바늘 맞추기', sub: '속도를 숫자에 맞춰 봐요', act: function () { Dash.games.startGame(); } },
+        { emoji: '🚗', name: '아빠 차 따라가기', sub: s.follow.on ? '켜져 있어요 (누르면 끝)' : '진짜 차 속도로 움직여요', on: s.follow.on,
+          act: function () { Dash.follow.toggle(); } },
+        { emoji: '🔍', name: '경고등 도감', act: function () { Dash.games.openDex(); } },
+        Dash.progress && Dash.progress.openStamps ? { emoji: '📍', name: '도장판', sub: Dash.progress.summary ? Dash.progress.summary() : '', act: function () { Dash.progress.openStamps(); } } : null,
+        Dash.sound.ENGINE_PROFILES ? { emoji: '🔊', name: '엔진 소리 고르기', act: function () { Dash.easy.openEngineSounds(); } } : null,
+        { emoji: '💡', name: '무드등 색', act: function () { Dash.games.openAmbient(); } },
         { emoji: '🪪', name: '운전면허증', act: function () { Dash.license.open(); } },
         { emoji: '👮', name: '운전자 확인', act: function () { Dash.license.driverCheck(); } },
         { emoji: hooks.isMuted() ? '🔇' : '🔊', name: '소리', sub: hooks.isMuted() ? '꺼져 있어요' : '켜져 있어요',
           act: function () { hooks.toggleMute(); } },
         { emoji: '👨‍👩‍👦', name: '부모님 설정', act: function () { Dash.rest.openParent(); } }
-      ]);
+      ].filter(Boolean));
+    },
+
+    // 🔊 엔진 소리 고르기 (js/core/sound.js 의 ENGINE_PROFILES), 고른 소리는 이 기기에 기억
+    openEngineSounds: function () {
+      var now = Dash.sound.getEngineProfile ? Dash.sound.getEngineProfile() : '';
+      openSheet('🔊 엔진 소리 고르기', Dash.sound.ENGINE_PROFILES.map(function (p) {
+        return { emoji: p.emoji, name: p.name, on: p.id === now, act: function () {
+          Dash.sound.setEngineProfile(p.id);
+          try { localStorage.setItem('dash.engineSound', p.id); } catch (e) { /* 무시 */ }
+          if (Dash.sound.previewEngine) Dash.sound.previewEngine(p.id);
+          Dash.util.popup(state, '엔진 소리', p.name);
+        } };
+      }));
     },
 
     // 매 프레임 (app.js)
