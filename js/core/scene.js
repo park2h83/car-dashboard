@@ -53,26 +53,41 @@
   }
 
   function f1(n) { return Math.round(n * 10) / 10; }
+  function f1h(n) { return Math.round(n * 1000) / 1000; } // 차 모양(m 단위)은 더 촘촘하게
   function rand(a, b) { return a + Math.random() * (b - a); }
 
   // ---------- 물건 모양 (단위 m, 원점 = 땅에 닿는 가운데, 위쪽이 −y) ----------
 
+  // o: { cls, brake, blinkL, blinkR, reverse, pitch(몸통이 위아래로 m), big(내 차: 브레이크·깜빡이 불빛을 크게), extra }
   function carSvg(color, o) {
     var lit = o.brake ? ' on' : '';
+    var ground = '', lights = '';
+    if (o.big) {
+      // 내 차는 불빛을 크게: 브레이크는 바닥까지 붉게, 깜빡이는 주황 빛 무리
+      if (o.brake) ground = '<ellipse cx="0" cy="0.12" rx="1.6" ry="0.32" fill="rgba(255,40,30,0.32)"/>';
+      if (o.blinkL) lights += '<circle cx="-0.85" cy="-0.6" r="0.42" fill="rgba(255,170,20,0.45)"/>';
+      if (o.blinkR) lights += '<circle cx="0.85" cy="-0.6" r="0.42" fill="rgba(255,170,20,0.45)"/>';
+    }
+    var bw = o.big ? 0.3 : 0.2, bh = o.big ? 0.14 : 0.08;
     return '<g class="car' + (o.cls ? ' ' + o.cls : '') + '">' +
+      ground +
       '<ellipse class="shadow" cx="0" cy="0" rx="1.15" ry="0.16"/>' +
       '<rect class="car-wheel" x="-0.97" y="-0.38" width="0.32" height="0.38" rx="0.06"/>' +
       '<rect class="car-wheel" x="0.65" y="-0.38" width="0.32" height="0.38" rx="0.06"/>' +
+      '<g transform="translate(0 ' + f1h(o.pitch || 0) + ')">' +
       '<path class="car-cabin" fill="' + color + '" d="M-0.8 -0.86L-0.6 -1.44Q0 -1.5 0.6 -1.44L0.8 -0.86Z"/>' +
       '<path class="car-glass" d="M-0.66 -0.92L-0.5 -1.36Q0 -1.41 0.5 -1.36L0.66 -0.92Z"/>' +
       '<rect class="car-bodyfill" fill="' + color + '" x="-0.95" y="-0.9" width="1.9" height="0.72" rx="0.16"/>' +
       '<rect class="car-bumper" x="-0.92" y="-0.3" width="1.84" height="0.14" rx="0.06"/>' +
       '<rect class="car-tail' + lit + '" x="-0.9" y="-0.78" width="0.42" height="0.13" rx="0.04"/>' +
       '<rect class="car-tail' + lit + '" x="0.48" y="-0.78" width="0.42" height="0.13" rx="0.04"/>' +
-      '<rect class="car-blink' + (o.blinkL ? ' on' : '') + '" x="-0.92" y="-0.64" width="0.2" height="0.08" rx="0.03"/>' +
-      '<rect class="car-blink' + (o.blinkR ? ' on' : '') + '" x="0.72" y="-0.64" width="0.2" height="0.08" rx="0.03"/>' +
+      '<rect class="car-blink' + (o.blinkL ? ' on' : '') + '" x="-0.94" y="' + f1h(-0.6 - bh / 2) + '" width="' + bw + '" height="' + bh + '" rx="0.03"/>' +
+      '<rect class="car-blink' + (o.blinkR ? ' on' : '') + '" x="' + f1h(0.94 - bw) + '" y="' + f1h(-0.6 - bh / 2) + '" width="' + bw + '" height="' + bh + '" rx="0.03"/>' +
       (o.reverse ? '<rect class="car-reverse" x="-0.12" y="-0.3" width="0.24" height="0.08"/>' : '') +
       '<rect class="car-plate" x="-0.26" y="-0.52" width="0.52" height="0.14" rx="0.02"/>' +
+      lights +
+      '</g>' +
+      (o.extra || '') +
       '</g>';
   }
 
@@ -227,6 +242,57 @@
 
     function zOf(s, d) { return FRONT + d; }
 
+    // (x, z) 땅 위의 점들로 다각형
+    function groundPath(pts) { return pathOf(pts.map(function (p) { return proj(p[0], Math.max(Z_NEAR, p[1]), 0); })); }
+
+    // 갈림길: 앞에 옆길이 보이고, 그 전에 내 차선 바닥에 꺾인 화살표 (아이가 '저기서 도는구나'를 알게)
+    var SIDE_W = 12;
+    function junctionSvg(s, width) {
+      var r = s.road;
+      if (!r || s.inTunnel || (r.cur.turn !== 'left' && r.cur.turn !== 'right')) return '';
+      var zj = FRONT + (r.cur.km - r.pos) * 1000;
+      if (zj > 230 || zj + SIDE_W < Z_NEAR) return '';
+      var dir = r.cur.turn === 'left' ? -1 : 1;
+      var xa = dir < 0 ? -0.6 : width + 0.6, xb = dir < 0 ? -70 : width + 70;
+      var out = '<path class="rd-surface" d="' + groundPath([[xa, zj], [xb, zj], [xb, zj + SIDE_W], [xa, zj + SIDE_W]]) + '"/>';
+      // 옆길 가운데 점선
+      var dash = '', zm = zj + SIDE_W / 2;
+      for (var x = 2; x < 60; x += 6) {
+        var x0 = xa + dir * x, x1 = xa + dir * (x + 3);
+        dash += groundPath([[x0, zm - 0.08], [x1, zm - 0.08], [x1, zm + 0.08], [x0, zm + 0.08]]);
+      }
+      out += '<path class="rd-dash" d="' + dash + '"/>';
+      // 바닥 화살표: 갈림길 15~60m 앞, 내 차선에
+      // 멀리서는 갈림길 22m 앞 바닥에, 가까워지면 내 차 바로 앞에 붙어서 따라온다
+      var za = Math.max(FRONT + 2, zj - 22);
+      if (za + 10 < zj + SIDE_W && za < 120) {
+        var cx = (s.lane + 0.5) * LANE_W;
+        var shape = [[-0.3, 0], [0.3, 0], [0.3, 7], [0.8, 7], [0.8, 5.6], [1.6, 8], [0.8, 10.4], [0.8, 9], [-0.3, 9]];
+        out += '<path d="' + groundPath(shape.map(function (p) { return [cx + dir * p[0], za + p[1]]; })) + '" fill="rgba(255,255,255,0.88)"/>';
+      }
+      return out;
+    }
+
+    // 깜빡이를 켜면 옮겨 갈 차선으로 주황 화살표 (깜빡임에 맞춰 밝아졌다 어두워졌다)
+    function laneArrowSvg(s) {
+      var dir = s.hazard ? 0 : s.turnLeft ? -1 : s.turnRight ? 1 : 0;
+      var moving = Math.abs(s.laneX - s.lane) > 0.01;
+      if (moving) dir = s.lane > s.laneX ? 1 : -1;
+      if (!dir || s.parking.on) return '';
+      var from = moving ? s.lane - dir : s.lane, to = from + dir;
+      if (to < 0 || to >= s.lanes) return '';
+      var x0 = (from + 0.5) * LANE_W, x1 = (to + 0.5) * LANE_W;
+      var z0 = FRONT + 3, z1 = FRONT + 16;
+      var dx = x1 - x0, dz = z1 - z0, len = Math.sqrt(dx * dx + dz * dz);
+      var ux = dx / len, uz = dz / len, nx = -uz, nz = ux;
+      var w = 0.42, hw = 1.05, hl = 3.6;
+      var bx = x1 - ux * hl, bz = z1 - uz * hl;
+      var pts = [[x0 + nx * w, z0 + nz * w], [bx + nx * w, bz + nz * w], [bx + nx * hw, bz + nz * hw], [x1, z1],
+        [bx - nx * hw, bz - nz * hw], [bx - nx * w, bz - nz * w], [x0 - nx * w, z0 - nz * w]];
+      var on = s.blinkOn || moving;
+      return '<path d="' + groundPath(pts) + '" fill="rgba(255,176,0,' + (on ? 0.92 : 0.4) + ')"/>';
+    }
+
     // ---- 바닥: 도로, 차선, 횡단보도, 방지턱, 터널 벽 ----
     function roadSvg(s) {
       var width = s.lanes * LANE_W;
@@ -244,6 +310,7 @@
       var phase = dist % (DASH_LEN + DASH_GAP);
       for (var i = 1; i < s.lanes; i++) marks += dashes(i * LANE_W, phase, 220);
       out += '<path class="rd-dash" d="' + marks + '"/>';
+      out += junctionSvg(s, width) + laneArrowSvg(s);
 
       // 바닥에 그려진 것들
       var zebra = '', stop = '', bumpY = '', bumpW = '', closed = '';
@@ -422,22 +489,29 @@
 
       // 내 차 (운전석 시점에서는 안 보인다)
       var blink = s.blinkOn;
-      if (!fp) list.push({ z: Z_EGO, svg: '<g transform="rotate(' + f1((s.lane - s.laneX) * 5) + ' ' + f1(proj((s.laneX + 0.5) * LANE_W, Z_EGO)[0]) + ' ' + f1(proj(0, Z_EGO)[1]) + ')">' +
+      if (!fp) list.push({ z: Z_EGO, svg: '<g transform="rotate(' + f1((s.lane - s.laneX) * 5 + turnSwing(s) * 16) + ' ' + f1(proj((s.laneX + 0.5) * LANE_W, Z_EGO)[0]) + ' ' + f1(proj(0, Z_EGO)[1]) + ')">' +
         place((s.laneX + 0.5) * LANE_W, Z_EGO, carSvg(egoColor, {
-          cls: 'ego', brake: s.brake > 0.05 || s.aeb,
+          cls: 'ego', brake: s.brake > 0.05 || s.aeb, big: true,
           blinkL: blink && (s.turnLeft || s.hazard), blinkR: blink && (s.turnRight || s.hazard),
-          reverse: s.gear === 'R'
+          reverse: s.gear === 'R',
+          // 엑셀을 밟으면 뒤가 살짝 내려앉고, 브레이크를 밟으면 뒤가 들린다
+          pitch: Math.max(-0.12, Math.min(0.07, (s.accelFeel || 0) * ((s.accelFeel || 0) > 0 ? 0.007 : 0.004))),
+          extra: exhaustSvg()
         })) + '</g>' });
 
       // 길가 나무: 달리면 휙휙 지나간다 (opts.scenery, 운전 게임·앞유리 화면). 같은 나무는 같은 모양으로
       if (opts.scenery && !s.inTunnel) {
         var dist = s.roadDist;
+        // 갈림길 옆길 자리에는 나무를 심지 않는다
+        var jr = s.road && s.road.cur, jside = jr && jr.turn === 'left' ? 0 : jr && jr.turn === 'right' ? 1 : -1;
+        var jz = jr ? FRONT + (jr.km - s.road.pos) * 1000 : -1e9;
         for (var tz = Z_NEAR - dist % TREE_EVERY; tz < 230; tz += TREE_EVERY) {
           if (tz < Z_NEAR) continue;
           var k = Math.round((dist + tz) / TREE_EVERY);
           [0, 1].forEach(function (side) {
             var h = (Math.imul(k * 2 + side + 7, 2654435761) >>> 0);
             if (h % 5 === 0) return; // 군데군데 비워 둔다
+            if (side === jside && tz > jz - 4 && tz < jz + SIDE_W + 4) return;
             var x = side ? width + 2.6 + (h >> 4) % 3 : -2.6 - (h >> 6) % 3;
             list.push({ z: tz + 0.02, svg: place(x, tz, SCENERY[(h >> 9) % SCENERY.length]) });
           });
@@ -506,13 +580,43 @@
       return out;
     }
 
+    // 배기 연기: 엑셀을 밟으면 뽀글뽀글 (내 차 뒤에서 카메라 쪽으로 커지며 흐려진다)
+    var puffs = [], puffDebt = 0, PUFF_LIFE = 0.9;
+    function updatePuffs(s, dt) {
+      puffs.forEach(function (p) { p.age += dt; });
+      puffs = puffs.filter(function (p) { return p.age < PUFF_LIFE; });
+      if (!s.engineOn || fp || s.inTunnel && s.speed > 30) return;
+      puffDebt += dt * (0.8 + s.throttle * 12);
+      while (puffDebt >= 1 && puffs.length < 24) {
+        puffDebt -= 1;
+        puffs.push({ age: 0, drift: rand(-0.15, 0.15), strength: 0.12 + s.throttle * 0.38 });
+      }
+      if (puffDebt > 1) puffDebt = 0;
+    }
+    function exhaustSvg() {
+      var out = '<rect x="-0.66" y="-0.25" width="0.16" height="0.08" rx="0.03" fill="#3a3f46"/>';
+      puffs.forEach(function (p) {
+        var k = p.age / PUFF_LIFE;
+        out += '<circle cx="' + f1h(-0.58 + p.drift * k - k * 0.25) + '" cy="' + f1h(-0.21 + k * 0.3) + '" r="' + f1h(0.06 + k * 0.42) +
+          '" fill="rgba(215,218,224,' + f1h(p.strength * (1 - k)) + ')"/>';
+      });
+      return out;
+    }
+
+    // 갈림길을 도는 장면: 0 → ±1 → 0 (왼쪽 −, 오른쪽 +)
+    function turnSwing(s) {
+      var a = s.turnAnim;
+      return a ? a.dir * Math.sin(Math.PI * Math.min(1, a.t / 1.6)) : 0;
+    }
+
     return {
       render: function (s, dt) {
         time += dt;
+        updatePuffs(s, dt);
         // 카메라는 내 차를 따라가되 도로 가운데 쪽으로 조금 당겨서 모든 차선이 보이게 한다
         // 운전석 시점: 내 차선 가운데에서 운전석(왼쪽) 쪽으로 조금
         camX = fp ? (s.laneX + 0.5) * LANE_W - 0.35 : (s.laneX + 0.5) * LANE_W * FOLLOW + s.lanes * LANE_W / 2 * (1 - FOLLOW);
-        curve = 0.00022 * Math.sin(s.odometer * 0.9) + s.curve * 0.0012;
+        curve = 0.00022 * Math.sin(s.odometer * 0.9) + s.curve * 0.0012 + turnSwing(s) * (fp ? 0.004 : 0.005);
         return { road: roadSvg(s), beam: beamSvg(s), sprites: spritesSvg(s), glass: glassSvg(s, dt) };
       }
     };

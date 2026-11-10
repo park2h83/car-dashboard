@@ -213,18 +213,18 @@
 /* ---------- 위: 깜빡이 화살표 · 경고등 ---------- */
 .ck-turn {
   position: absolute;
-  top: 8px;
-  width: 116px;
-  height: 116px;
-  padding: 14px;
+  top: 4px;
+  width: 136px;
+  height: 136px;
+  padding: 8px;
   border-radius: 50%;
 }
-.ck-turn.left { left: 16px; }
-.ck-turn.right { right: 16px; }
+.ck-turn.left { left: 6px; }
+.ck-turn.right { right: 6px; }
 .ck-turn svg { display: block; width: 100%; height: 100%; fill: rgba(255, 255, 255, 0.13); }
 .ck-turn.armed svg { fill: rgba(34, 197, 94, 0.3); }
-.ck-turn.on { background: rgba(10, 40, 20, 0.7); box-shadow: 0 0 0 7px rgba(46, 232, 106, 0.4); }
-.ck-turn.on svg { fill: #2ee86a; }
+.ck-turn.on { background: rgba(10, 40, 20, 0.7); box-shadow: 0 0 0 9px rgba(46, 232, 106, 0.45), 0 0 46px 12px rgba(46, 232, 106, 0.55); }
+.ck-turn.on svg { fill: #2ee86a; filter: drop-shadow(0 0 10px #2ee86a); }
 .ck.hazard .ck-turn.on { box-shadow: 0 0 0 7px rgba(255, 59, 48, 0.55); }
 
 .ck-warns {

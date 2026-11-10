@@ -151,6 +151,19 @@
     s.absActive = !s.faults.abs && s.brake > 0.9 && s.speed > 30;
   }
 
+  // 조작하는 느낌: 차가 앞뒤로 숙는 정도, 급브레이크 '끼익', 차선 옮길 때 '휙', 갈림길 도는 장면
+  var TURN_ANIM_SECONDS = 1.6;
+  var feel = { speed: 0, brake: 0, lane: 0 };
+  function updateFeel(s, dt) {
+    var a = (s.speed - feel.speed) / Math.max(dt, 0.001);
+    feel.speed = s.speed;
+    s.accelFeel += (clamp(a, -40, 20) - s.accelFeel) * Math.min(1, dt * 6);
+    if (s.brake > 0.7 && feel.brake <= 0.7 && s.speed > 25 && !s.parking.on) U.emit(s, 'skid');
+    feel.brake = s.brake;
+    if (s.lane !== feel.lane) { if (!s.parking.on) U.emit(s, 'whoosh'); feel.lane = s.lane; }
+    if (s.turnAnim && (s.turnAnim.t += dt) > TURN_ANIM_SECONDS) s.turnAnim = null;
+  }
+
   function updateGear(s, dt) {
     shiftCooldown = Math.max(0, shiftCooldown - dt);
     if (s.gear !== 'D' || shiftCooldown > 0) return;
@@ -617,6 +630,7 @@
       updateAlerts(s, dt);
       updateTimers(s, dt);
       if (!s.follow.on) Dash.score.update(s, dt);
+      updateFeel(s, dt);
     },
 
     // 주행

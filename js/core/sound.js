@@ -478,6 +478,10 @@
     },
     'thunder': function () { noise('lowpass', 140, 2.8, 1, 0.15, 0.5); noise('lowpass', 400, 0.6, 0.5, 0.1, 0.7); },
     'mirror': function () { motor(0.9); },
+    // 급브레이크 끼익 (타이어 소리: 좁은 대역 잡음 두 겹)
+    'skid': function () { noise('bandpass', 1900, 0.55, 0.35, 0, 12); noise('bandpass', 2600, 0.4, 0.22, 0.05, 14); },
+    // 차선을 옮길 때 휙
+    'whoosh': function () { noise('bandpass', 700, 0.45, 0.35, 0, 1.5); },
     'pop': function () { noise('lowpass', 700, 0.35, 0.9, 0, 0.7); },
     'arrive': function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, 0.4, 0.2, 'triangle', i * 0.13); }); },
     'speak': function (e) { speak(e.text, e.queue); },

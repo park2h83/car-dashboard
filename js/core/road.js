@@ -164,6 +164,7 @@
       }
     }
     s.nav.signaled = false;
+    if (turning) s.turnAnim = { dir: done.turn === 'left' ? -1 : 1, t: 0 }; // 화면 속 차가 그쪽으로 꺾어 들어간다
     if (turning) {
       // 핸들을 풀면 깜빡이가 저절로 꺼진다
       s.turnLeft = false;

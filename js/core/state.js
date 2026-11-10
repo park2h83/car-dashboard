@@ -61,6 +61,8 @@
       roadName: '',
       lanes: 1,           // 지금 도로의 차선 수
       lane: 0,            // 내 차가 가려는 차선 (0 = 맨 왼쪽)
+      accelFeel: 0,       // 부드럽게 한 가속도(km/h/s): 화면 속 차가 앞뒤로 숙는 느낌 (scene.js)
+      turnAnim: null,     // 갈림길에서 도는 장면 { dir: -1|1, t } (road.js 가 켜고 vehicle.step 이 끈다)
       laneX: 0,           // 내 차의 실제 가로 위치 (차선 번호, 차선 바꾸는 중엔 소수)
       cars: [],           // 다른 차들 { id, lane, gap(m, +앞 −뒤), speed, color }
       lead: null,         // 내 차선 바로 앞의 차나 장애물 { gap, speed, id, kind } 또는 null
