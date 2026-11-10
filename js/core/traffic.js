@@ -27,7 +27,7 @@
 
   function rand(a, b) { return a + Math.random() * (b - a); }
 
-  function maxCars(lanes) { return lanes === 1 ? 1 : lanes === 2 ? 3 : 4; }
+  function maxCars(lanes) { return lanes === 1 ? 1 : lanes === 2 ? 3 : lanes === 3 ? 4 : 5; }
 
   function laneFree(s, lane, from, to) {
     for (var i = 0; i < s.cars.length; i++) {
@@ -195,7 +195,14 @@
     }
     // 앞유리 화면에서는 아이가 핸들로 바꾼다 (깜빡이만으로는 자율주행일 때만)
     var bySignal = !s.driveView || s.autopilot.on;
-    if (bySignal && dir && settled && s.signalTimer > SIGNAL_TO_CHANGE && (s.speed > 2 || s.autopilot.on || myLaneBlocked)) {
+    // 쉬운 모드는 깜빡이를 켜면 더 빨리 옮겨 간다. 그쪽에 차선이 없으면 알려 준다
+    var waitSignal = s.easy ? SIGNAL_TO_CHANGE / 2 : SIGNAL_TO_CHANGE;
+    if (bySignal && dir && settled && s.signalTimer > waitSignal && s.easy && !s.autopilot.on &&
+        (s.lane + dir < 0 || s.lane + dir >= s.lanes) && blockedTimer <= 0 && !(s.nav.on && s.nav.turn === (dir < 0 ? 'left' : 'right'))) {
+      blockedTimer = 4;
+      U.say(s, (dir < 0 ? '왼쪽' : '오른쪽') + '에는 차선이 없어요');
+    }
+    if (bySignal && dir && settled && s.signalTimer > waitSignal && (s.speed > 2 || s.autopilot.on || myLaneBlocked)) {
       var target = s.lane + dir;
       if (target >= 0 && target < s.lanes) {
         if (Dash.roadside.laneBlocked(s, target, 0, 40)) {

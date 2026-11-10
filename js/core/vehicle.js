@@ -195,6 +195,7 @@
     s.instantEconomy = lph > 0 ? Math.min(30, s.speed / lph) : 0;
     var lPerKm = s.trip > 0.5 && s.tripFuel > 0 ? s.tripFuel / s.trip : 1 / 14;
     s.range = s.fuel * FUEL_TANK_L / GAME_DRAIN / lPerKm;
+    s.fuelLiters = s.fuel * FUEL_TANK_L;
     if (s.engineOn && s.fuel <= 0) {
       s.engineOn = false;
       say(s, '연료가 다 떨어졌어요! 주유하세요');
@@ -218,6 +219,9 @@
     } else {
       s.coolantTemp += (s.outsideTemp - s.coolantTemp) * Math.min(1, 0.005 * dt);
     }
+    // 엔진 오일: 냉각수보다 천천히 데워지고, 세게 달리면 더 뜨거워진다 (보통 90~110°C)
+    var oilGoal = s.engineOn ? (s.faults.overheat ? 135 : 92 + s.rpm / 1000 * 3 + s.throttle * 10) : s.outsideTemp;
+    s.oilTemp += (oilGoal - s.oilTemp) * Math.min(1, (s.engineOn ? 0.012 : 0.003) * dt);
 
     // 실내 온도: 공조가 켜져 있으면 설정 온도로, 꺼져 있으면 바깥 온도로 서서히
     var c = s.climate;

@@ -22,6 +22,8 @@
       fuel: 0.75,         // 0~1
       refueling: false,   // 주유 중
       coolantTemp: 20,    // °C
+      oilTemp: 20,        // 엔진 오일 온도 °C (냉각수보다 천천히 데워지고 조금 더 뜨겁다)
+      fuelLiters: 37.5,   // 남은 기름 (L)
       odometer: 12345.6,  // km
 
       // ---- 트립 컴퓨터 ----

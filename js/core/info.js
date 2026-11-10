@@ -119,6 +119,15 @@
         row('시트 통풍', vent(s.seatVent[0]) + ' / ' + vent(s.seatVent[1])) +
         row('핸들 열선', s.wheelHeat ? '켬' : '끔');
     },
+    // 진짜 계기판처럼: 남은 기름(L)·갈 수 있는 거리, 냉각수·엔진 오일 온도
+    engine: function (s) {
+      var temp = function (t, hot) { return Math.round(t) + '°C' + (t >= hot ? ' 🔥' : t < 50 ? ' (차가워요)' : ''); };
+      return title('🛢 엔진 상태') +
+        row('남은 기름', s.fuelLiters.toFixed(1) + ' L') + bar(s.fuel) +
+        row('갈 수 있는 거리', Math.round(s.range) + ' km') +
+        row('냉각수 온도', temp(s.coolantTemp, 110)) +
+        row('엔진 오일 온도', temp(s.oilTemp, 125));
+    },
     score: function (s) {
       var sc = s.score;
       var last = sc.good.concat(sc.oops).slice(-2).map(function (e) { return '<div class="info-sub">' + e.label + '</div>'; }).join('');
@@ -135,7 +144,7 @@
         (s.nav.on ? '' : '<div class="info-sub">내비 탭에서 목적지를 골라 보세요</div>');
     }
   };
-  var ORDER = ['trip', 'score', 'economy', 'tires', 'car', 'climate', 'road'];
+  var ORDER = ['trip', 'score', 'engine', 'economy', 'tires', 'car', 'climate', 'road'];
 
   function pages(s) {
     var list = ORDER.filter(function (id) { return !(s.easy && id === 'climate'); }); // 쉬운 모드엔 공조가 없다

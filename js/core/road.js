@@ -18,56 +18,56 @@
 
   // 목적지 없이 달릴 때 도는 길
   var FREE = [
-    seg('우리 동네 골목', 30, 0.4, 1, 'right'),
-    seg(DAYCARE + ' 앞 (어린이 보호구역)', 30, 0.5, 1, 'straight', { school: true, camera: 0.3 }),
-    seg('시내 도로', 50, 1.5, 2, 'left', { camera: 1.0 }),
-    seg('큰길', 60, 2.0, 3, 'right'),
-    seg('강변북로', 80, 5.0, 3, 'straight', { camera: 2.5 }),
-    seg('강변북로', 80, 3.0, 3, 'right'),
-    seg('남산 터널', 80, 1.5, 2, 'straight', { tunnel: true }),
-    seg('시내 도로', 50, 2.0, 2, 'right', { camera: 1.2 })
+    seg('우리 동네 골목', 30, 0.4, 2, 'right'),
+    seg(DAYCARE + ' 앞 (어린이 보호구역)', 30, 0.5, 2, 'straight', { school: true, camera: 0.3 }),
+    seg('시내 도로', 50, 1.5, 3, 'left', { camera: 1.0 }),
+    seg('큰길', 60, 2.0, 4, 'right'),
+    seg('강변북로', 80, 5.0, 4, 'straight', { camera: 2.5 }),
+    seg('강변북로', 80, 3.0, 4, 'right'),
+    seg('남산 터널', 80, 1.5, 3, 'straight', { tunnel: true }),
+    seg('시내 도로', 50, 2.0, 3, 'right', { camera: 1.2 })
   ];
 
   // 목적지별 경로
   var DESTINATIONS = [
     { id: 'daycare', name: DAYCARE, route: [
       seg('동네 길', 40, 0.6, 2, 'right'),
-      seg('시내 도로', 50, 1.0, 2, 'right', { camera: 0.5 }),
-      seg(DAYCARE + ' 앞 (어린이 보호구역)', 30, 0.5, 1, 'arrive', { school: true, camera: 0.25 })
+      seg('시내 도로', 50, 1.0, 3, 'right', { camera: 0.5 }),
+      seg(DAYCARE + ' 앞 (어린이 보호구역)', 30, 0.5, 2, 'arrive', { school: true, camera: 0.25 })
     ] },
     { id: 'yeouido', name: '여의도 한강공원', route: [
-      seg('시내 도로', 50, 1.2, 2, 'right'),
-      seg('큰길', 60, 2.0, 3, 'left'),
-      seg('올림픽대로', 80, 7.0, 3, 'straight', { camera: 3.0 }),
-      seg('올림픽대로', 80, 5.0, 3, 'right', { camera: 2.0 }),
+      seg('시내 도로', 50, 1.2, 3, 'right'),
+      seg('큰길', 60, 2.0, 4, 'left'),
+      seg('올림픽대로', 80, 7.0, 4, 'straight', { camera: 3.0 }),
+      seg('올림픽대로', 80, 5.0, 4, 'right', { camera: 2.0 }),
       seg('여의도 진입로', 50, 1.0, 2, 'left'),
       seg('여의도 한강공원 주차장', 20, 0.3, 1, 'arrive')
     ] },
     { id: 'guri', name: '구리 한강공원', route: [
-      seg('시내 도로', 50, 1.2, 2, 'right'),
-      seg('큰길', 60, 2.0, 3, 'left'),
-      seg('강변북로', 80, 6.0, 3, 'straight', { camera: 2.5 }),
-      seg('강변북로', 80, 4.0, 3, 'right', { camera: 1.5 }),
-      seg('구리암사대교 북단', 60, 1.0, 2, 'left'),
+      seg('시내 도로', 50, 1.2, 3, 'right'),
+      seg('큰길', 60, 2.0, 4, 'left'),
+      seg('강변북로', 80, 6.0, 4, 'straight', { camera: 2.5 }),
+      seg('강변북로', 80, 4.0, 4, 'right', { camera: 1.5 }),
+      seg('구리암사대교 북단', 60, 1.0, 3, 'left'),
       seg('구리 한강공원 주차장', 20, 0.3, 1, 'arrive')
     ] },
     { id: 'home', name: '우리 집', route: [
-      seg('시내 도로', 50, 1.0, 2, 'right'),
-      seg('우리 동네 골목', 30, 0.5, 1, 'left'),
+      seg('시내 도로', 50, 1.0, 3, 'right'),
+      seg('우리 동네 골목', 30, 0.5, 2, 'left'),
       seg('우리 아파트 주차장', 20, 0.2, 1, 'arrive')
     ] },
     { id: 'mart', name: '마트', route: [
-      seg('시내 도로', 50, 1.5, 2, 'left'),
-      seg('큰길', 60, 2.5, 3, 'right', { camera: 1.2 }),
+      seg('시내 도로', 50, 1.5, 3, 'left'),
+      seg('큰길', 60, 2.5, 4, 'right', { camera: 1.2 }),
       seg('마트 주차장', 20, 0.2, 1, 'arrive')
     ] },
     { id: 'grandma', name: '할머니 댁', route: [
-      seg('시내 도로', 50, 1.2, 2, 'right'),
-      seg('큰길', 60, 2.0, 3, 'right'),
-      seg('고속도로', 100, 10.0, 3, 'straight', { camera: 4.0 }),
-      seg('고속도로', 110, 8.0, 3, 'right', { camera: 3.0 }),
-      seg('국도', 70, 4.0, 2, 'left', { camera: 2.0 }),
-      seg('할머니 댁 동네', 30, 0.6, 1, 'arrive')
+      seg('시내 도로', 50, 1.2, 3, 'right'),
+      seg('큰길', 60, 2.0, 4, 'right'),
+      seg('고속도로', 100, 10.0, 4, 'straight', { camera: 4.0 }),
+      seg('고속도로', 110, 8.0, 4, 'right', { camera: 3.0 }),
+      seg('국도', 70, 4.0, 3, 'left', { camera: 2.0 }),
+      seg('할머니 댁 동네', 30, 0.6, 2, 'arrive')
     ] }
   ];
 

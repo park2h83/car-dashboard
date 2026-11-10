@@ -301,7 +301,7 @@
 
   // 계기판 가운데 정보 화면 이름 (js/core/info.js 의 페이지 id)
   var INFO_NAMES = { autopilot: 'AI 운전', nav: '길 안내', trip: '주행', score: '운전 점수', economy: '연비',
-    tires: '타이어 공기압', car: '차 상태', climate: '공조', road: '도로' };
+    tires: '타이어 공기압', engine: '엔진 상태', car: '차 상태', climate: '공조', road: '도로' };
 
   // 쉬운 모드(5살): 눌렀을 때 화면에서 바로 보이는 큰 버튼 몇 개만 (부모님 설정에서 '모든 기능'으로 바꿀 수 있다)
   function easyItems() {
