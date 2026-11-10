@@ -481,3 +481,6 @@
 }
 
 @keyframes pg-blink { 50% { opacity: 0.25; } }
+
+/* 길가 나무 (scene.js opts.scenery): 밤에는 어둡게 */
+.theme-play .pg.night .scn { opacity: 0.35; }

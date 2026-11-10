@@ -143,3 +143,6 @@
 
 /* 앞유리 화면일 때: 계기판은 남은 자리에 통째로 줄어든다 (테마 fitStage) */
 #app.drive-view #cluster { flex: 1; }
+
+/* 길가 나무: 밤에는 어둡게 */
+#windshield.night .scn { opacity: 0.35; }

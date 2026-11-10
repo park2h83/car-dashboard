@@ -22,6 +22,17 @@
   var DASH_LEN = 6;        // 차선 점선 길이·간격
   var DASH_GAP = 10;
   var POST_EVERY = 30;     // 갓길 반사봉 간격
+  var TREE_EVERY = 16;     // 길가 나무 간격 (opts.scenery)
+  // 길가 나무 모양 (단위 m, 원점 = 땅에 닿는 가운데)
+  var SCENERY = [
+    '<g class="scn"><rect x="-0.18" y="-1.6" width="0.36" height="1.6" fill="#7a5532"/><circle cy="-2.6" r="1.4" fill="#3f9b47"/>' +
+      '<circle cx="-0.7" cy="-2.1" r="0.9" fill="#4fae55"/><circle cx="0.7" cy="-2.2" r="1" fill="#36893f"/></g>',
+    '<g class="scn"><rect x="-0.15" y="-0.8" width="0.3" height="0.8" fill="#6d4a2c"/><path d="M0 -4.2L-1.3 -0.8H1.3Z" fill="#2f7d45"/>' +
+      '<path d="M0 -4.7L-1 -2.2H1Z" fill="#3a9152"/></g>',
+    '<g class="scn"><ellipse cy="-0.55" rx="1.1" ry="0.65" fill="#4a9e4f"/><ellipse cx="0.5" cy="-0.75" rx="0.6" ry="0.45" fill="#5cb35e"/></g>',
+    '<g class="scn"><rect x="-0.16" y="-1.3" width="0.32" height="1.3" fill="#7a5532"/><circle cy="-2.2" r="1.15" fill="#f2a7c3"/>' +
+      '<circle cx="-0.5" cy="-1.9" r="0.7" fill="#f7c2d6"/></g>'
+  ];
   var TUNNEL_LIGHT_EVERY = 12;
   var STREETLIGHT_EVERY = 40; // 시내 길 가로등 간격
   var SIGN_BEFORE = { light: 80, crosswalk: 0 }; // 표지판이 물건보다 얼마나 앞에 서 있는지 (기본 50m)
@@ -414,6 +425,21 @@
           blinkL: blink && (s.turnLeft || s.hazard), blinkR: blink && (s.turnRight || s.hazard),
           reverse: s.gear === 'R'
         })) + '</g>' });
+
+      // 길가 나무: 달리면 휙휙 지나간다 (opts.scenery, 운전 게임·앞유리 화면). 같은 나무는 같은 모양으로
+      if (opts.scenery && !s.inTunnel) {
+        var dist = s.roadDist;
+        for (var tz = Z_NEAR - dist % TREE_EVERY; tz < 230; tz += TREE_EVERY) {
+          if (tz < Z_NEAR) continue;
+          var k = Math.round((dist + tz) / TREE_EVERY);
+          [0, 1].forEach(function (side) {
+            var h = (Math.imul(k * 2 + side + 7, 2654435761) >>> 0);
+            if (h % 5 === 0) return; // 군데군데 비워 둔다
+            var x = side ? width + 2.6 + (h >> 4) % 3 : -2.6 - (h >> 6) % 3;
+            list.push({ z: tz + 0.02, svg: place(x, tz, SCENERY[(h >> 9) % SCENERY.length]) });
+          });
+        }
+      }
 
       list.sort(function (a, b) { return b.z - a.z; });
       return list.map(function (o) { return o.svg; }).join('');

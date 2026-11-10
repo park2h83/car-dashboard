@@ -84,7 +84,7 @@
     app.classList.toggle('drive-view', v);
     root.hidden = !v;
     if (v && !scene) {
-      scene = Dash.scene.create({ firstPerson: true });
+      scene = Dash.scene.create({ firstPerson: true, scenery: true });
       build();
     }
     save();

@@ -238,6 +238,7 @@
           warnIcons[n.getAttribute('data-ind')] = n;
         });
         scene = Dash.scene.create({
+          scenery: true,
           egoColor: EGO_COLOR,
           zoom: CAMERA.zoom, egoDist: CAMERA.egoDist, camH: CAMERA.camH, horizon: CAMERA.horizon,
           bottom: CAMERA.bottom, follow: CAMERA.follow, glass: CAMERA.glass, wipers: CAMERA.wipers
