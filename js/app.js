@@ -239,6 +239,9 @@
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
   } catch (e) { /* 미지원 */ }
 
+  // 화면 구석에 작게 버전 표시 (새 버전이 들어왔는지 확인용)
+  document.getElementById('version').textContent = 'v' + (Dash.version || 'dev');
+
   // 인터넷 주소(https)로 열었을 때: 오프라인에서도 열리게 파일을 보관한다 (sw.js)
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     navigator.serviceWorker.register('sw.js').catch(function () { /* 지원 안 되면 그냥 온라인으로 */ });

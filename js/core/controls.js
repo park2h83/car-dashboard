@@ -146,7 +146,10 @@
         { label: '길 이벤트', act: function (s) {
             s.eventRate = { few: 'normal', normal: 'many', many: 'few' }[s.eventRate];
             Dash.util.popup(s, '길 이벤트', EVENT_RATE_NAMES[s.eventRate]);
-          }, value: function (s) { return EVENT_RATE_NAMES[s.eventRate]; } }
+          }, value: function (s) { return EVENT_RATE_NAMES[s.eventRate]; } },
+        // 새 버전이 들어왔는지 확인용 (js/version.js, 공개 사이트에 올릴 때 찍힌다)
+        { label: 'ℹ️ 버전', value: function () { return 'v' + (Dash.version || 'dev'); },
+          act: function (s) { Dash.util.popup(s, '버전', 'v' + (Dash.version || 'dev')); } }
       ]
     };
   }

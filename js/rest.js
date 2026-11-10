@@ -242,6 +242,7 @@
     var body = settingsTab === 'time' ? timeRows(isResting) : prefRows(settingsTab);
     if (settingsTab === 'screen') {
       body += '<div class="rest-actions left"><button type="button" class="rest-btn" data-act="name">✏️ 이름 바꾸기</button></div>';
+      body += '<div class="rest-row"><b>버전</b><div class="rest-used">v' + (Dash.version || 'dev') + '</div></div>';
       body += confirmReset
         ? '<div class="rest-reset">' +
           '  <b>정말 처음 상태로 돌릴까요?</b>' +
