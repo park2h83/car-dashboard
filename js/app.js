@@ -41,6 +41,7 @@
     } catch (e) { /* 저장된 것이 없거나 읽을 수 없으면 새 차로 시작 */ }
   })();
   function saveCar() {
+    if (Dash.resetting) return; // 초기화 중에는 다시 써 넣지 않는다
     var out = {};
     SAVED.forEach(function (k) { out[k] = state[k]; });
     try { localStorage.setItem(CAR_KEY, JSON.stringify(out)); } catch (e) { /* 저장 불가 환경은 무시 */ }
@@ -48,6 +49,20 @@
   setInterval(saveCar, 5000);
   window.addEventListener('pagehide', saveCar);
   document.addEventListener('visibilitychange', function () { if (document.hidden) saveCar(); });
+
+  // 부모님 설정 → 🗑 처음 상태로: 이 기기에 저장된 것(이름·면허증·놀이 시간·설정·연료 …)을 모두 지우고 새로 연다
+  Dash.resetAll = function () {
+    Dash.resetting = true;
+    try {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('dash.') === 0) keys.push(k);
+      }
+      keys.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) { /* 저장소를 못 쓰는 환경 */ }
+    location.reload();
+  };
 
   function load(key) {
     try { return localStorage.getItem(key); } catch (e) { return null; }

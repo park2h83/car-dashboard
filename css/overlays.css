@@ -199,6 +199,10 @@
 }
 .rest-tab.on { background: #1d2430; border-color: #1d2430; color: #fff; }
 .rest-actions.left { justify-content: flex-start; margin-top: 8px; }
+.rest-btn.danger { background: #e2332b; border-color: #e2332b; color: #fff; }
+.rest-reset { margin-top: 12px; padding: 14px 16px; border-radius: 16px; border: 3px solid #e2332b; background: #fff1f0; }
+.rest-reset b { font-size: 20px; color: #b3261e; }
+.rest-reset p { margin: 6px 0 0; font-size: 16px; line-height: 1.5; color: #4a5260; }
 
 /* 시간 직접 정하기: [−5] [−1] 20분 [+1] [+5] */
 .rest-stepper { display: flex; align-items: center; gap: 8px; }

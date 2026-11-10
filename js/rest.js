@@ -54,6 +54,7 @@
     newDayCheck();
   }
   function save() {
+    if (Dash.resetting) return; // 처음 상태로 초기화하는 중
     try { localStorage.setItem(KEY, JSON.stringify({ settings: settings, usage: usage })); } catch (e) { /* 무시 */ }
   }
 
@@ -207,6 +208,7 @@
   }
 
   var settingsTab = 'time';
+  var confirmReset = false;   // '처음 상태로 초기화'를 한 번 더 묻는 중
 
   // 탭: ⏱ 시간 · 🧑‍🏫 코치 · 🔊 소리 · 🚗 운전 · 🖥 화면 (시간 말고는 js/prefs.js 의 SCHEMA 로 그린다)
   function prefRows(tab) {
@@ -240,6 +242,16 @@
     var body = settingsTab === 'time' ? timeRows(isResting) : prefRows(settingsTab);
     if (settingsTab === 'screen') {
       body += '<div class="rest-actions left"><button type="button" class="rest-btn" data-act="name">✏️ 이름 바꾸기</button></div>';
+      body += confirmReset
+        ? '<div class="rest-reset">' +
+          '  <b>정말 처음 상태로 돌릴까요?</b>' +
+          '  <p>이름·어린이집 이름, 면허증과 사진, 놀이 시간, 부모님 설정, 연료·주행거리가 이 아이패드에서 모두 지워져요. 되돌릴 수 없어요.</p>' +
+          '  <div class="rest-actions left">' +
+          '    <button type="button" class="rest-btn" data-act="reset-no">취소</button>' +
+          '    <button type="button" class="rest-btn danger" data-act="reset-yes">🗑 모두 지우기</button>' +
+          '  </div>' +
+          '</div>'
+        : '<div class="rest-actions left"><button type="button" class="rest-btn" data-act="reset-ask">🗑 처음 상태로 초기화</button></div>';
     }
     var box = root.querySelector('.rest-box.wide');
     var scroll = box ? box.scrollTop : 0;
@@ -262,6 +274,7 @@
   function settingsClick(t) {
     if (t.hasAttribute('data-ptab')) {
       settingsTab = t.getAttribute('data-ptab');
+      confirmReset = false;
       settingsScreen();
       var nb = root.querySelector('.rest-box.wide');
       if (nb) nb.scrollTop = 0;
@@ -281,6 +294,11 @@
     } else if (t.getAttribute('data-act') === 'reset') {
       usage.played = 0;
       warned = {};
+    } else if (t.getAttribute('data-act') === 'reset-ask' || t.getAttribute('data-act') === 'reset-no') {
+      confirmReset = t.getAttribute('data-act') === 'reset-ask';
+      return settingsScreen();
+    } else if (t.getAttribute('data-act') === 'reset-yes') {
+      return Dash.resetAll();
     } else if (t.getAttribute('data-act') === 'name') {
       afterSettingsChange();
       if (resting()) showLock(); else setMode('none');
@@ -315,7 +333,7 @@
       if (resting()) { state.restDue = true; showLock(); }
     },
 
-    openParent: function () { openGate(settingsScreen); },
+    openParent: function () { confirmReset = false; openGate(settingsScreen); },
 
     // 쉬는 시간·부모님 화면이 떠 있으면 true (그동안 키보드로 차를 움직이지 못하게)
     isOpen: function () { return mode !== 'none'; },
