@@ -1,7 +1,9 @@
 // 주차: 위에서 내려다본 작은 주차장에서 내 차를 핸들·페달로 움직인다.
 //  - 'mission': 목적지 주차장에 도착하면 시작. 무작위로 고른 초록 칸에 세우고 P 를 누르면 성공 (별 1~3개)
+//               (쉬운 모드는 칸 안에 1초 멈추면 성공)
 //  - 'ai'     : 자율주행으로 도착했거나 'AI 주차'를 누르면 AI 가 정해진 길로 주차한다
-//  - 'free'   : 아무 때나 R 을 넣으면 뒤를 볼 수 있다 (장애물·센서만, 미션 없음)
+//  - 'free'   : 아무 때나 R 을 넣으면 뒤를 볼 수 있다 (뒤 벽과 주차 센서만, 미션 없음)
+// 장애물은 적게: 벽(센서가 느끼는 것)과 목표 칸 옆 차 한 대뿐. 주차 칸은 한 줄.
 // 주차장 좌표는 미터. x 는 오른쪽, y 는 아래쪽, 방향(h)은 라디안 (0 = 오른쪽, +는 시계 방향).
 // 주차하는 동안 도로·다른 차·길 이벤트는 멈춘다 (vehicle.step 이 건너뛴다).
 (function (Dash) {
@@ -9,17 +11,19 @@
 
   var U = Dash.util;
 
-  var LOT_W = 24, LOT_H = 20;
-  var SLOT_W = 2.7, SLOT_D = 5.2, SLOTS = 7, X0 = 2.05, EDGE = 0.6;
-  var AISLE_Y = LOT_H / 2;
+  var LOT_W = 28, LOT_H = 13;
+  var SLOT_W = 3.0, SLOT_D = 5.2, SLOTS = 7, X0 = 6, EDGE = 0.6;
+  var AISLE_Y = 9.4;
   var CAR_L = 4.5, CAR_W = 1.8, WHEELBASE = 2.7;
   var MAX_STEER = 0.6;            // 앞바퀴가 꺾이는 최대 각도 (약 35°)
   var STEER_RATE = 1.6;           // 바퀴가 따라 꺾이는 빠르기
   var SENSOR_RANGE = 1.5;         // 이보다 가까우면 센서가 울린다
+  var SENSOR_SIDE = 0.3;          // 차 옆으로 이만큼까지 센서가 본다
+  var ZONE_MID = 0.35;            // 센서 칸: 왼쪽 | 가운데(±0.35m) | 오른쪽
   var MAX_SPEED = { D: 8, R: 6 }; // 주차장에서는 천천히
   var AI_SPEED = 1.5;             // m/s
-  var START = { x: 3.2, y: AISLE_Y, h: 0 };
-  var CAR_COLORS = ['#e8453c', '#3a7bd5', '#2f2f35', '#f2b632', '#8a8f98', '#2fa36b', '#7b4fd6'];
+  var CAR_COLORS = ['#e8453c', '#3a7bd5', '#f2b632', '#2fa36b', '#7b4fd6'];
+  var TURN_R = WHEELBASE / Math.tan(MAX_STEER * 0.9); // AI 가 칸으로 돌아 들어가는 반지름
 
   // ---------- 도형 ----------
 
@@ -60,20 +64,20 @@
 
   // ---------- 주차장 만들기 (매번 무작위) ----------
 
-  function makeLot(mode, carStart) {
+  function makeLot(mode) {
     var slots = [];
-    for (var row = 0; row < 2; row++) {
-      for (var i = 0; i < SLOTS; i++) {
-        slots.push({
-          row: row, i: i,
-          x: X0 + SLOT_W * (i + 0.5),
-          y: row ? LOT_H - EDGE - SLOT_D / 2 : EDGE + SLOT_D / 2,
-          w: SLOT_W, d: SLOT_D
-        });
-      }
+    for (var i = 0; i < SLOTS; i++) {
+      slots.push({ row: 0, i: i, x: X0 + SLOT_W * (i + 0.5), y: EDGE + SLOT_D / 2, w: SLOT_W, d: SLOT_D });
     }
-    var target = -1;
-    if (mode === 'mission' || mode === 'ai') target = Math.floor(rand(0, 2)) * SLOTS + 2 + Math.floor(rand(0, SLOTS - 2));
+    var target = -1, at;
+    if (mode === 'mission' || mode === 'ai') {
+      target = 1 + Math.floor(rand(0, SLOTS - 2));
+      // 목표 칸 조금 앞 통로에서 시작한다 (화면에 차와 초록 칸이 같이 보이게)
+      at = { x: slots[target].x - TURN_R - 2.2, y: AISLE_Y, h: 0 };
+    } else {
+      // 후진 둘러보기: 뒤쪽 벽에서 2~3.5m 떨어진 곳
+      at = { x: CAR_L / 2 + rand(2.0, 3.5), y: AISLE_Y, h: 0 };
+    }
 
     var obstacles = [
       { kind: 'wall', x: LOT_W / 2, y: -0.25, w: LOT_W + 1, h: 0.5, a: 0 },
@@ -81,38 +85,20 @@
       { kind: 'wall', x: -0.25, y: LOT_H / 2, w: 0.5, h: LOT_H, a: 0 },
       { kind: 'wall', x: LOT_W + 0.25, y: LOT_H / 2, w: 0.5, h: LOT_H, a: 0 }
     ];
-    // 다른 칸에는 차가 서 있기도 하다
-    slots.forEach(function (sl, k) {
-      if (k === target || Math.random() > 0.6) return;
+    // 목표 칸 옆 한쪽에만 차 한 대 (너무 어렵지 않게)
+    if (target >= 0) {
+      var side = Math.random() < 0.5 ? -1 : 1;
+      var nb = slots[target + side];
       obstacles.push({
         kind: 'car', color: CAR_COLORS[Math.floor(rand(0, CAR_COLORS.length))],
-        x: sl.x + rand(-0.15, 0.15), y: sl.y + rand(-0.2, 0.2),
-        w: 4.3, h: 1.8, a: (sl.row ? 1 : -1) * Math.PI / 2 + rand(-0.05, 0.05)
+        x: nb.x + side * 0.15, y: nb.y + rand(-0.15, 0.15),
+        w: 4.3, h: 1.8, a: -Math.PI / 2 + rand(-0.04, 0.04)
       });
-    });
-    // 통로에 고깔 0~2개 (목적 칸 앞과 처음 자리는 비워 둔다)
-    var tx = target >= 0 ? slots[target].x : -99;
-    var cones = Math.floor(rand(0, 3));
-    for (var tries = 0; cones > 0 && tries < 30; tries++) {
-      var cx = rand(6.5, LOT_W - 1.5);
-      var cy = Math.random() < 0.5 ? rand(6.6, 8.0) : rand(12.0, 13.4);
-      if (Math.abs(cx - tx) < 4.5 || Math.abs(cx - carStart.x) < 4) continue;
-      obstacles.push({ kind: 'cone', x: cx, y: cy, w: 0.5, h: 0.5, a: 0 });
-      cones--;
-    }
-    // 후진 둘러보기: 차 뒤쪽에 무언가 하나
-    if (mode === 'free') {
-      var gap = rand(2.2, 4.5);
-      if (Math.random() < 0.5) {
-        obstacles.push({ kind: 'cone', x: carStart.x - CAR_L / 2 - gap, y: carStart.y + rand(-0.4, 0.4), w: 0.5, h: 0.5, a: 0 });
-      } else {
-        obstacles.push({ kind: 'car', color: CAR_COLORS[Math.floor(rand(0, CAR_COLORS.length))],
-          x: carStart.x - CAR_L - gap, y: carStart.y + rand(-0.3, 0.3), w: 4.3, h: 1.8, a: rand(-0.08, 0.08) });
-      }
     }
     var points = [];
     obstacles.forEach(function (o) { points = points.concat(edgePoints(o)); });
-    return { w: LOT_W, h: LOT_H, slots: slots, obstacles: obstacles, target: target, points: points, id: Math.random() };
+    return { w: LOT_W, h: LOT_H, slots: slots, obstacles: obstacles, target: target, points: points,
+      start: at, id: Math.random() };
   }
 
   // ---------- AI 주차 길: 통로를 따라가다 핸들을 끝까지 꺾어 칸으로 들어간다 ----------
@@ -120,7 +106,8 @@
   function aiPath(lot) {
     var sl = lot.slots[lot.target];
     var steer = MAX_STEER * 0.9;
-    var R = WHEELBASE / Math.tan(steer);
+    var R = TURN_R;
+    var START = lot.start;
     var dir = sl.row ? 1 : -1; // 위 칸은 왼쪽(-), 아래 칸은 오른쪽(+)으로 돈다
     var xa = sl.x - R;
     var path = [];
@@ -141,13 +128,13 @@
 
   function start(s, mode) {
     var p = s.parking;
-    var at = mode === 'free' ? { x: 12, y: AISLE_Y, h: 0 } : START;
     p.on = true;
     p.mode = mode;
     p.pending = false;
-    p.lot = makeLot(mode, at);
+    p.lot = makeLot(mode);
+    var at = p.lot.start;
     p.car = { x: at.x, y: at.y, h: at.h, steer: 0 };
-    p.sensor = { front: null, rear: null };
+    p.sensor = emptySensor();
     p.phase = 'drive';
     p.stars = 0;
     p.timer = 0;
@@ -177,7 +164,7 @@
     p.lot = null;
     p.ai = null;
     p.phase = '';
-    p.sensor = { front: null, rear: null };
+    p.sensor = emptySensor();
     if (mode === 'mission' || mode === 'ai') Dash.score.finish(s, 'park');
   }
 
@@ -212,19 +199,30 @@
     }
   }
 
+  // 센서 값: front/rear 는 가장 가까운 거리(m, 없으면 null — sound.js 가 삐삐 소리에 쓴다),
+  // zones.front/rear 는 [왼쪽, 가운데, 오른쪽] 칸마다 거리 (화면의 색 띠)
+  function emptySensor() {
+    return { front: null, rear: null, zones: { front: [null, null, null], rear: [null, null, null] } };
+  }
+
   function updateSensors(p) {
     var car = p.car, c = Math.cos(-car.h), sn = Math.sin(-car.h);
-    var front = Infinity, rear = Infinity, half = CAR_L / 2, side = CAR_W / 2 + 0.3;
+    var half = CAR_L / 2, side = CAR_W / 2 + SENSOR_SIDE;
+    var fz = [Infinity, Infinity, Infinity], rz = [Infinity, Infinity, Infinity];
     var pts = p.lot.points;
     for (var i = 0; i < pts.length; i++) {
       var dx = pts[i][0] - car.x, dy = pts[i][1] - car.y;
       var lx = dx * c - dy * sn, ly = dx * sn + dy * c;
       if (Math.abs(ly) > side) continue;
-      if (lx > half) front = Math.min(front, lx - half);
-      else if (lx < -half) rear = Math.min(rear, -half - lx);
+      var z = ly < -ZONE_MID ? 0 : ly > ZONE_MID ? 2 : 1;
+      if (lx > half) fz[z] = Math.min(fz[z], lx - half);
+      else if (lx < -half) rz[z] = Math.min(rz[z], -half - lx);
     }
-    p.sensor.front = front < SENSOR_RANGE ? front : null;
-    p.sensor.rear = rear < SENSOR_RANGE ? rear : null;
+    var near = function (d) { return d < SENSOR_RANGE ? d : null; };
+    p.sensor.zones.front = fz.map(near);
+    p.sensor.zones.rear = rz.map(near);
+    p.sensor.front = near(Math.min.apply(null, fz));
+    p.sensor.rear = near(Math.min.apply(null, rz));
   }
 
   function hits(lot, box) {
@@ -300,6 +298,7 @@
 
   Dash.parking = {
     CAR_L: CAR_L, CAR_W: CAR_W, MAX_STEER: MAX_STEER, WHEELBASE: WHEELBASE,
+    SENSOR_RANGE: SENSOR_RANGE, ZONE_MID: ZONE_MID,
     corners: corners,
     start: start,
     stop: stop,
@@ -317,7 +316,7 @@
       if (!p.on || p.mode !== 'mission' || p.phase === 'done') return;
       var lot = p.lot;
       p.mode = 'ai';
-      p.car = { x: START.x, y: START.y, h: START.h, steer: 0 };
+      p.car = { x: lot.start.x, y: lot.start.y, h: lot.start.h, steer: 0 };
       p.ai = { path: aiPath(lot), i: 0 };
       s.gear = 'D';
       s.parkingBrake = false;
