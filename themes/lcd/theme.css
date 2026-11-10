@@ -1,0 +1,404 @@
+/* 디지털 숫자 (7-세그먼트 LCD) 테마. 모든 규칙은 .theme-lcd 아래에 둔다.
+   .lc-stage 안의 좌표는 1600x800 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
+   빛나는 느낌은 켜진 칸의 반투명 테두리와 움직이지 않는 그라데이션으로만 낸다 (흐림 필터 없음). */
+.theme-lcd .lc {
+  --lit-rgb: 255, 176, 46;             /* 보통: 호박색 */
+  --lit: rgb(var(--lit-rgb));
+  --ghost: 0.085;                      /* 꺼진 칸이 비치는 정도 */
+  --glass-a: #15180f;
+  --glass-b: #070805;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 0%, #1d1e1c 0%, transparent 70%),
+    linear-gradient(#121212, #040404);
+  color: var(--lit);
+  font-family: "Avenir Next Condensed", "Avenir Next", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+/* 주행 모드: 에코 초록(+ 흐르는 빛), 보통 호박색, 스포츠 빨강(+ 달리는 빗금) */
+.theme-lcd .lc[data-mode="eco"] { --lit-rgb: 84, 255, 138; --glass-a: #0d1a10; --glass-b: #040905; }
+.theme-lcd .lc[data-mode="sport"] { --lit-rgb: 255, 72, 52; --glass-a: #1d0d0b; --glass-b: #090303; }
+/* 자율주행: 하늘색 */
+.theme-lcd .lc.ap { --lit-rgb: 79, 210, 255; --glass-a: #0b1520; --glass-b: #03070b; }
+.theme-lcd .lc.night { --ghost: 0.05; --glass-b: #020302; }
+.theme-lcd .lc.off { --ghost: 0.06; }
+
+.theme-lcd .lc-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 800px;
+  transform-origin: 0 0;
+}
+.theme-lcd .lc-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* ---- 검은 유리판 ---- */
+.theme-lcd .lc-glass {
+  position: absolute;
+  left: 16px;
+  top: 96px;
+  width: 1568px;
+  height: 618px;
+  border-radius: 28px;
+  overflow: hidden;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 32%, transparent 33%),
+    radial-gradient(ellipse 80% 70% at 50% 40%, var(--glass-a) 0%, var(--glass-b) 100%);
+  border: 4px solid #22241f;
+  box-shadow: inset 0 0 0 2px #000, inset 0 10px 30px rgba(0, 0, 0, 0.7), 0 2px 0 #2c2e2a;
+  transition: background 0.5s;
+}
+/* LCD 화소 무늬 */
+.theme-lcd .lc-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 4px);
+  pointer-events: none;
+}
+/* 에코·자율주행: 유리 위로 빛 띠가 천천히 지나간다 (transform 애니메이션만) */
+.theme-lcd .lc-flow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -420px;
+  width: 420px;
+  background: linear-gradient(90deg, transparent, rgba(var(--lit-rgb), 0.13) 50%, transparent);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.theme-lcd .lc[data-mode="eco"]:not(.off) .lc-flow { opacity: 1; animation: lc-flow 5s linear infinite; will-change: transform; }
+.theme-lcd .lc.ap:not(.off) .lc-flow { opacity: 1; animation: lc-flow 1.8s linear infinite; will-change: transform; }
+@keyframes lc-flow { to { transform: translateX(2000px); } }
+/* 스포츠: 비스듬한 빨간 빗금이 달린다 */
+.theme-lcd .lc-chev {
+  position: absolute;
+  top: -20px;
+  bottom: -20px;
+  left: -300px;
+  right: -300px;
+  background: repeating-linear-gradient(90deg, transparent 0 70px, rgba(255, 72, 52, 0.09) 70px 110px);
+  transform: skewX(-28deg);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.theme-lcd .lc[data-mode="sport"]:not(.off):not(.ap) .lc-chev { opacity: 1; animation: lc-chev 0.7s linear infinite; will-change: transform; }
+@keyframes lc-chev { from { transform: translateX(0) skewX(-28deg); } to { transform: translateX(-110px) skewX(-28deg); } }
+
+/* ---- 7-세그먼트 숫자 ---- */
+.theme-lcd .lc .s { fill: rgba(var(--lit-rgb), var(--ghost)); }
+.theme-lcd .lc .s.on {
+  fill: var(--lit);
+  stroke: rgba(var(--lit-rgb), 0.28);
+  stroke-width: 7;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+.theme-lcd .lc.over #lc-speed .s.on { fill: #ff3b30; stroke: rgba(255, 59, 48, 0.35); }
+.theme-lcd .lc.over #lc-speed { animation: lc-blink 0.6s steps(1) infinite; }
+.theme-lcd .lc #lc-odo .s.on,
+.theme-lcd .lc #lc-trip .s.on,
+.theme-lcd .lc #lc-clock .s.on { stroke-width: 3; }
+.theme-lcd .lc.off #lc-odo .s.on { fill: rgba(var(--lit-rgb), 0.55); stroke: none; }
+.theme-lcd .lc-dp { fill: rgba(var(--lit-rgb), var(--ghost)); }
+.theme-lcd .lc:not(.off) .lc-dp { fill: var(--lit); }
+.theme-lcd .lc-colon rect { fill: rgba(var(--lit-rgb), var(--ghost)); }
+.theme-lcd .lc-colon.on rect { fill: var(--lit); }
+
+/* RPM 막대그래프 */
+.theme-lcd .lc .b { fill: rgba(var(--lit-rgb), var(--ghost)); }
+.theme-lcd .lc .b.red { fill: rgba(255, 59, 48, calc(var(--ghost) * 1.6)); }
+.theme-lcd .lc .b.on { fill: var(--lit); }
+.theme-lcd .lc .b.red.on { fill: #ff3b30; }
+/* 스포츠: 막대가 더 굵게 빛난다 */
+.theme-lcd .lc[data-mode="sport"] .b.on { stroke: rgba(255, 120, 90, 0.45); stroke-width: 5; stroke-linejoin: round; paint-order: stroke; }
+.theme-lcd .lc-rlabel { fill: rgba(var(--lit-rgb), 0.85); font-size: 28px; font-weight: 800; }
+.theme-lcd .lc-rlabel.red { fill: #ff4a3a; }
+
+/* 연료·온도 막대 */
+.theme-lcd .lc .lv { fill: rgba(var(--lit-rgb), var(--ghost)); }
+.theme-lcd .lc .lv.on { fill: var(--lit); }
+.theme-lcd .lc .lv.hot { fill: rgba(255, 59, 48, calc(var(--ghost) * 1.6)); }
+.theme-lcd .lc .lv.hot.on { fill: #ff3b30; }
+.theme-lcd .lc.lowfuel #lc-fuel .lv.on { fill: #ff8a1c; }
+.theme-lcd .lc.lowfuel:not(.off) #lc-fuel { animation: lc-blink 1s steps(1) infinite; }
+
+/* 글자 */
+.theme-lcd .lc-label { fill: rgba(var(--lit-rgb), 0.8); font-size: 24px; font-weight: 800; letter-spacing: 1px; }
+.theme-lcd .lc-small { fill: rgba(var(--lit-rgb), 0.7); font-size: 20px; font-weight: 800; }
+.theme-lcd .lc-unit { fill: var(--lit); font-size: 34px; font-weight: 800; font-style: italic; }
+.theme-lcd .lc-rule { fill: none; stroke: rgba(var(--lit-rgb), 0.25); stroke-width: 2; stroke-dasharray: 6 8; }
+.theme-lcd .lc-box { fill: rgba(var(--lit-rgb), 0.04); stroke: rgba(var(--lit-rgb), 0.4); stroke-width: 3; }
+.theme-lcd .lc-pr { fill: rgba(var(--lit-rgb), var(--ghost)); font-size: 36px; font-weight: 900; }
+.theme-lcd .lc-pr.on { fill: var(--lit); }
+.theme-lcd .lc-halo-a { stop-color: var(--lit); stop-opacity: 0.16; transition: stop-opacity 0.6s; }
+.theme-lcd .lc-halo-b { stop-color: var(--lit); stop-opacity: 0; }
+.theme-lcd .lc.off .lc-halo-a { stop-opacity: 0; }
+.theme-lcd .lc.night .lc-halo-a { stop-opacity: 0.1; }
+
+/* 시동 꺼짐: 글자도 거의 꺼진다 */
+.theme-lcd .lc-svg text, .theme-lcd .lc-box, .theme-lcd .lc-rule { transition: opacity 0.5s; }
+.theme-lcd .lc.off .lc-svg text,
+.theme-lcd .lc.off .lc-box,
+.theme-lcd .lc.off .lc-rule { opacity: 0.25; }
+.theme-lcd .lc.night .lc-svg text { opacity: 0.85; }
+
+/* ---- 경고등 ---- */
+.theme-lcd .lc-group { position: absolute; display: flex; gap: 12px; }
+.theme-lcd .lc-top-left { left: 28px; top: 24px; }
+.theme-lcd .lc-top-right { right: 28px; top: 24px; }
+.theme-lcd .lc-bottom { left: 50%; top: 728px; transform: translateX(-50%); gap: 16px; }
+.theme-lcd .lc-ind {
+  display: inline-flex;
+  width: 46px;
+  height: 46px;
+  color: #fff;
+  opacity: 0.1;
+}
+.theme-lcd .lc-ind svg { width: 100%; height: 100%; }
+.theme-lcd .lc-ind.on { opacity: 1; }
+.theme-lcd .lc-ind.on.red { color: #ff3b30; }
+.theme-lcd .lc-ind.on.amber { color: #ffb020; }
+.theme-lcd .lc-ind.on.green { color: #39ff6a; }
+.theme-lcd .lc-ind.on.blue { color: #4f9dff; }
+.theme-lcd .lc-ind.on.white { color: #eef2f5; }
+.theme-lcd .lc-turn { position: absolute; top: 14px; width: 70px; height: 70px; opacity: 0.12; }
+.theme-lcd .lc-turn-left { left: 304px; }
+.theme-lcd .lc-turn-right { left: 1222px; }
+
+/* ---- 위 가운데: 내비·도로 ---- */
+.theme-lcd .lc-top {
+  position: absolute;
+  left: 392px;
+  top: 12px;
+  width: 816px;
+  height: 74px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.theme-lcd .lc-nav,
+.theme-lcd .lc-road {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 24px 4px 10px;
+  border-radius: 14px;
+  background: linear-gradient(#10130c, #070806);
+  border: 3px solid rgba(var(--lit-rgb), 0.5);
+  color: var(--lit);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.theme-lcd .lc-road { padding: 10px 26px; font-size: 26px; font-weight: 800; }
+.theme-lcd .lc-nav .nav-arrow { width: 60px; height: 60px; flex: 0 0 auto; fill: none; stroke: var(--lit); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.theme-lcd .lc-nav b { font-size: 38px; font-weight: 900; }
+.theme-lcd .lc-nav span { font-size: 24px; font-weight: 700; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- 오른쪽: 제한속도·신호등·표지판 ---- */
+.theme-lcd .lc-roadrow {
+  position: absolute;
+  left: 1094px;
+  top: 298px;
+  width: 470px;
+  height: 92px;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+.theme-lcd .lc-limit {
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: #fff;
+  border: 9px solid #e0201b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  font-size: 34px;
+  font-weight: 800;
+  transition: opacity 0.5s;
+}
+.theme-lcd .lc.off .lc-limit { opacity: 0.15; }
+.theme-lcd .lc-limit.over { animation: lc-over 0.6s steps(1) infinite; }
+@keyframes lc-over {
+  0% { background: #e0201b; color: #fff; }
+  50% { background: #fff; color: #111; }
+}
+.theme-lcd .lc-light,
+.theme-lcd .lc-sign {
+  width: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--lit);
+}
+.theme-lcd .lc-light { padding-top: 20px; }
+.theme-lcd .lc-sign svg { width: 68px; height: 68px; }
+.theme-lcd .lc-lamps { display: flex; gap: 5px; padding: 5px 7px; border-radius: 9px; background: #050505; border: 2px solid #333; }
+.theme-lcd .lc-lamps i { width: 18px; height: 18px; border-radius: 50%; background: #262626; }
+.theme-lcd .lc-lamps i.red.on { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
+.theme-lcd .lc-lamps i.yellow.on { background: #ffb020; box-shadow: 0 0 10px #ffb020; }
+.theme-lcd .lc-lamps i.green.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+.theme-lcd .lc-camera {
+  align-self: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffb020;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.theme-lcd .lc-camera.show { opacity: 1; }
+
+/* ---- 오른쪽: 점-글자 정보창 ---- */
+.theme-lcd .lc-mc {
+  position: absolute;
+  left: 1090px;
+  top: 394px;
+  width: 474px;
+  height: 224px;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 4px;
+  border-radius: 14px;
+  border: 3px solid rgba(var(--lit-rgb), 0.4);
+  background:
+    radial-gradient(circle, rgba(var(--lit-rgb), 0.07) 1px, transparent 1.6px) 0 0 / 5px 5px,
+    #060705;
+  color: var(--lit);
+  transition: opacity 0.5s;
+}
+.theme-lcd .lc.off .lc-mc { opacity: 0.7; }
+.theme-lcd .lc-page { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+.theme-lcd .lc-page > * { flex-shrink: 0; }
+.theme-lcd .lc-status { height: 26px; display: flex; justify-content: center; align-items: center; font-size: 19px; font-weight: 800; }
+.theme-lcd .st-over { color: #ff3b30; animation: lc-blink 0.6s steps(1) infinite; }
+.theme-lcd .st-warn { color: #ffb020; }
+.theme-lcd .st-info { color: var(--lit); }
+@keyframes lc-blink { 50% { opacity: 0.2; } }
+
+/* 정보창 페이지 (js/core/info.js) */
+.theme-lcd .info-title {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding-bottom: 3px;
+  border-bottom: 2px dashed rgba(var(--lit-rgb), 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.theme-lcd .info-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 18px; font-weight: 700; opacity: 0.85; }
+.theme-lcd .info-row b { font-size: 21px; font-weight: 900; opacity: 1; white-space: nowrap; }
+.theme-lcd .info-label { font-size: 18px; font-weight: 700; }
+.theme-lcd .info-sub { font-size: 17px; font-weight: 700; text-align: center; opacity: 0.8; }
+.theme-lcd .info-bar { height: 16px; border: 2px solid rgba(var(--lit-rgb), 0.5); padding: 2px; }
+.theme-lcd .info-bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--lit) 0 10px, transparent 10px 13px); }
+.theme-lcd .info-bar.big { height: 24px; }
+.theme-lcd .info-big { font-size: 56px; font-weight: 900; text-align: center; line-height: 1.1; }
+.theme-lcd .info-car { height: 124px; align-self: center; overflow: visible; }
+.theme-lcd .info-car .car-body { fill: #f4f6f8; stroke: var(--lit); stroke-width: 3; }   /* 내 차는 흰색 */
+.theme-lcd .info-car .car-glass { fill: #1d2324; }
+.theme-lcd .tire { fill: var(--lit); }
+.theme-lcd .tire.bad { fill: #ff3b30; }
+.theme-lcd .tire-psi { fill: var(--lit); font-size: 23px; font-weight: 900; }
+.theme-lcd .tire-psi.bad { fill: #ff3b30; }
+.theme-lcd .door { fill: none; stroke: var(--lit); stroke-width: 3; stroke-linecap: round; }
+.theme-lcd .door.open { stroke: #ff3b30; stroke-width: 5; }
+.theme-lcd .lc-page .nav-arrow { width: 56px; height: 56px; align-self: center; fill: none; stroke: var(--lit); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.theme-lcd .nav-dist { font-size: 27px; font-weight: 900; text-align: center; line-height: 1.1; }
+.theme-lcd .nav-word { font-size: 19px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.theme-lcd .clim-temps { display: flex; justify-content: space-around; font-size: 30px; font-weight: 900; }
+.theme-lcd .road-name { font-size: 24px; font-weight: 900; text-align: center; }
+.theme-lcd .ap-state { font-size: 22px; font-weight: 900; text-align: center; }
+.theme-lcd .off-hint { margin-top: 30px; font-size: 22px; font-weight: 700; line-height: 1.5; text-align: center; }
+
+/* ---- 아래: 주행 모드·AI 표시 칸 ---- */
+.theme-lcd .lc-ann {
+  position: absolute;
+  left: 676px;
+  top: 634px;
+  width: 680px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.theme-lcd .lc-ann span {
+  padding: 6px 16px;
+  border-radius: 10px;
+  border: 3px solid rgba(var(--lit-rgb), var(--ghost));
+  color: rgba(var(--lit-rgb), calc(var(--ghost) * 1.4));
+  font-size: 26px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.theme-lcd .lc-ann span.on { color: var(--lit); border-color: var(--lit); background: rgba(var(--lit-rgb), 0.12); }
+.theme-lcd .lc-ann .lc-ai { margin-left: auto; display: flex; align-items: center; gap: 8px; color: rgba(79, 210, 255, 0.1); border-color: rgba(79, 210, 255, 0.1); }
+.theme-lcd .lc-ai i { width: 14px; height: 14px; border-radius: 50%; background: currentColor; }
+.theme-lcd .lc.ap .lc-ann .lc-ai { color: #4fd2ff; border-color: #4fd2ff; background: rgba(79, 210, 255, 0.15); }
+.theme-lcd .lc.ap .lc-ai i { animation: lc-blink 0.8s steps(1) infinite; }
+.theme-lcd .lc[data-mode="sport"]:not(.ap) .lc-ann span.on { animation: lc-pulse 0.9s ease-in-out infinite; }
+@keyframes lc-pulse { 50% { opacity: 0.55; } }
+
+/* ---- 팝업·안내 문구 ---- */
+.theme-lcd .lc-popup {
+  position: absolute;
+  left: 470px;
+  top: 104px;
+  width: 660px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 16px;
+  background: #080a06;
+  border: 4px solid var(--lit);
+  color: var(--lit);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.theme-lcd .lc-popup.show { opacity: 1; }
+.theme-lcd .lc-popup .t { font-size: 26px; font-weight: 800; opacity: 0.8; }
+.theme-lcd .lc-popup .v { font-size: 60px; font-weight: 900; line-height: 1.1; text-align: center; }
+
+.theme-lcd .lc-msg {
+  position: absolute;
+  left: 32px;
+  top: 622px;
+  width: 1536px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  border-radius: 14px;
+  background: #0d0f09;
+  border: 4px solid #ffd21f;
+  color: #ffe27a;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+.theme-lcd .lc-msg.show { opacity: 1; transform: none; }
