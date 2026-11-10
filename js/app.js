@@ -149,7 +149,13 @@
   };
   Dash.easy.init(state, hooks);
   Dash.controls.init(state, input, hooks);
-  useTheme(load(THEME_KEY));
+  // 쉬운 모드에는 차가 달리는 '운전 게임' 화면을 한 번 보여 준다 (그 뒤엔 고른 테마를 기억)
+  if (state.easy && load('dash.playIntro') !== '1' && Dash.themes.get('play')) {
+    save('dash.playIntro', '1');
+    useTheme('play');
+  } else {
+    useTheme(load(THEME_KEY));
+  }
 
   // 주행 모드를 바꾸면 계기판 위로 모드 이름과 색 빛이 크게 지나간다
   var modeFlash = document.getElementById('mode-flash');

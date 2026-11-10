@@ -123,16 +123,36 @@
     GLASS: { x0: 0, x1: 1600, y0: 0, y1: 370 },
     WIPERS: [{ px: 450, py: 430, len: 470 }, { px: 1000, py: 430, len: 440 }] };
 
+  // 뒤에서 보는 시점(firstPerson 이 아닐 때)은 카메라를 테마마다 조금 바꿀 수 있다. 안 주면 기본값 그대로.
+  //   zoom    초점 거리 F 배율 (1.5 = 1.5배 확대)
+  //   camH    카메라 높이 (m)
+  //   egoDist 카메라에서 내 차 뒤 범퍼까지 거리 (m) — 작을수록 내 차가 크게 보인다
+  //   horizon 지평선 y
+  //   bottom  도로를 이 y 까지 그린다 (화면보다 아래까지 칠하려면 크게)
+  //   follow  카메라가 내 차를 따라가는 정도 0~1 (기본 0.6, 나머지는 도로 가운데 쪽)
+  //   glass, wipers  빗방울이 맺히는 영역 {x0,x1,y0,y1}, 와이퍼 [{px,py,len}]
   function create(opts) {
     opts = opts || {};
     var egoColor = opts.egoColor || '#f5f7fa';
     var fp = !!opts.firstPerson;
+    var cam = !fp && (opts.zoom != null || opts.camH != null || opts.egoDist != null || opts.horizon != null || opts.bottom != null);
     // 시점마다 카메라 값을 따로 쓴다 (아래 함수들은 이 값들을 본다)
     var CX = fp ? FP.CX : CX0, H0 = fp ? FP.H0 : H00, F = fp ? FP.F : F0, CAM_H = fp ? FP.CAM_H : CAM_H0;
     var Z_EGO = fp ? FP.Z_EGO : Z_EGO0;
     var Z_NEAR = fp ? F * CAM_H / (FP.H - H0) : Z_NEAR0;
+    if (cam) {
+      if (opts.zoom != null) F = F0 * opts.zoom;
+      if (opts.camH != null) CAM_H = opts.camH;
+      if (opts.egoDist != null) Z_EGO = opts.egoDist;
+      if (opts.horizon != null) H0 = opts.horizon;
+      // 화면 아래 끝(bottom)에 닿는 거리. 너무 가까우면 투영이 터지니 0.8m 보다는 멀게
+      Z_NEAR = Math.max(0.8, F * CAM_H / ((opts.bottom != null ? opts.bottom : 680) - H0));
+    }
+    var FOLLOW = !fp && opts.follow != null ? opts.follow : 0.6;
     var FRONT = fp ? FP.FRONT : Z_EGO + CAR_LEN; // 카메라에서 내 차 앞 범퍼까지
     var GLASS = fp ? FP.GLASS : GLASS0, WIPERS = fp ? FP.WIPERS : WIPERS0;
+    if (opts.glass) GLASS = opts.glass;
+    if (opts.wipers) WIPERS = opts.wipers;
     var Z_SAMPLES = zSamples(Z_NEAR);
     var camX = 0;
     var curve = 0;
@@ -462,7 +482,7 @@
         time += dt;
         // 카메라는 내 차를 따라가되 도로 가운데 쪽으로 조금 당겨서 모든 차선이 보이게 한다
         // 운전석 시점: 내 차선 가운데에서 운전석(왼쪽) 쪽으로 조금
-        camX = fp ? (s.laneX + 0.5) * LANE_W - 0.35 : (s.laneX + 0.5) * LANE_W * 0.6 + s.lanes * LANE_W / 2 * 0.4;
+        camX = fp ? (s.laneX + 0.5) * LANE_W - 0.35 : (s.laneX + 0.5) * LANE_W * FOLLOW + s.lanes * LANE_W / 2 * (1 - FOLLOW);
         curve = 0.00022 * Math.sin(s.odometer * 0.9) + s.curve * 0.0012;
         return { road: roadSvg(s), beam: beamSvg(s), sprites: spritesSvg(s), glass: glassSvg(s, dt) };
       }
