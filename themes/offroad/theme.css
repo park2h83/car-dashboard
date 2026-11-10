@@ -1,0 +1,483 @@
+/* SUV·오프로드 테마. 이 테마 전용 루트 클래스 .or 아래(.theme-offroad)에만 규칙을 둔다.
+   .or-stage 안의 좌표는 1600x820 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
+   매 프레임 바뀌는 것(바늘·나침반·기울기 차)은 transform 만 바꾸고, 빛은 움직이지 않는 그라데이션으로 낸다. */
+.theme-offroad .or {
+  --acc: #ffb02e;            /* 지형 모드 색 (기본: 일반 도로 = 호박색) */
+  --acc-rgb: 255, 176, 46;
+  --text: #f4efe6;
+  --muted: #a99f8e;
+  --panel: #14130f;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #0b0a08;
+  color: var(--text);
+  font-family: "Avenir Next", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+/* 지형 모드: 잔디·눈길(eco) 민트, 일반(comfort) 호박색, 모래·진흙(sport) 주황 */
+.theme-offroad .or[data-mode="eco"] { --acc: #4fe0b5; --acc-rgb: 79, 224, 181; }
+.theme-offroad .or[data-mode="sport"] { --acc: #ff6a1f; --acc-rgb: 255, 106, 31; }
+.theme-offroad .or.ap { --acc: #4da3ff; --acc-rgb: 77, 163, 255; }
+
+/* 줄무늬 철판(체크 플레이트) 배경 */
+.theme-offroad .or-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 70% at 50% 45%, rgba(var(--acc-rgb), 0.13), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.04) 0 5px, transparent 5px 24px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.3) 0 5px, transparent 5px 24px),
+    radial-gradient(ellipse 80% 90% at 50% 40%, #2c2924 0%, #0e0d0b 75%);
+}
+.theme-offroad .or[data-mode="sport"] .or-bg {
+  background:
+    radial-gradient(ellipse 60% 70% at 50% 45%, rgba(255, 106, 31, 0.2), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(255, 190, 120, 0.05) 0 5px, transparent 5px 24px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.3) 0 5px, transparent 5px 24px),
+    radial-gradient(ellipse 80% 90% at 50% 40%, #3a2516 0%, #120a05 75%);
+}
+.theme-offroad .or[data-mode="eco"] .or-bg {
+  background:
+    radial-gradient(ellipse 60% 70% at 50% 45%, rgba(79, 224, 181, 0.16), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(220, 255, 245, 0.045) 0 5px, transparent 5px 24px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.3) 0 5px, transparent 5px 24px),
+    radial-gradient(ellipse 80% 90% at 50% 40%, #1b2a26 0%, #070c0a 75%);
+}
+/* 밤: 전체를 조금 어둡게 */
+.theme-offroad .or::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 10, 0.3);
+  opacity: 0;
+  transition: opacity 1s;
+  pointer-events: none;
+}
+.theme-offroad .or.night::after { opacity: 1; }
+
+.theme-offroad .or-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 820px;
+  transform-origin: 0 0;
+  z-index: 1;
+}
+.theme-offroad .or-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* ---- 큰 계기 ---- */
+.theme-offroad .or-face-a { stop-color: #23221f; }
+.theme-offroad .or-face-b { stop-color: #0d0d0c; }
+.theme-offroad .or.night .or-face-a { stop-color: #1a1814; }
+.theme-offroad .or-knurl { fill: none; stroke: #1b1d20; stroke-width: 5; stroke-dasharray: 3 5; }
+.theme-offroad .or-bolt-seat { fill: #15171a; }
+.theme-offroad .or-bolt { stroke: #111; stroke-width: 1; }
+.theme-offroad .or-accent-ring { fill: none; stroke: var(--acc); stroke-width: 6; transition: stroke 0.4s; }
+.theme-offroad .or-zone-red { fill: none; stroke: #e0201b; stroke-width: 14; }
+.theme-offroad .or-scale .tick-major { stroke: #f4efe6; stroke-width: 5; }
+.theme-offroad .or-scale .tick-minor { stroke: #b5ab9a; stroke-width: 2.5; }
+.theme-offroad .or-scale .hot { stroke: #ff4a3a; }
+.theme-offroad .or-scale .tick-label { fill: #f4efe6; font-size: 32px; font-weight: 800; }
+.theme-offroad .or-scale .tick-label.hot { fill: #ff4a3a; }
+/* 밤: 숫자가 지형 모드 색으로 빛난다 */
+.theme-offroad .or.night .or-scale .tick-label { fill: var(--acc); }
+.theme-offroad .or.night .or-scale .tick-major { stroke: var(--acc); }
+.theme-offroad .or-dial-unit { fill: var(--muted); font-size: 20px; font-weight: 700; }
+.theme-offroad .or-needle { stroke: #3b1300; stroke-width: 1; }
+.theme-offroad .or-digital { fill: #fff; font-size: 64px; font-weight: 900; letter-spacing: -1px; }
+.theme-offroad .or-digital.over { fill: #ff3b30; }
+.theme-offroad .or-limit-mark { fill: #ffb020; stroke: #000; stroke-width: 1.5; }
+.theme-offroad .or-ap-mark { fill: #4da3ff; stroke: #000; stroke-width: 1.5; }
+.theme-offroad #or-ap-mark { display: none; }
+.theme-offroad #or-ap-mark.show { display: inline; }
+
+.theme-offroad .or-gears text { fill: #4d473e; font-size: 34px; font-weight: 900; }
+.theme-offroad .or-gears text.on { fill: #fff; stroke: var(--acc); stroke-width: 1.5px; }
+.theme-offroad .or-gears .or-gearnum { fill: var(--acc); font-size: 26px; font-weight: 900; }
+
+.theme-offroad .or-mini-arc { fill: none; stroke: #6e675c; stroke-width: 4; }
+.theme-offroad .or-mini-zone { fill: none; stroke-width: 7; }
+.theme-offroad .or-mini-zone.hot { stroke: #e0201b; }
+.theme-offroad .or-mini-zone.low { stroke: #ffa000; }
+.theme-offroad .or-mini-tick { stroke: #d8d0c3; stroke-width: 3; }
+.theme-offroad .or-mini-label { fill: #d8d0c3; font-size: 18px; font-weight: 800; }
+.theme-offroad .or-mini-icon { color: var(--acc); }
+.theme-offroad .or-mini-needle { fill: #ff7a2e; }
+.theme-offroad .low .or-mini-needle { fill: #ffa000; }
+.theme-offroad .hot .or-mini-needle { fill: #ff2a2a; }
+.theme-offroad .or-mini-hub { fill: #2b2e33; stroke: #8d939a; stroke-width: 2; }
+
+/* ---- 나침반 ---- */
+.theme-offroad .or-compass-face { fill: #0f1012; stroke: var(--acc); stroke-width: 3; transition: stroke 0.4s; }
+.theme-offroad .or-rose-major { stroke: #f4efe6; stroke-width: 3; }
+.theme-offroad .or-rose-minor { stroke: #7d766a; stroke-width: 1.5; }
+.theme-offroad .or-star { fill: #c8c0b2; stroke: #000; stroke-width: 1; }
+.theme-offroad .or-star.small { fill: #6e675c; }
+.theme-offroad .or-star.north { fill: #ff3b30; }
+.theme-offroad .or-rose-letter { fill: #f4efe6; font-size: 22px; font-weight: 900; }
+.theme-offroad .or-rose-letter.n { fill: #ff4a3a; }
+.theme-offroad .or-lubber { fill: var(--acc); stroke: #000; stroke-width: 1.5; }
+.theme-offroad .or-heading-box { fill: #0b0b0a; stroke: var(--acc); stroke-width: 2.5; }
+.theme-offroad .or-heading { fill: #fff; font-size: 23px; font-weight: 900; }
+
+/* ---- 기울기 계 ---- */
+.theme-offroad .or-incl-horizon { stroke: #fff; stroke-width: 2; stroke-dasharray: 5 4; opacity: 0.8; }
+.theme-offroad .or-incl-tick { stroke: #fff; stroke-width: 2.5; }
+.theme-offroad .or-suv-body { stroke: #1a1a1a; stroke-width: 1.5; }
+.theme-offroad .or-suv-glass { fill: #2a3a4c; }
+.theme-offroad .or-suv-rack { fill: #333; }
+.theme-offroad .or-suv-tire { fill: #141414; }
+.theme-offroad .or-suv-rim { fill: #b9bec5; }
+.theme-offroad .or-suv-light { fill: #e0201b; }
+.theme-offroad .or-suv-plate { fill: #ffd21f; }
+.theme-offroad .or-incl-label { fill: var(--muted); font-size: 18px; font-weight: 700; }
+.theme-offroad .or-incl-val { fill: #fff; font-size: 23px; font-weight: 900; }
+
+.theme-offroad .or-alt {
+  position: absolute;
+  left: 760px;
+  top: 292px;
+  width: 330px;
+  height: 46px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: linear-gradient(#1e1c18, #0e0d0b);
+  border: 2px solid #4a443b;
+  white-space: nowrap;
+  line-height: 42px;
+}
+.theme-offroad .or-alt-ico { font-size: 24px; }
+.theme-offroad .or-alt-lbl { font-size: 18px; color: var(--muted); font-weight: 700; }
+.theme-offroad .or-alt b { font-size: 30px; font-weight: 900; color: #fff; }
+.theme-offroad .or-alt small { font-size: 18px; color: var(--muted); }
+.theme-offroad .or-alt em { font-style: normal; font-size: 17px; font-weight: 800; color: var(--acc); }
+
+/* ---- 경고등 ---- */
+.theme-offroad .or-group { position: absolute; display: flex; gap: 14px; }
+.theme-offroad .or-top-left { left: 28px; top: 20px; }
+.theme-offroad .or-top-right { right: 28px; top: 20px; }
+.theme-offroad .or-bottom { left: 50%; bottom: 12px; transform: translateX(-50%); gap: 12px; }
+.theme-offroad .or-ind { display: inline-flex; width: 44px; height: 44px; color: #fff; opacity: 0.1; }
+.theme-offroad .or-ind svg { width: 100%; height: 100%; }
+.theme-offroad .or-ind.on { opacity: 1; }
+.theme-offroad .or-ind.on.red { color: #ff3b30; }
+.theme-offroad .or-ind.on.amber { color: #ffb020; }
+.theme-offroad .or-ind.on.green { color: #3ddc5f; }
+.theme-offroad .or-ind.on.blue { color: #4d8bff; }
+.theme-offroad .or-ind.on.white { color: #fff; }
+.theme-offroad .or-turn { position: absolute; top: 14px; width: 66px; height: 66px; }
+.theme-offroad .or-turn-left { left: 424px; }
+.theme-offroad .or-turn-right { left: 1110px; }
+
+/* ---- 위: 내비·도로 ---- */
+.theme-offroad .or-top {
+  position: absolute;
+  left: 510px;
+  top: 8px;
+  width: 580px;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.theme-offroad .or-nav,
+.theme-offroad .or-road {
+  max-width: 100%;
+  border-radius: 14px;
+  background: linear-gradient(#24211c, #0f0e0c);
+  border: 3px solid #5a5248;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.theme-offroad .or-nav { display: flex; align-items: center; gap: 12px; padding: 4px 18px 4px 8px; border-color: var(--acc); }
+.theme-offroad .or-nav .nav-arrow { width: 62px; height: 62px; flex: 0 0 auto; fill: none; stroke: var(--acc); stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; }
+.theme-offroad .or-nav b { display: block; font-size: 28px; font-weight: 900; }
+.theme-offroad .or-nav span { display: block; font-size: 18px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.theme-offroad .or-road { padding: 12px 24px; font-size: 22px; font-weight: 700; color: #e6dccb; text-overflow: ellipsis; }
+
+/* ---- 제한속도·표지판·신호등 ---- */
+.theme-offroad .or-limit {
+  position: absolute;
+  left: 1470px;
+  top: 96px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #fff;
+  border: 10px solid #e0201b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  font-size: 38px;
+  font-weight: 900;
+}
+.theme-offroad .or-limit.over { animation: or-over 0.6s steps(1) infinite; }
+@keyframes or-over { 0% { background: #e0201b; color: #fff; } 50% { background: #fff; color: #111; } }
+.theme-offroad .or-camera {
+  position: absolute;
+  left: 1330px;
+  top: 112px;
+  width: 130px;
+  text-align: right;
+  font-size: 21px;
+  font-weight: 800;
+  color: #ffb020;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.theme-offroad .or-camera.show { opacity: 1; }
+.theme-offroad .or-sign,
+.theme-offroad .or-light {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #e6dccb;
+}
+.theme-offroad .or-sign { left: 28px; top: 96px; width: 96px; }
+.theme-offroad .or-sign svg { width: 84px; height: 84px; }
+.theme-offroad .or-light { left: 136px; top: 100px; width: 104px; }
+.theme-offroad .or-lamps { display: flex; gap: 5px; padding: 5px 7px; border-radius: 9px; background: #050505; border: 2px solid #4a443b; }
+.theme-offroad .or-lamps i { width: 20px; height: 20px; border-radius: 50%; background: #262420; }
+.theme-offroad .or-lamps i.red.on { background: radial-gradient(circle at 40% 35%, #ffd0cc, #ff3b30 55%); }
+.theme-offroad .or-lamps i.yellow.on { background: radial-gradient(circle at 40% 35%, #fff2c4, #ffb020 55%); }
+.theme-offroad .or-lamps i.green.on { background: radial-gradient(circle at 40% 35%, #d4ffe0, #22c55e 55%); }
+
+/* ---- 가운데 정보창 ---- */
+.theme-offroad .or-lcd {
+  position: absolute;
+  left: 510px;
+  top: 346px;
+  width: 580px;
+  height: 266px;
+  box-sizing: border-box;
+  padding: 8px 18px 6px;
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 4px),
+    linear-gradient(#141615, #070807);
+  border: 4px solid #4a443b;
+  box-shadow: inset 0 0 0 2px #000, inset 0 0 30px rgba(var(--acc-rgb), 0.12);
+  display: flex;
+  flex-direction: column;
+  font-size: 19px;
+  transition: border-color 0.4s;
+}
+.theme-offroad .or.ap .or-lcd { border-color: #4da3ff; }
+.theme-offroad .or-lcd-head { height: 28px; display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.theme-offroad .or-lcd-road { overflow: hidden; text-overflow: ellipsis; }
+.theme-offroad .or-ap-chip {
+  display: none;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: linear-gradient(#5aa9ff, #1f5fd6);
+  color: #fff;
+  font-weight: 900;
+  font-size: 16px;
+}
+.theme-offroad .or.ap .or-ap-chip { display: inline-block; animation: or-pulse 1.4s ease-in-out infinite; }
+@keyframes or-pulse { 50% { opacity: 0.55; } }
+.theme-offroad .or-page { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+.theme-offroad .or-status { height: 24px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; white-space: nowrap; }
+.theme-offroad .st-over { color: #ff3b30; animation: or-blink 0.6s steps(1) infinite; }
+.theme-offroad .st-warn { color: #ffb020; }
+.theme-offroad .st-info { color: #9fd3ff; }
+.theme-offroad .st-ap { color: #7fb9ff; }
+@keyframes or-blink { 50% { opacity: 0.2; } }
+
+.theme-offroad .info-title { font-size: 17px; font-weight: 900; color: var(--acc); padding-bottom: 4px; border-bottom: 2px solid rgba(var(--acc-rgb), 0.35); }
+.theme-offroad .info-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 18px; color: var(--muted); }
+.theme-offroad .info-row b { color: #fff; font-size: 21px; font-weight: 800; }
+.theme-offroad .info-label { font-size: 16px; color: var(--muted); }
+.theme-offroad .info-sub { font-size: 16px; color: var(--muted); text-align: center; }
+.theme-offroad .info-bar { height: 14px; border-radius: 7px; background: #2a2722; overflow: hidden; }
+.theme-offroad .info-bar i { display: block; height: 100%; background: var(--acc); }
+.theme-offroad .info-bar.big { height: 20px; }
+.theme-offroad .info-car { height: 140px; align-self: center; overflow: visible; }
+.theme-offroad .info-car .car-body { fill: #f6f7f9; stroke: #8d939a; stroke-width: 2; }
+.theme-offroad .info-car .car-glass { fill: #2a3a4c; }
+.theme-offroad .tire { fill: #3a362f; }
+.theme-offroad .tire.bad { fill: #ffb020; }
+.theme-offroad .tire-psi { fill: #fff; font-size: 17px; font-weight: 800; }
+.theme-offroad .tire-psi.bad { fill: #ffb020; }
+.theme-offroad .door { fill: none; stroke: #8d939a; stroke-width: 3; stroke-linecap: round; }
+.theme-offroad .door.open { stroke: #ff3b30; stroke-width: 4; }
+.theme-offroad .or-page .nav-arrow { width: 76px; height: 76px; align-self: center; fill: none; stroke: var(--acc); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.theme-offroad .nav-dist { font-size: 30px; font-weight: 900; text-align: center; }
+.theme-offroad .nav-word { font-size: 19px; text-align: center; color: var(--acc); }
+.theme-offroad .clim-temps { display: flex; justify-content: space-around; font-size: 32px; font-weight: 900; }
+.theme-offroad .road-name { font-size: 24px; font-weight: 900; text-align: center; }
+.theme-offroad .info-big { font-size: 56px; font-weight: 900; text-align: center; color: var(--acc); }
+.theme-offroad .ap-state { font-size: 22px; font-weight: 900; text-align: center; color: #7fb9ff; }
+.theme-offroad .off-hint { margin-top: 30px; font-size: 22px; line-height: 1.6; text-align: center; color: var(--muted); }
+
+.theme-offroad .or-popup,
+.theme-offroad .or-msg {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  border-radius: 14px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.theme-offroad .or-popup {
+  top: 30px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(10, 10, 9, 0.97);
+  border: 3px solid var(--acc);
+}
+.theme-offroad .or-popup.show { opacity: 1; }
+.theme-offroad .or-popup .t { font-size: 21px; color: var(--muted); }
+.theme-offroad .or-popup .v { font-size: 46px; font-weight: 900; text-align: center; }
+.theme-offroad .or-msg {
+  bottom: 10px;
+  padding: 10px 14px;
+  background: rgba(34, 26, 4, 0.97);
+  border: 3px solid #ffd21f;
+  color: #ffe27a;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.35;
+  text-align: center;
+  word-break: keep-all;
+}
+.theme-offroad .or-msg.show { opacity: 1; }
+
+/* ---- 지형 모드 ---- */
+.theme-offroad .or-terrain {
+  position: absolute;
+  left: 510px;
+  top: 624px;
+  width: 580px;
+  height: 104px;
+  box-sizing: border-box;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  border: 4px solid #5a5248;
+  background: linear-gradient(#3a3d42, #1b1c1f);
+  transition: border-color 0.4s;
+}
+.theme-offroad .or-terrain-fx {
+  position: absolute;
+  left: -100px;
+  top: -60px;
+  right: -100px;
+  bottom: -60px;
+  pointer-events: none;
+  will-change: transform;
+}
+.theme-offroad .or-terrain-ico,
+.theme-offroad .or-terrain-txt { position: relative; }
+.theme-offroad .or-terrain-ico {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  background: radial-gradient(circle at 40% 35%, #fff, #c9c2b6 70%);
+  border: 3px solid var(--acc);
+}
+.theme-offroad .or-terrain-txt small { display: block; font-size: 16px; font-weight: 800; color: rgba(255, 255, 255, 0.75); }
+.theme-offroad .or-terrain-txt b { display: block; font-size: 36px; font-weight: 900; color: #fff; line-height: 1.1; }
+.theme-offroad .or-terrain-txt em { display: block; font-style: normal; font-size: 17px; font-weight: 800; color: var(--acc); }
+
+/* 일반 도로: 아스팔트에 노란 가운데 선이 흘러간다 */
+.theme-offroad .or[data-mode="comfort"] .or-terrain { border-color: #ffb02e; }
+.theme-offroad .or[data-mode="comfort"] .or-terrain-fx {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 210, 31, 0.9) 0 60px, transparent 60px 120px) 0 calc(100% - 64px) / 100% 5px no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 60px, rgba(255, 255, 255, 0.05) 60px 120px) 0 calc(100% - 136px) / 100% 4px no-repeat;
+  animation: or-roll 1.2s linear infinite;
+}
+/* 잔디·눈길: 눈송이가 내린다 */
+.theme-offroad .or[data-mode="eco"] .or-terrain {
+  border-color: #4fe0b5;
+  background: linear-gradient(#bfe9ff 0%, #6fc9a2 60%, #2f8a5e 100%);
+}
+.theme-offroad .or[data-mode="eco"] .or-terrain-txt b { color: #08321f; }
+.theme-offroad .or[data-mode="eco"] .or-terrain-txt small { color: #1f5a40; }
+.theme-offroad .or[data-mode="eco"] .or-terrain-txt em { color: #0b4a33; }
+.theme-offroad .or[data-mode="eco"] .or-terrain-fx {
+  background:
+    radial-gradient(circle at 20px 20px, #fff 0 3px, transparent 4px),
+    radial-gradient(circle at 50px 45px, rgba(255, 255, 255, 0.8) 0 2px, transparent 3px);
+  background-size: 60px 60px;
+  animation: or-snow 2.6s linear infinite;
+}
+/* 모래·진흙: 모래 물결과 흙 튀김이 빠르게 지나간다 */
+.theme-offroad .or[data-mode="sport"] .or-terrain {
+  border-color: #ff6a1f;
+  background: linear-gradient(#e3b06a 0%, #b9773a 55%, #5e3416 100%);
+}
+.theme-offroad .or[data-mode="sport"] .or-terrain-txt b { color: #2c1404; }
+.theme-offroad .or[data-mode="sport"] .or-terrain-txt small { color: #4a2408; }
+.theme-offroad .or[data-mode="sport"] .or-terrain-txt em { color: #6b1d00; }
+.theme-offroad .or[data-mode="sport"] .or-terrain-fx {
+  background:
+    radial-gradient(circle at 30px 70px, rgba(70, 35, 10, 0.55) 0 7px, transparent 8px),
+    radial-gradient(circle at 90px 40px, rgba(70, 35, 10, 0.45) 0 5px, transparent 6px),
+    repeating-linear-gradient(110deg, rgba(120, 65, 25, 0.35) 0 14px, transparent 14px 40px);
+  background-size: 120px 120px, 120px 120px, auto;
+  animation: or-roll 0.5s linear infinite;
+}
+.theme-offroad .or.ap .or-terrain { border-color: #4da3ff; }
+.theme-offroad .or.off .or-terrain-fx { animation-play-state: paused; }
+@keyframes or-roll { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+@keyframes or-snow { from { transform: translate(0, -60px); } to { transform: translate(-20px, 0); } }
+
+/* ---- 아래 구석: 주행거리·시계 ---- */
+.theme-offroad .or-foot-left,
+.theme-offroad .or-foot-right {
+  position: absolute;
+  top: 684px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.theme-offroad .or-foot-left { left: 30px; }
+.theme-offroad .or-foot-right { right: 30px; text-align: right; }
+.theme-offroad .or-foot-right .clock { font-size: 26px; font-weight: 900; color: #fff; }
+
+/* ---- 시동 꺼짐 ---- */
+.theme-offroad .or-svg > *,
+.theme-offroad .or-lcd,
+.theme-offroad .or-terrain,
+.theme-offroad .or-alt,
+.theme-offroad .or-foot-left,
+.theme-offroad .or-foot-right { transition: opacity 0.8s; }
+.theme-offroad .or.off .or-compass,
+.theme-offroad .or.off .or-incl,
+.theme-offroad .or.off .or-alt,
+.theme-offroad .or.off .or-terrain { opacity: 0.35; }
+.theme-offroad .or.off .or-scale,
+.theme-offroad .or.off .or-accent-ring,
+.theme-offroad .or.off .or-mini { opacity: 0.4; }
+.theme-offroad .or.off .or-lcd { border-color: #2c2924; }

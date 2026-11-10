@@ -1,0 +1,499 @@
+/* 와이드 스크린 테마. 이 테마 전용 루트 클래스 .wd 아래(.theme-wide)에만 규칙을 둔다.
+   .wd-stage 안의 좌표는 1600x820 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
+   빛나는 느낌은 움직이지 않는 그라데이션으로만 내고, 움직이는 것은 transform 으로만 움직인다. */
+.theme-wide .wd {
+  --acc: #36b8ff;            /* 주행 모드 색 (기본: 편안하게 = 하늘색) */
+  --acc-rgb: 54, 184, 255;
+  --acc2: #8ee3ff;           /* 링 끝의 밝은 색 */
+  --acc3: #0b5fb0;           /* 링 시작의 진한 색 */
+  --amb-speed: 4s;           /* 무드등이 흐르는 빠르기 */
+  --text: #eef4fa;
+  --muted: #8b9aab;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #020305;
+  color: var(--text);
+  font-family: "Avenir Next", "Helvetica Neue", "Apple SD Gothic Neo", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.theme-wide .wd[data-mode="eco"] { --acc: #2fe08a; --acc-rgb: 47, 224, 138; --acc2: #b6ffd6; --acc3: #0b7a44; --amb-speed: 7s; }
+.theme-wide .wd[data-mode="sport"] { --acc: #ff2d55; --acc-rgb: 255, 45, 85; --acc2: #ffb36b; --acc3: #a3001f; --amb-speed: 1.3s; }
+.theme-wide .wd.ap { --acc: #8a7dff; --acc-rgb: 138, 125, 255; --acc2: #7fe8ff; --acc3: #4a2fd6; --amb-speed: 2.4s; }
+
+.theme-wide .wd-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 820px;
+  transform-origin: 0 0;
+}
+
+/* ---- 유리 화면: 크롬 테두리 + 비스듬한 반사 ---- */
+.theme-wide .wd-glass {
+  position: absolute;
+  inset: 4px 6px;
+  border-radius: 44px;
+  border: 5px solid transparent;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 34%, transparent 34.2%) padding-box,
+    radial-gradient(ellipse 60% 70% at 50% 45%, rgba(var(--acc-rgb), 0.1), transparent 70%) padding-box,
+    linear-gradient(#0f151d, #06090d 70%) padding-box,
+    linear-gradient(135deg, #c9d1db, #2a3038 30%, #e4e9ef 50%, #20262d 70%, #aab4c0) border-box;
+  transition: background 0.6s;
+}
+.theme-wide .wd[data-mode="sport"] .wd-glass {
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 34%, transparent 34.2%) padding-box,
+    radial-gradient(ellipse 60% 70% at 50% 45%, rgba(255, 45, 85, 0.14), transparent 70%) padding-box,
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 4px, transparent 4px 8px) padding-box,
+    linear-gradient(#170b0e, #070304 70%) padding-box,
+    linear-gradient(135deg, #c9d1db, #2a3038 30%, #e4e9ef 50%, #20262d 70%, #aab4c0) border-box;
+}
+.theme-wide .wd[data-mode="eco"] .wd-glass {
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 34%, transparent 34.2%) padding-box,
+    radial-gradient(ellipse 60% 70% at 50% 45%, rgba(47, 224, 138, 0.12), transparent 70%) padding-box,
+    linear-gradient(#0a1712, #040806 70%) padding-box,
+    linear-gradient(135deg, #c9d1db, #2a3038 30%, #e4e9ef 50%, #20262d 70%, #aab4c0) border-box;
+}
+.theme-wide .wd.night .wd-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 40px;
+  background: rgba(0, 0, 8, 0.35);
+}
+
+/* ---- 무드등 줄 (위·아래). 빛 무리는 움직이지 않고, 반짝임만 transform 으로 흐른다 ---- */
+.theme-wide .wd-amb {
+  position: absolute;
+  left: 110px;
+  right: 110px;
+  height: 7px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: linear-gradient(90deg, transparent, var(--acc) 12%, var(--acc2) 50%, var(--acc) 88%, transparent);
+  transition: opacity 0.6s;
+}
+.theme-wide .wd-amb.top { top: 0; }
+.theme-wide .wd-amb.bottom { bottom: 0; }
+/* 줄 바로 옆에 퍼지는 빛 (따로 둔 고정 레이어) */
+.theme-wide .wd-stage::before,
+.theme-wide .wd-stage::after {
+  content: '';
+  position: absolute;
+  left: 90px;
+  right: 90px;
+  height: 46px;
+  pointer-events: none;
+  transition: opacity 0.6s;
+}
+.theme-wide .wd-stage::before { top: 4px; background: radial-gradient(ellipse 50% 100% at 50% 0%, rgba(var(--acc-rgb), 0.38), transparent 100%); }
+.theme-wide .wd-stage::after { bottom: 4px; background: radial-gradient(ellipse 50% 100% at 50% 100%, rgba(var(--acc-rgb), 0.38), transparent 100%); }
+.theme-wide .wd-amb i {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  animation: wd-shimmer var(--amb-speed) linear infinite;
+  will-change: transform;
+}
+.theme-wide .wd-amb.bottom i { animation-direction: reverse; }
+@keyframes wd-shimmer { from { transform: translateX(-220px); } to { transform: translateX(1380px); } }
+/* 에코: 숨 쉬듯 천천히 밝아졌다 어두워진다 */
+.theme-wide .wd[data-mode="eco"] .wd-amb { animation: wd-breathe 3.2s ease-in-out infinite; }
+@keyframes wd-breathe { 50% { opacity: 0.45; } }
+.theme-wide .wd.off .wd-amb { opacity: 0.15; animation: none; }
+.theme-wide .wd.off .wd-amb i { animation: none; opacity: 0; }
+.theme-wide .wd.off .wd-stage::before,
+.theme-wide .wd.off .wd-stage::after { opacity: 0.15; }
+.theme-wide .wd.night .wd-stage::before,
+.theme-wide .wd.night .wd-stage::after { opacity: 1; }
+
+.theme-wide .wd-svg { position: absolute; inset: 0; overflow: visible; }
+
+/* ---- 링 계기 ---- */
+.theme-wide .wd-stop-a { stop-color: var(--acc3); }
+.theme-wide .wd-stop-b { stop-color: var(--acc); }
+.theme-wide .wd-stop-c { stop-color: var(--acc2); }
+.theme-wide .wd-disc-a { stop-color: rgba(var(--acc-rgb), 0.22); }
+.theme-wide .wd-chrome { fill: none; stroke: url(#wd-chrome); stroke-width: 5; stroke-linecap: round; }
+.theme-wide .wd-track { fill: none; stroke: #04060a; stroke-width: 44; stroke-linecap: round; }
+.theme-wide .wd-tube { fill: none; stroke: url(#wd-tube); stroke-width: 34; stroke-linecap: round; }
+.theme-wide .wd-hot { fill: none; stroke: #ff2a2a; stroke-width: 6; stroke-opacity: 0.85; }
+.theme-wide .wd-fill { fill: none; stroke: url(#wd-fill); stroke-width: 30; stroke-linecap: round; }
+.theme-wide .wd-gloss { fill: none; stroke: url(#wd-gloss); stroke-width: 7; stroke-linecap: round; opacity: 0.55; }
+.theme-wide .wd-bead { stroke: #fff; stroke-width: 3; }
+.theme-wide .wd-ticks .tick-major { stroke: #dfe7ef; stroke-width: 3.5; }
+.theme-wide .wd-ticks .tick-minor { stroke: #6b7887; stroke-width: 2; }
+.theme-wide .wd-ticks .hot { stroke: #ff4a4a; }
+.theme-wide .wd-ticks .tick-label { fill: #c9d4e0; font-size: 27px; font-weight: 700; }
+.theme-wide .wd-ticks .tick-label.hot { fill: #ff5a5a; }
+.theme-wide .wd.night .wd-ticks .tick-label { fill: var(--acc2); }
+.theme-wide .wd-speed { fill: #fff; font-size: 128px; font-weight: 300; letter-spacing: -4px; }
+.theme-wide .wd-speed.over { fill: #ff3b30; font-weight: 500; }
+.theme-wide .wd[data-mode="sport"] .wd-speed { font-style: italic; font-weight: 600; }
+.theme-wide .wd-unit { fill: var(--muted); font-size: 24px; font-weight: 700; }
+.theme-wide .wd-ring-name { fill: var(--acc2); font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+.theme-wide .wd-gear { fill: #fff; font-size: 128px; font-weight: 700; }
+.theme-wide .wd-gearnum { fill: var(--acc2); font-size: 44px; font-weight: 800; }
+.theme-wide .wd-rpm { fill: var(--muted); font-size: 24px; font-weight: 700; }
+.theme-wide .wd-rpm.hot { fill: #ff5a5a; }
+.theme-wide .wd-limit-mark { fill: #ffb020; stroke: #000; stroke-width: 1.5; }
+.theme-wide .wd-ap-mark { fill: #a99bff; stroke: #000; stroke-width: 1.5; }
+.theme-wide #wd-ap-mark { display: none; }
+.theme-wide #wd-ap-mark.show { display: inline; }
+
+/* ---- 경고등 ---- */
+.theme-wide .wd-group { position: absolute; display: flex; gap: 14px; }
+.theme-wide .wd-top-left { left: 54px; top: 26px; }
+.theme-wide .wd-top-right { right: 54px; top: 26px; }
+.theme-wide .wd-bottom { left: 50%; bottom: 18px; transform: translateX(-50%); gap: 13px; }
+.theme-wide .wd-ind { display: inline-flex; width: 42px; height: 42px; color: #fff; opacity: 0.08; }
+.theme-wide .wd-ind svg { width: 100%; height: 100%; }
+.theme-wide .wd-ind.on { opacity: 1; }
+.theme-wide .wd-ind.on.red { color: #ff3b30; }
+.theme-wide .wd-ind.on.amber { color: #ffb020; }
+.theme-wide .wd-ind.on.green { color: #35e06f; }
+.theme-wide .wd-ind.on.blue { color: #6f8bff; }
+.theme-wide .wd-ind.on.white { color: #eef4fa; }
+.theme-wide .wd-turn { position: absolute; top: 18px; width: 64px; height: 64px; }
+.theme-wide .wd-turn-left { left: 440px; }
+.theme-wide .wd-turn-right { left: 1096px; }
+
+.theme-wide .wd-clock {
+  position: absolute;
+  left: 600px;
+  top: 22px;
+  width: 400px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 16px;
+  white-space: nowrap;
+}
+.theme-wide .wd-clock b { font-size: 40px; font-weight: 700; letter-spacing: 1px; }
+.theme-wide .wd-clock span { font-size: 22px; color: var(--muted); font-weight: 700; }
+
+/* ---- 가운데 위: 제한속도 · 내비 · 표지판 ---- */
+.theme-wide .wd-head {
+  position: absolute;
+  left: 548px;
+  top: 92px;
+  width: 504px;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.theme-wide .wd-limit {
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: #fff;
+  border: 9px solid #e0201b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+  font-size: 34px;
+  font-weight: 800;
+}
+.theme-wide .wd-limit.over { animation: wd-over 0.6s steps(1) infinite; }
+@keyframes wd-over { 0% { background: #e0201b; color: #fff; } 50% { background: #fff; color: #111; } }
+.theme-wide .wd-top { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; }
+.theme-wide .wd-nav,
+.theme-wide .wd-road-name {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 6px;
+  border-radius: 18px;
+  background: linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  border: 2px solid rgba(var(--acc-rgb), 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.theme-wide .wd-road-name { justify-content: center; font-size: 22px; font-weight: 700; }
+.theme-wide .wd-nav .nav-arrow,
+.theme-wide .wd-road-name .nav-arrow { width: 64px; height: 64px; flex: 0 0 auto; fill: none; stroke: var(--acc2); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.theme-wide .wd-top b { display: block; font-size: 28px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+.theme-wide .wd-top span { display: block; font-size: 17px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.theme-wide .wd-top div { min-width: 0; }
+.theme-wide .wd-sign {
+  flex: 0 0 auto;
+  width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.theme-wide .wd-sign:empty { width: 0; margin-left: -12px; }
+.theme-wide .wd-sign svg { width: 70px; height: 70px; }
+
+/* ---- 가운데: 위에서 내려다본 길 ---- */
+.theme-wide .wd-road {
+  position: absolute;
+  left: 548px;
+  top: 206px;
+  width: 504px;
+  height: 530px;
+  border-radius: 26px;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 40px 40px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 40px 40px,
+    linear-gradient(#0b1219, #070b10);
+  border: 2px solid rgba(var(--acc-rgb), 0.35);
+}
+/* 위쪽이 멀리 있는 것처럼 어둡게 */
+.theme-wide .wd-road::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#070b10 0%, rgba(7, 11, 16, 0) 30%);
+  pointer-events: none;
+}
+.theme-wide .wd-road-svg { position: absolute; left: 0; top: 0; }
+.theme-wide .wd-asphalt { fill: #1d242d; }
+.theme-wide .wd[data-mode="sport"] .wd-asphalt { fill: #241c20; }
+.theme-wide .wd-edge { stroke: #e9eef3; stroke-width: 4; }
+.theme-wide .wd-lane { stroke: rgba(233, 238, 243, 0.75); stroke-width: 4; stroke-dasharray: 34 30; }
+.theme-wide .wd-post { fill: rgba(var(--acc-rgb), 0.85); }
+.theme-wide .wd-car-shadow { fill: rgba(0, 0, 0, 0.45); }
+.theme-wide .wd-car-body { stroke: rgba(0, 0, 0, 0.6); stroke-width: 1.5; }
+.theme-wide .wd-car-roof { fill: rgba(255, 255, 255, 0.14); }
+.theme-wide .wd-car-glass { fill: #0d1520; }
+.theme-wide .wd-car.lead .wd-car-body { stroke: var(--acc2); stroke-width: 4; }
+.theme-wide .wd-car.beside .wd-car-body { stroke: #ffb020; stroke-width: 4; }
+.theme-wide .wd-car.danger .wd-car-body { stroke: #ff2a2a; stroke-width: 6; }
+.theme-wide .wd-ego-car .wd-car-body { stroke: #ffffff; stroke-width: 2; }
+.theme-wide .wd-ego-car .wd-car-roof { fill: #dfe4ea; }
+.theme-wide .wd-ego-halo { fill: url(#wd-halo); }
+.theme-wide .wd-halo-a { stop-color: rgba(var(--acc-rgb), 0.55); }
+.theme-wide .wd-halo-b { stop-color: rgba(var(--acc-rgb), 0); }
+.theme-wide .wd-ego-beam { fill: url(#wd-beam); opacity: 0; transition: opacity 0.4s; }
+.theme-wide #wd-ego.lights .wd-ego-beam { opacity: 1; }
+.theme-wide .wd-blink { fill: #ffb020; opacity: 0; }
+.theme-wide #wd-ego.bl .wd-blink-l,
+.theme-wide #wd-ego.br .wd-blink-r { opacity: 1; }
+.theme-wide .wd-brake { fill: #5a0b0b; }
+.theme-wide #wd-ego.braking .wd-brake { fill: #ff2a2a; }
+.theme-wide .wd-obstacle { display: none; }
+.theme-wide .wd-obstacle.show { display: inline; }
+.theme-wide .wd-obstacle circle { fill: #ff2a2a; stroke: #ffd0d0; stroke-width: 3; }
+.theme-wide .wd-obstacle text { fill: #fff; font-size: 26px; font-weight: 900; }
+.theme-wide .wd-ap-path { fill: url(#wd-ap-g); opacity: 0; transition: opacity 0.4s; }
+.theme-wide .wd.ap .wd-ap-path { opacity: 1; }
+
+.theme-wide .wd-light {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.theme-wide .wd-lamps { display: flex; gap: 5px; padding: 5px 7px; border-radius: 9px; background: #020406; border: 2px solid #2a3542; }
+.theme-wide .wd-lamps i { width: 20px; height: 20px; border-radius: 50%; background: #18202a; }
+.theme-wide .wd-lamps i.red.on { background: radial-gradient(circle at 40% 35%, #ffd0cc, #ff3b30 55%); }
+.theme-wide .wd-lamps i.yellow.on { background: radial-gradient(circle at 40% 35%, #fff2c4, #ffb020 55%); }
+.theme-wide .wd-lamps i.green.on { background: radial-gradient(circle at 40% 35%, #d4ffe0, #22c55e 55%); }
+.theme-wide .wd-camera {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 1;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.7);
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffb020;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.theme-wide .wd-camera.show { opacity: 1; }
+.theme-wide .wd-ai-chip {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 1;
+  transform: translateX(-50%);
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6a5cff, #36b8ff);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.theme-wide .wd.ap .wd-ai-chip { opacity: 1; }
+
+/* 시동 꺼짐: 길 화면에 인사 */
+.theme-wide .wd-off {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 180px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(rgba(3, 5, 8, 0.9) 70%, rgba(3, 5, 8, 0));
+  opacity: 0;
+  transition: opacity 0.8s;
+  pointer-events: none;
+}
+.theme-wide .wd.off .wd-off { opacity: 1; }
+.theme-wide .wd-off b { font-size: 90px; }
+.theme-wide .wd-off span { font-size: 28px; font-weight: 800; color: #fff; }
+
+.theme-wide .wd-popup {
+  position: absolute;
+  left: 50px;
+  right: 50px;
+  top: 150px;
+  height: 190px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 22px;
+  background: rgba(8, 12, 18, 0.96);
+  border: 3px solid var(--acc);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.theme-wide .wd-popup.show { opacity: 1; }
+.theme-wide .wd-popup .t { font-size: 21px; color: var(--muted); }
+.theme-wide .wd-popup .v { font-size: 46px; font-weight: 800; text-align: center; }
+.theme-wide .wd-msg {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 62px;
+  z-index: 2;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(34, 26, 4, 0.96);
+  border: 3px solid #ffd21f;
+  color: #ffe27a;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+  word-break: keep-all;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.theme-wide .wd-msg.show { opacity: 1; }
+
+/* ---- 왼쪽 아래: 기어·연료·온도 ---- */
+.theme-wide .wd-left,
+.theme-wide .wd-right {
+  position: absolute;
+  top: 486px;
+  width: 440px;
+  height: 250px;
+  box-sizing: border-box;
+  border-radius: 24px;
+  background: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  border: 2px solid rgba(255, 255, 255, 0.08);
+}
+.theme-wide .wd-left { left: 70px; padding: 14px 22px; display: flex; flex-direction: column; justify-content: space-between; }
+.theme-wide .wd-right { left: 1090px; padding: 12px 20px 6px; display: flex; flex-direction: column; font-size: 18px; }
+.theme-wide .wd-gears { display: flex; align-items: center; gap: 18px; font-size: 42px; font-weight: 800; color: #2c3744; }
+.theme-wide .wd-gears span.on { color: #fff; }
+.theme-wide .wd-gears span.on::after { content: ''; display: block; height: 4px; margin-top: -2px; border-radius: 2px; background: var(--acc); }
+.theme-wide .wd-mode {
+  margin-left: auto;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--acc3), var(--acc));
+  color: #fff;
+  font-size: 19px;
+  font-weight: 800;
+  font-style: normal;
+  white-space: nowrap;
+}
+.theme-wide .wd[data-mode="sport"] .wd-mode { animation: wd-pulse 0.9s ease-in-out infinite; }
+@keyframes wd-pulse { 50% { opacity: 0.6; } }
+.theme-wide .wd-gauge { display: flex; align-items: center; gap: 12px; }
+.theme-wide .wd-gicon { width: 30px; height: 30px; color: var(--acc2); }
+.theme-wide .wd-gicon svg { width: 100%; height: 100%; }
+.theme-wide .wd-gbar { flex: 1; height: 16px; border-radius: 8px; background: #121a23; overflow: hidden; box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.7); }
+.theme-wide .wd-gbar i { display: block; height: 100%; width: 0; border-radius: 8px; background: linear-gradient(90deg, var(--acc3), var(--acc) 60%, var(--acc2)); }
+.theme-wide .wd-gbar i.low { background: linear-gradient(90deg, #a35a00, #ffa000); }
+.theme-wide .wd-gbar.temp i { background: linear-gradient(90deg, #36b8ff, #35e06f 50%, #ffa000 85%, #ff3b30); }
+.theme-wide .wd-gbar.temp i.hot { background: #ff3b30; }
+.theme-wide .wd-gauge em { width: 140px; font-style: normal; font-size: 18px; font-weight: 700; color: var(--muted); text-align: right; white-space: nowrap; }
+.theme-wide .wd-foot { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; color: var(--muted); padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+
+/* ---- 오른쪽 아래: 정보창 ---- */
+.theme-wide .wd-page { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+.theme-wide .wd-status { height: 26px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; }
+.theme-wide .st-over { color: #ff3b30; animation: wd-blink 0.6s steps(1) infinite; }
+.theme-wide .st-warn { color: #ffb020; }
+.theme-wide .st-info { color: #8ee3ff; }
+.theme-wide .st-ap { color: #b4aaff; }
+@keyframes wd-blink { 50% { opacity: 0.2; } }
+
+.theme-wide .info-title { font-size: 17px; font-weight: 800; color: var(--acc2); padding-bottom: 4px; border-bottom: 1px solid rgba(var(--acc-rgb), 0.35); }
+.theme-wide .info-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 17px; color: var(--muted); }
+.theme-wide .info-row b { color: #fff; font-size: 21px; font-weight: 700; }
+.theme-wide .info-label { font-size: 16px; color: var(--muted); }
+.theme-wide .info-sub { font-size: 15px; color: var(--muted); text-align: center; }
+.theme-wide .info-bar { height: 12px; border-radius: 6px; background: #121a23; overflow: hidden; }
+.theme-wide .info-bar i { display: block; height: 100%; background: var(--acc); }
+.theme-wide .info-bar.big { height: 18px; }
+.theme-wide .info-car { height: 130px; align-self: center; overflow: visible; }
+.theme-wide .info-car .car-body { fill: #f7f8fa; stroke: var(--acc); stroke-width: 2; }
+.theme-wide .info-car .car-glass { fill: #1a2633; }
+.theme-wide .tire { fill: #3a4756; }
+.theme-wide .tire.bad { fill: #ffb020; }
+.theme-wide .tire-psi { fill: #fff; font-size: 17px; font-weight: 700; }
+.theme-wide .tire-psi.bad { fill: #ffb020; }
+.theme-wide .door { fill: none; stroke: var(--acc); stroke-width: 3; stroke-linecap: round; }
+.theme-wide .door.open { stroke: #ff3b30; stroke-width: 4; }
+.theme-wide .wd-page .nav-arrow { width: 72px; height: 72px; align-self: center; fill: none; stroke: var(--acc2); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.theme-wide .nav-dist { font-size: 28px; font-weight: 800; text-align: center; }
+.theme-wide .nav-word { font-size: 18px; text-align: center; color: var(--acc2); }
+.theme-wide .clim-temps { display: flex; justify-content: space-around; font-size: 30px; font-weight: 800; }
+.theme-wide .road-name { font-size: 22px; font-weight: 800; text-align: center; }
+.theme-wide .info-big { font-size: 54px; font-weight: 800; text-align: center; color: var(--acc2); }
+.theme-wide .ap-state { font-size: 21px; font-weight: 800; text-align: center; color: #b4aaff; }
+.theme-wide .off-hint { margin-top: 26px; font-size: 21px; line-height: 1.6; text-align: center; color: var(--muted); }
+
+/* ---- 시동 꺼짐 ---- */
+.theme-wide .wd-ring,
+.theme-wide .wd-left,
+.theme-wide .wd-right,
+.theme-wide .wd-head,
+.theme-wide .wd-clock { transition: opacity 0.8s; }
+.theme-wide .wd.off .wd-ring { opacity: 0.35; }
+.theme-wide .wd.off .wd-left { opacity: 0.45; }
