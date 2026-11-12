@@ -28,7 +28,7 @@
   // 쉬운 모드 🌧 와이퍼 버튼
   var WIPER_HELP_AFTER = 40;      // 이만큼(초) 안 누르면 대신 켜 준다
   var WIPER_OFF_AFTER = 3;        // 비가 그치고 이만큼(초) 뒤 와이퍼를 끈다
-  var ask = { shown: false, waitT: 0, dryT: 0, praised: false };
+  var ask = { shown: false, waitT: 0, dryT: 0, praised: false, helped: false }; // helped: 이번 비에 이미 켰다(아이가 눌렀거나 대신 켜 줌)
 
   // 비가 오면 버튼을 보이고(빗줄기 0.1 부터), 거의 그치면(0.05 아래) 숨긴다
   function updateWiperAsk(s, dt) {
@@ -36,6 +36,7 @@
       ask.shown = true;
       ask.waitT = 0;
       ask.praised = false;
+      ask.helped = false;
     } else if (ask.shown && s.rainLevel < 0.05) {
       ask.shown = false;
       ask.dryT = 0;
@@ -43,9 +44,10 @@
     if (!s.easy) return;
     if (ask.shown) {
       // 달리는 동안 오래 안 누르면 앞이 잘 보이게 대신 켠다 (혼내지 않고, 다음엔 버튼을 누르면 된다고)
-      if (s.wiper === 'off' && s.engineOn && !s.parking.on) {
+      if (!ask.helped && s.wiper === 'off' && s.engineOn && !s.parking.on) {
         ask.waitT += dt;
         if (ask.waitT >= WIPER_HELP_AFTER) {
+          ask.helped = true;
           s.wiper = 'auto';
           s.wiperTimer = 0;
           U.say(s, '🌧 앞이 잘 보이게 와이퍼를 켰어요. 다음엔 🌧 버튼을 눌러 봐요');
@@ -111,7 +113,11 @@
     wiperAsk: function () { return ask.shown; },
 
     // 쉬운 모드 🌧 버튼: 켜기 ↔ 끄기. 켜면 바로 한 번 쓸어서 누른 게 눈에 보이게
+    // 이번 비에 아이가 와이퍼 버튼을 만졌는지 (자율주행이 껐다 켰다 다투지 않게)
+    wiperTouched: function () { return ask.helped; },
+
     pressWiper: function (s) {
+      ask.helped = true; // 아이가 직접 켜고 끈다: 이번 비에는 더 대신 켜지 않는다
       if (s.wiper === 'off') {
         s.wiper = 'auto';
         s.wiperTimer = 0;

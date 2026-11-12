@@ -6,6 +6,14 @@
   var lastSpoken = { text: '', at: 0 };
   var POPUP_SECONDS = 2;
 
+  // shortText 가 쓰는 낱말 → 그림 (위에서부터 먼저 맞는 것)
+  var WORD_ICONS = [
+    [/주유|연료|기름/, '⛽'], [/안전벨트/, '🔔'], [/타이어|공기압/, '🛞'], [/문이|문을/, '🚪'], [/워셔/, '💧'],
+    [/시동/, '🔑'], [/차선/, '↔️'], [/핸들/, '🎡'], [/브레이크|멈춰|멈춘|멈추/, '🛑'], [/엔진|정비/, '🔧'],
+    [/방지턱|천천히/, '⚠️'], [/안내|내비/, '🧭'], [/위치/, '📍'], [/안녕|반가/, '👋'], [/초록 칸|주차/, '🅿️'],
+    [/기어/, '🕹️'], [/깜빡이/, '↔️'], [/쉬어|쉬는/, '☕']
+  ];
+
   Dash.util = {
     // 아이 이름 (config.js)
     kid: function () { return (Dash.config && Dash.config.kidName) || '친구'; },
@@ -73,7 +81,10 @@
         out.push(m.trim());
         return m;
       });
-      return out.length ? out.join(' ') : '🔊';
+      if (out.length) return out.join(' ');
+      // 그림도 숫자도 없는 글: 낱말을 보고 어울리는 그림 하나 (🔊 만 뜨면 무슨 일인지 알 수 없으니까)
+      for (var i = 0; i < WORD_ICONS.length; i++) if (WORD_ICONS[i][0].test(text)) return WORD_ICONS[i][1];
+      return '💬';
     },
 
     // 말로 읽을 글: 그림 문자(이모지)는 빼고 한글·숫자·문장부호만

@@ -239,7 +239,10 @@
       var d = downs[e.pointerId];
       delete downs[e.pointerId];
       el.classList.remove('pressing');
-      if (d && Math.abs(e.clientX - d.x) < 12 && Math.abs(e.clientY - d.y) < 12) fn();
+      if (d && Math.abs(e.clientX - d.x) < 12 && Math.abs(e.clientY - d.y) < 12) {
+        lastPress = { t: Date.now(), x: e.clientX, y: e.clientY }; // 창이 열리면 따라오는 click 은 버린다 (아래)
+        fn();
+      }
     });
     el.addEventListener('pointercancel', function (e) {
       delete downs[e.pointerId];

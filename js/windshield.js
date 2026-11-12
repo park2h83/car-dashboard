@@ -13,7 +13,7 @@
   var mode = 'game', themeHasRoad = false, sceneMode = '';
   var MODE_NAMES = { game: '운전 게임', first: '앞유리', off: '계기판만' };
   // 운전 게임 보기의 카메라: 뒤에서 조금 높이, 내 흰 차가 아래 가운데에 또렷하게 (1600x400 좌표, 아래쪽 기준으로 자른다)
-  var GAME_CAMERA = { zoom: 1.0, egoDist: 6.8, camH: 2.6, horizon: 172, bottom: 430, follow: 0.55,
+  var GAME_CAMERA = { zoom: 1.0, egoDist: 7.4, camH: 2.7, horizon: 138, bottom: 430, follow: 0.55,
     glass: { x0: 0, x1: 1600, y0: 0, y1: 400 }, wipers: [{ px: 520, py: 480, len: 430 }, { px: 1080, py: 480, len: 410 }] };
   // 느린 기기: 그리는 데 오래 걸리면 두 프레임에 한 번만 그린다 (켜는 기준과 끄는 기준을 다르게)
   var workMs = 0, halfRate = false, skip = false, sceneDt = 0;

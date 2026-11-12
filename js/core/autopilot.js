@@ -248,7 +248,7 @@
         s.headlights = 'auto';
         U.announce(s, s.inTunnel ? '🤖 터널이에요. 전조등을 켤게요' : '🤖 밤이에요. 전조등을 켤게요');
       }
-      if (s.rainLevel > 0.1 && s.wiper === 'off') {
+      if (s.rainLevel > 0.1 && s.wiper === 'off' && !(s.easy && Dash.weather.wiperTouched && Dash.weather.wiperTouched())) {
         s.wiper = 'auto';
         U.announce(s, '🤖 비가 와요. 와이퍼를 켤게요');
       }

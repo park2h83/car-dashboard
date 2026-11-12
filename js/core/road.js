@@ -259,7 +259,8 @@
     // 매 프레임: 현재 도로 정보, 과속 여부, 내비 안내
     update: function (s) {
       applySegment(s);
-      s.overspeed = s.gear !== 'R' && s.speed > s.speedLimit + OVERSPEED_MARGIN;
+      // 바늘 맞추기 놀이 중에는 과속으로 치지 않는다 (맞출 숫자가 제한속도보다 높을 수 있다)
+      s.overspeed = s.gear !== 'R' && !s.game && s.speed > s.speedLimit + OVERSPEED_MARGIN;
       if (s.nav.on) {
         var t = nextTurn(s);
         s.nav.turn = t.turn;

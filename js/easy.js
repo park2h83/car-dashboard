@@ -7,7 +7,7 @@
 (function (Dash) {
   'use strict';
 
-  var state, hooks, sheet, honk;
+  var state, hooks, sheet, honk, lastTitle = '';
 
   var DEST_EMOJI = { daycare: '🏫', yeouido: '🌳', guri: '🌉', home: '🏠', mart: '🛒', grandma: '👵', station: '⛽' };
 
@@ -22,17 +22,24 @@
       }).join('') + '</div>' +
       '</div>';
     sheet.hidden = false;
+    if (state && state.easy) {
+      var spoken = Dash.util.speechOf(title).replace(/눌러 봐요/, '').trim();
+      if (spoken && spoken !== lastTitle) Dash.util.emit(state, 'speak', { text: spoken, queue: true });
+      lastTitle = spoken; // 도감처럼 같은 창을 다시 열 때는 되풀이하지 않는다
+    }
     sheet.onclick = function (e) {
       if (e.target.closest('.sheet-close')) return close();
       var b = e.target.closest('.sheet-card');
       if (!b) return;
       var it = items[parseInt(b.getAttribute('data-i'), 10)];
-      close();
+      close(true); // 카드가 같은 창을 다시 열면(도감) 제목을 또 읽지 않게
+      setTimeout(function () { if (sheet.hidden) lastTitle = ''; }, 400);
       it.act();
     };
   }
 
-  function close() {
+  function close(keepTitle) {
+    if (!keepTitle) lastTitle = '';
     sheet.hidden = true;
     sheet.innerHTML = '';
     sheet.onclick = null;
@@ -84,7 +91,7 @@
           act: function () { Dash.follow.toggle(); } },
         { emoji: '🔍', name: '경고등 도감', act: function () { Dash.games.openDex(); } },
         Dash.progress && Dash.progress.openStamps ? { emoji: '📍', name: '도장판', sub: Dash.progress.summary ? Dash.progress.summary() : '', act: function () { Dash.progress.openStamps(); } } : null,
-        Dash.sound.ENGINE_PROFILES ? { emoji: '🔊', name: '엔진 소리 고르기', act: function () { Dash.easy.openEngineSounds(); } } : null,
+        Dash.sound.ENGINE_PROFILES ? { emoji: '🎶', name: '엔진 소리 고르기', act: function () { Dash.easy.openEngineSounds(); } } : null,
         { emoji: '💡', name: '무드등 색', act: function () { Dash.games.openAmbient(); } },
         { emoji: '🪪', name: '운전면허증', act: function () { Dash.license.open(); } },
         { emoji: '👮', name: '운전자 확인', act: function () { Dash.license.driverCheck(); } },

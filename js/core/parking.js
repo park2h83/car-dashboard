@@ -167,6 +167,8 @@
     p.dir = 1;
     p.ai = mode === 'ai' ? { path: aiPath(p.lot), i: 0 } : null;
     p.fromFree = mode === 'free';
+    s.pendingGear = null;
+    if (mode === 'free' && s.autopilot.on) Dash.autopilot.disengage(s); // 후진 주차 놀이는 아이가 한다 (AI 주차 버튼은 따로 있다)
     p.bumpT = 0;
     p.touching = false;
     p.cap = CREEP;
@@ -215,6 +217,7 @@
   function success(s, stars, byAi) {
     var p = s.parking;
     p.phase = 'done';
+    s.pendingGear = null; // AI 주차 중에 누른 R·D 가 주차 뒤에 저절로 들어가지 않게
     p.stars = stars;
     p.timer = 3;
     s.gear = 'P';
@@ -409,7 +412,10 @@
     // '그만하기' 버튼
     quit: function (s) {
       if (!s.parking.on) return;
-      if (s.speed > 1) return U.say(s, '먼저 브레이크로 멈춰요');
+      if (s.speed > 1) {
+        if (!s.easy) return U.say(s, '🛑 먼저 브레이크로 멈춰요');
+        s.speed = 0; // 쉬운 모드: 차가 알아서 멈춘다
+      }
       s.gear = 'P';
       s.parkingBrake = true;
       U.say(s, '🅿️ 여기 세울게요');

@@ -184,3 +184,13 @@ body.easy .ctrl-quick .ctrl-btn.wiper.active::after {
 
 /* 주차 핸들: 조작부(30vh) 안에 다 들어가게 */
 body.easy .st-wheel { width: min(290px, 27.5vh); height: min(290px, 27.5vh); }
+
+/* 알림이 내 차를 가리지 않게 (전체 점검):
+   - 운전 게임 도로(다른 테마): 가운데엔 내 차가 있으니 왼쪽 위로
+   - 주차 화면: 초록 칸·차를 가리지 않게 오른쪽 센서 판의 빈 곳으로 */
+body.easy #app.road-game #toast,
+body.easy #app.road-game #toast.under-coach { left: 13%; top: max(12px, env(safe-area-inset-top)); }
+body.parking #toast,
+body.parking #toast.under-coach { left: 87%; top: 50vh; max-width: 22vw; white-space: normal; border-radius: 18px; }
+/* 경적 말풍선도 차 위쪽 하늘에 */
+#honk { top: 8%; }

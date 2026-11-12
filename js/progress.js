@@ -89,6 +89,8 @@
   var FIRST_DELAY = 2200;  // 도착 안내를 먼저 읽을 시간
   var SHOW_MS = 3200;      // 큰 축하 창이 떠 있는 시간
   var MAX_WAIT_MS = 6000;  // 앞 말이 끝나기를 기다리는 최대 시간
+  var MAX_PARK_WAIT_MS = 180000; // 주차가 끝나기를 기다리는 최대 시간
+  var parkWait = 0;
 
   function speaking() {
     try { return !!(window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)); } catch (e) { return false; }
@@ -108,6 +110,10 @@
         waited += 300;
         return setTimeout(next, 300);
       }
+      // 주차하는 동안은 기다린다 (큰 축하 창이 차와 초록 칸을 가리면 주차를 못 한다)
+      var st = queue[0].s;
+      if (st && st.parking && st.parking.on && (parkWait += 300) < MAX_PARK_WAIT_MS) return setTimeout(next, 300);
+      parkWait = 0;
       var it = queue.shift();
       showToast(it.c);
       U.emit(it.s, 'arrive');

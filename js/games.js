@@ -82,7 +82,7 @@
 
   function buildBanner() {
     banner.innerHTML =
-      '<div class="gb-target">🎯 <b data-gb="target"></b><small>km/h 에 맞춰 봐!</small></div>' +
+      '<div class="gb-target">🎯 <b data-gb="target"></b><small>' + (state.easy ? '' : 'km/h 에 맞춰 봐!') + '</small></div>' +
       '<div class="gb-bar"><i class="gb-zone"></i><i class="gb-now"></i></div>' +
       '<div class="gb-stars" data-gb="stars"></div>' +
       '<button type="button" class="gb-stop" aria-label="그만하기">✕</button>';

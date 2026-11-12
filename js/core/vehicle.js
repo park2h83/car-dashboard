@@ -407,7 +407,11 @@
   }
 
   function shift(s, gear, input) {
-    if (gear === s.gear) return;
+    if (gear === s.gear) {
+      // 달리다 R·P 를 잘못 눌렀으면, 지금 기어를 다시 눌러 취소할 수 있다
+      if (s.pendingGear) { s.pendingGear = null; emit(s, 'click'); }
+      return;
+    }
     var reversing = gear === 'R' || s.gear === 'R';
     if (s.speed > 3 && (gear === 'P' || reversing)) {
       if (!s.easy) return say(s, '차를 먼저 멈춰요');
