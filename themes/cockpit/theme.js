@@ -449,7 +449,7 @@
           '    <div class="ck-console"></div>' +
           '    <div class="ck-tile ck-nav"></div>' +
           '    <div class="ck-tile ck-mode-tile"><span class="ck-mode-badge"></span><b class="ck-score"><i>🏆</i><span></span></b></div>' +
-          '    <div class="ck-info"><div class="ck-info-page"></div><div class="ck-info-dots"></div></div>' +
+          '    <div class="ck-info" data-coach-slot><div class="ck-info-page"></div><div class="ck-info-dots"></div></div>' +
           '    <div class="ck-cbtns left">' + consoleBtn(CONSOLE_BUTTONS[0]) + consoleBtn(CONSOLE_BUTTONS[1]) + '</div>' +
           '    <div class="ck-cbtns right">' + consoleBtn(CONSOLE_BUTTONS[2]) + consoleBtn(CONSOLE_BUTTONS[3]) + '</div>' +
           '    <div class="ck-popup"><div class="t"></div><div class="v"></div></div>' +

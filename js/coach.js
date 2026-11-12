@@ -345,12 +345,51 @@
       (sit.wheel ? '<div class="coach-wheel" hidden></div>' : '');
     root.className = (sit.urgent ? 'urgent' : '') + (s.easy ? ' few-words' : '');
     root.hidden = false;
+    placed = '';
+    place();
     card.items = root.querySelectorAll('.coach-steps li');
     card.counter = root.querySelector('.coach-count');
     card.wheelEl = root.querySelector('.coach-wheel');
     if (card.wheelEl) Dash.wheel.bind(card.wheelEl);
     U.emit(s, 'chime');
     U.emit(s, 'speak', { text: sit.title(s, ctx).replace(/[^가-힣 0-9!]/g, '').trim() + '. ' + stepText(steps[0], ctx) });
+  }
+
+  // 카드 자리 (사용자 요청: 주행 화면을 가리지 않게):
+  //  - 'slot'  테마가 `data-coach-slot` 으로 내준 칸(계기판+도로의 가운데 정보 화면)을 그대로 덮는다
+  //  - 'strip' 위 도로 화면(운전 게임)이 있으면 도로 바로 아래, 계기판 위쪽에 얇은 띠
+  //  - 'top'   둘 다 없으면 예전처럼 화면 위쪽
+  var placed = '', placeT = 0;
+  function place() {
+    var app = document.getElementById('app');
+    var slot = document.querySelector('#cluster [data-coach-slot]');
+    var ws = document.getElementById('windshield');
+    var mode = 'top', st = root.style, r, a = app.getBoundingClientRect(), key;
+    if (slot && slot.offsetParent) {
+      r = slot.getBoundingClientRect();
+      if (r.width > 120 && r.height > 100) mode = 'slot';
+    }
+    if (mode === 'top' && ws && !ws.hidden && app.classList.contains('road-game')) {
+      r = ws.getBoundingClientRect();
+      mode = 'strip';
+    }
+    key = mode + (r ? [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)].join(',') : '');
+    if (key === placed) return;
+    placed = key;
+    root.classList.toggle('in-slot', mode === 'slot');
+    root.classList.toggle('strip', mode === 'strip');
+    if (mode === 'slot') {
+      st.left = (r.left - a.left) + 'px';
+      st.top = (r.top - a.top) + 'px';
+      st.width = r.width + 'px';
+      st.height = r.height + 'px';
+    } else if (mode === 'strip') {
+      st.left = '';
+      st.top = (r.bottom - a.top + 4) + 'px';
+      st.width = st.height = '';
+    } else {
+      st.left = st.top = st.width = st.height = '';
+    }
   }
 
   function close() {
@@ -418,6 +457,8 @@
       U.popup(state, '운전 코치', enabled() ? '켬' : '끔');
     },
     isOpen: function () { return !!card; },
+    // 카드가 화면 맨 위에 떠 있는지 (그럴 때만 노란 알림을 카드 아래로 내린다)
+    atTop: function () { return !!card && !root.classList.contains('in-slot') && !root.classList.contains('strip'); },
     // 지금 할 일을 보여 주는 카드의 상황 id (칭찬이 겹치지 않게 다른 곳에서 본다)
     currentId: function () { return card && !card.finished ? card.sit.id : null; },
     isFinished: function () { return !!(card && card.finished); },
@@ -445,6 +486,7 @@
         }
       }
       if (!card) return;
+      if ((placeT -= dt) <= 0) { placeT = 0.3; place(); } // 테마·화면 크기가 바뀌면 자리를 다시 잡는다
 
       card.t += dt;
       card.age = (card.age || 0) + dt;

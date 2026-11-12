@@ -112,3 +112,39 @@
 body.easy #coach.few-words { width: auto; min-width: 300px; max-width: calc(100% - 24px); }
 #coach.few-words .coach-body { display: flex; align-items: center; gap: 18px; }
 #coach.few-words .coach-title { margin-bottom: 0; }
+
+/* ---- 카드 자리: 주행 화면을 가리지 않게 (js/coach.js place) ---- */
+/* 테마가 내준 칸(계기판+도로의 가운데 정보 화면)을 그대로 덮는다 */
+#coach.in-slot {
+  transform: none;
+  max-height: none;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 6px 12px;
+  padding: 8px 10px;
+  border-radius: 22px;
+  overflow: hidden;
+  animation: coach-pop 0.3s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+body.easy #coach.in-slot, body.easy #coach.in-slot.few-words { width: auto; min-width: 0; max-width: none; padding: 8px 10px; gap: 6px 12px; }
+@keyframes coach-pop { from { transform: scale(0.8); opacity: 0; } to { transform: none; opacity: 1; } }
+#coach.in-slot .coach-body { flex: 0 1 auto; min-width: 0; }
+#coach.in-slot .coach-wheel { margin: -4px 0; width: 104px; height: 104px; }
+#coach.in-slot:not(.few-words) .coach-title { font-size: 19px; }
+#coach.in-slot:not(.few-words) .coach-steps li { font-size: 15px; }
+#coach.in-slot:not(.few-words) .coach-art { width: 80px; height: 66px; }
+#coach.in-slot:not(.few-words) .coach-art > * { transform: scale(0.72); }
+/* 위 도로 화면(운전 게임) 바로 아래, 계기판 위쪽에 얇은 띠 */
+#coach.strip {
+  max-height: none;
+  transform: translateX(-50%) scale(0.74);
+  transform-origin: 50% 0;
+  animation: coach-strip 0.3s ease-out;
+}
+@keyframes coach-strip { from { opacity: 0; transform: translateX(-50%) scale(0.6); } to { opacity: 1; transform: translateX(-50%) scale(0.74); } }
+#coach.in-slot { background: #fffaf0; }
+#coach.in-slot.few-words .coach-art { transform: scale(1.2); margin: 6px 14px; }
+.coach-count { white-space: nowrap; }

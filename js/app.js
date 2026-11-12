@@ -183,7 +183,7 @@
     var message = current.showsMessages && !state.parking.on && !Dash.coach.isOpen() ? '' : state.message;
     if (Dash.coach.isFinished()) message = ''; // 칭찬은 코치 카드가 보여 준다
     // 코치 카드나 주차 화면이 아래쪽을 쓰고 있으면 알림은 위쪽에
-    var under = Dash.coach.isOpen();
+    var under = Dash.coach.atTop();
     if (toast.classList.contains('under-coach') !== under) toast.classList.toggle('under-coach', under);
     if (message === lastMessage) return;
     lastMessage = message;
