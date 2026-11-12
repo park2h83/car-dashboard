@@ -4,10 +4,6 @@
   --road-school: #7a2d2d;
   --mark: #eef1f4;
   --center: #f2c230;
-  --haze: #b9d3ea;
-  --sky1: #5aa6e6;
-  --sky2: #cfe6f7;
-  --ground: #5f8f4e;
   position: relative;
   flex: 0 0 31vh;
   overflow: hidden;
@@ -15,13 +11,23 @@
   border-bottom: 2px solid #000;
 }
 #windshield[hidden] { display: none; }
+/* 하늘·땅·산 색: 운전 게임·계기판+도로 테마와 같은 이름 (css/scene.css 가 계절·하늘에 따라 바꾼다) */
+.ws {
+  --sky-top: #3d9df5;
+  --sky-bot: #bfe4ff;
+  --grass-far: #8fd17a;
+  --grass-near: #4fae4a;
+  --hill-far: #9cc9d9;
+  --hill-near: #74b86a;
+  --haze: #d6eefc;
+}
 .ws-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-.sky-top { stop-color: var(--sky1); }
-.sky-bottom { stop-color: var(--sky2); }
+.sky-top { stop-color: var(--sky-top); }
+.sky-bottom { stop-color: var(--sky-bot); }
 .haze-stop { stop-color: var(--haze); }
-.ws-hills { fill: #7fa86a; opacity: 0.8; }
-.ws-ground { fill: var(--ground); }
+.grass-far { stop-color: var(--grass-far); }
+.grass-near { stop-color: var(--grass-near); }
 .ws-dark, .ws-stars { display: none; }
 .ws-stars circle { fill: #fff; opacity: 0.8; }
 
@@ -83,12 +89,17 @@
 @keyframes ws-blink { 50% { opacity: 0.2; } }
 
 /* 비·터널·밤 */
-#windshield.wet { --road: #2c333c; --sky1: #7d8996; --sky2: #aeb7c1; --haze: #a4adb7; --ground: #4f7342; }
-#windshield.tunnel { --road: #2a2620; --sky1: #1a1712; --sky2: #2a251c; --haze: #120f0a; --ground: #1a1712; }
-#windshield.tunnel .ws-hills { display: none; }
-#windshield.night { --road: #1b2028; --mark: #c9d0d9; --sky1: #050a18; --sky2: #0d1830; --haze: #0a1020; --ground: #0c120c; }
+#windshield.wet { --road: #3a4049; }
+.ws.wet { --sky-top: #6f7d8c; --sky-bot: #b7c1cb; --haze: #b7c1cb; --grass-far: #6f9c66; --grass-near: #3f7a3d; --hill-far: #8fa3ad; --hill-near: #5e8a5a; }
+#windshield.night { --road: #1b2028; --mark: #c9d0d9; }
+.ws.night { --sky-top: #020617; --sky-bot: #1b2a52; --haze: #1b2a52; --grass-far: #0f2a17; --grass-near: #0a1f10; --hill-far: #16223a; --hill-near: #0f2416; }
+.ws.night.wet { --sky-top: #05080f; --sky-bot: #1a2233; }
+#windshield.tunnel { --road: #2f2b25; }
+.ws.tunnel { --sky-top: #0c0a07; --sky-bot: #241e15; --haze: #241e15; --grass-far: #3a342a; --grass-near: #2a251d; }
+#windshield.tunnel .ws-dark { display: none; }
+#windshield.wet .ws-sun, #windshield.night .ws-sun, #windshield.tunnel .ws-sun { display: none; }
 #windshield.night .ws-dark, #windshield.night .ws-stars { display: inline; }
-#windshield.night .ws-hills { fill: #101a14; }
+#windshield.night.tunnel .ws-dark, #windshield.tunnel .ws-stars { display: none; }
 #windshield.night .ws-hood { fill: #b9c0c8; }
 #windshield.night .car-tail { fill: #d42020; }
 #windshield.night .st-head { fill: #ffe09a; }
@@ -144,8 +155,6 @@
 /* 앞유리 화면일 때: 계기판은 남은 자리에 통째로 줄어든다 (테마 fitStage) */
 #app.drive-view #cluster { flex: 1; }
 
-/* 길가 나무: 밤에는 어둡게 */
-#windshield.night .scn { opacity: 0.35; }
 
 /* 운전 게임 보기 (뒤에서 본 흰 차): 앞유리 장식(보닛·기둥·룸미러)·HUD·핸들은 없다. 계기판이 너무 작아지지 않게 조금 낮게 */
 #app.road-game #windshield { flex: 0 0 29vh; }
@@ -154,3 +163,4 @@ body.easy #app.road-game #windshield { flex-basis: 34vh; }
 #windshield.game .ws-hood, #windshield.game .ws-hood-line, #windshield.game .ws-pillar,
 #windshield.game .ws-roof, #windshield.game .ws-mirror, #windshield.game .ws-hud, #windshield.game .ws-wheel { display: none; }
 #windshield.game .car.ego .car-bodyfill, #windshield.game .car.ego .car-cabin { stroke: #6b7684; stroke-width: 0.03; }
+.ws-haze { opacity: 0.6; }

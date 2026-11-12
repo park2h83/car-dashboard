@@ -1,0 +1,159 @@
+/* 길가 풍경·먼 배경·하늘·계절 (js/core/scenery.js 모양, js/core/scene.js 그리기). 도로 화면을 그리는 곳이 다 같이 쓴다:
+   위 도로 화면(#windshield), 운전 게임(.pg), 계기판 + 도로(.ck).
+   - 색 변수는 세 곳이 같은 이름을 쓴다: --sky-top --sky-bot --grass-far --grass-near --hill-far --hill-near --haze
+   - 뿌리의 data-sky="계절 계절-day|night|wet 하늘" (Dash.scene.skyClass) 에 따라 아래 규칙이 그 변수를 바꾼다.
+     밤·비·터널 색은 각 테마의 .night .wet .tunnel 규칙이 그대로 이긴다 (이 파일은 테마 CSS 뒤에 불러온다). */
+
+/* ---------- 나무·꽃·창문 (계절마다 잎 색이 바뀐다) ---------- */
+.tk { fill: #7a5532; }
+.lf1 { fill: var(--lf1, #3f9b47); }
+.lf2 { fill: var(--lf2, #4fae55); }
+.lfp { fill: var(--lfp, #2f7d45); }
+.lfb { fill: var(--lfb, #3f9b47); }
+.lfb2 { fill: var(--lfb2, #4fae55); }
+.fl { stroke: var(--fl, #ff6fa5); stroke-width: 0.36; stroke-linecap: round; fill: none; }
+.wn { stroke: var(--wn, #e3f0f9); fill: none; }
+.wn2 { fill: var(--wn, #e3f0f9); }
+.sc-num { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- 땅 띠 ---------- */
+.rd-land { fill: var(--grass-far, #8fd17a); }
+.gr-walk { fill: var(--walk, #cfd3d8); }
+.gr-shoulder { fill: #747b84; }
+.gr-water { fill: var(--water, #58a8e0); }
+.gr-sea { fill: var(--sea, #2f93d6); }
+.gr-foam { fill: #fff; opacity: 0.85; }
+.gr-sand { fill: var(--sand, #f3e2ab); }
+.gr-deck { fill: #a3aab3; }
+.gr-apron { fill: #bfc4cb; }
+.gr-runway { fill: #50555d; }
+.gr-mark { fill: #f4f6f8; }
+.gr-plaza { fill: #f6cfdc; }
+.gr-field1 { fill: var(--field1, #c3dc74); }
+.gr-field2 { fill: var(--field2, #7fbf5e); }
+
+/* ---------- 담·난간·울타리 ---------- */
+.wl-rail { fill: rgba(232, 236, 241, 0.9); }
+.wl-guard { fill: #c6ccd3; }
+.wl-noise { fill: rgba(186, 216, 228, 0.82); stroke: #7d8a96; stroke-width: 1; }
+.wl-yellow { fill: #ffd23f; }
+.wl-wood { fill: #b07f45; }
+.wl-fence { fill: rgba(160, 170, 180, 0.4); stroke: #7d8794; stroke-width: 1; }
+
+/* ---------- 다리·안내판·대관람차·도착 문 ---------- */
+.br-tower { stroke: #f1f4f8; fill: none; stroke-linecap: round; }
+.br-cable { stroke: #ffffff; fill: none; opacity: 0.85; }
+.ob-deck { fill: #8f97a1; }
+.ob-pier { fill: #a9b0b9; }
+.ob-rail { fill: #5d6570; }
+.gn-frame { stroke: #7d8794; fill: none; }
+.gn-board { fill: #1f8a4c; stroke: #fff; }
+.gn-arrow { stroke: #fff; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.fw-cab { fill: none; stroke: #ffcf2e; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 0.01 9.94; }
+.gt-frame { stroke: #ff5a5f; fill: none; stroke-linejoin: round; }
+.gt-board { fill: #fffdf5; stroke: #ffcf2e; stroke-width: 0.3; }
+
+/* ---------- 터널 입구·출구 ---------- */
+.tn-hill { fill: var(--hill-near, #74b86a); }
+.tn-bank { fill: var(--grass-near, #4fae4a); }
+.tn-face { fill: #c2c7ce; }
+.tn-bore { fill: #17140f; }
+.tn-inroad { fill: #2a2620; }
+.tn-out { fill: var(--out-sky, #e6f4fd); }
+.tn-outland { fill: var(--out-land, #9fd68a); }
+.night .tn-out { fill: #0d1830; }
+.night .tn-outland { fill: #0f2a17; }
+
+/* ---------- 먼 배경 ---------- */
+.sc-bd { animation: sc-bd-in 0.9s ease-out; }
+@keyframes sc-bd-in { from { opacity: 0; } }
+.bd-far { fill: var(--hill-far, #9cc9d9); }
+.bd-mid { fill: var(--hill-near, #74b86a); opacity: 0.5; }
+.bd-near { fill: var(--hill-near, #74b86a); }
+.bd-snowcap { fill: #fff; opacity: 0.8; }
+.bd-city { fill: var(--bd-city, #b3c8dc); }
+.bd-city2 { fill: var(--bd-city2, #93abc5); }
+.bd-bridge { fill: none; stroke: var(--bd-city2, #93abc5); stroke-width: 2.6; }
+.bd-cloud { fill: var(--bd-cloud, #fff); opacity: 0.94; }
+.bd-isle { fill: var(--hill-near, #74b86a); }
+.bd-ship { fill: #e8483f; }
+.bd-plane path { fill: #fff; stroke: #9fb3c8; stroke-width: 1; }
+.bd-ferris path, .bd-ferris circle { fill: none; stroke: #ff5a8a; stroke-width: 2.4; }
+.bd-ferris .cab { stroke: #ffcf2e; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 0.01 18.84; }
+.bd-sun { fill: #ffb347; }
+.bd-sun2 { fill: rgba(255, 170, 80, 0.4); }
+.bd-sun3 { fill: rgba(255, 170, 80, 0.2); }
+
+/* 눈·꽃잎·낙엽 */
+.sc-flake { fill: none; stroke-linecap: round; }
+.sc-flake.snow { stroke: #fff; }
+.sc-flake.petal { stroke: #ffc4da; }
+.sc-flake.leaf { stroke: #e8823a; }
+
+/* ---------- 밤: 길가 것들은 어두운 색으로 (정해진 색은 scenery.js nightOf 가 바꾸고, 여기는 CSS 로 칠하는 것들) ---------- */
+.night .tk { fill: #2a2018; }
+.night .lf1, .night .lfb { fill: #173022; }
+.night .lf2, .night .lfb2 { fill: #1d3a29; }
+.night .lfp { fill: #12281c; }
+.night .fl { stroke: #5a5236; }
+.night[data-sky^="winter"] .lf1, .night[data-sky^="winter"] .lfb { fill: #3d4958; }
+.night[data-sky^="winter"] .lf2, .night[data-sky^="winter"] .lfb2 { fill: #56626f; }
+.night .wl-rail, .night .wl-guard { fill: #414a56; }
+.night .wl-yellow { fill: #6f5f1f; }
+.night .wl-wood { fill: #3d2c18; }
+.night .br-tower { stroke: #77808d; }
+.night .br-cable { opacity: 0.35; }
+.night .ob-deck { fill: #2b323c; }
+.night .ob-pier { fill: #343c47; }
+.night .ob-rail { fill: #1b2028; }
+.night .gn-board { fill: #135a33; }
+.night .tn-face { fill: #4a5059; }
+.night .tn-bank { fill: #0f2416; }
+
+/* ---------- 밤·비: 물·건물은 어둡게 ---------- */
+.night .gr-water, .night .gr-sea { fill: #17324d; }
+.night .gr-sand, .night .gr-apron, .night .gr-plaza, .night .gr-walk, .night .gr-deck { fill: #3a4048; }
+.night .gr-field1, .night .gr-field2 { fill: #14301c; }
+.night .bd-city { fill: #1a2640; }
+.night .bd-city2 { fill: #111b30; }
+.night .bd-cloud, .night .bd-snowcap, .night .bd-ship, .night .bd-plane { display: none; }
+.night .wn { stroke: #ffd76a; }
+.night .wn2 { fill: #ffd76a; }
+.wet .gr-water, .wet .gr-sea { fill: #6f8fa8; }
+.wet .bd-city { fill: #97a5b3; }
+.wet .bd-city2 { fill: #7f8d9b; }
+.wet .bd-cloud { fill: #d5dbe1; }
+
+/* ---------- 하늘 (밝은 낮 하늘만 저절로 나온다. 노을은 부모님 설정에서 골랐을 때만) ---------- */
+[data-sky~="fair"] { --sky-top: #2f8fea; --sky-bot: #c6e7ff; }
+[data-sky~="cloudy"] { --sky-top: #9cc0dc; --sky-bot: #e8f2f8; --haze: #e8f2f8; --bd-cloud: #f6f9fb; }
+[data-sky~="snow"] { --sky-top: #b4c7d6; --sky-bot: #f0f5f8; --haze: #f0f5f8; --bd-cloud: #f8fafc; }
+[data-sky~="sunset"] {
+  --sky-top: #5b86d6; --sky-bot: #ffc48a; --haze: #ffd3a3; --bd-cloud: #ffd9c2;
+  --hill-far: #b592bd; --bd-city: #b99ab8; --bd-city2: #8f7fa8;
+}
+/* 구름 많은 날·눈 오는 날·노을엔 테마가 그린 해를 숨긴다 */
+[data-sky~="cloudy"] .pg-sun, [data-sky~="snow"] .pg-sun, [data-sky~="sunset"] .pg-sun,
+[data-sky~="cloudy"] .ck-sun, [data-sky~="snow"] .ck-sun, [data-sky~="sunset"] .ck-sun,
+[data-sky~="cloudy"] .ws-sun, [data-sky~="snow"] .ws-sun, [data-sky~="sunset"] .ws-sun { display: none; }
+
+/* ---------- 계절 ---------- */
+/* 잎·꽃 색 (낮·밤·비·터널 안 모두) */
+[data-sky^="spring"] { --lf1: #58b860; --lf2: #7ccb74; --lfb: #f7a8c8; --lfb2: #fbc9dc; --fl: #ffd23f; --out-land: #a8dc86; }
+[data-sky^="summer"] { --fl: #ff6fa5; }
+[data-sky^="autumn"] {
+  --lf1: #e8a13a; --lf2: #f0c040; --lfb: #d9534f; --lfb2: #e8743a; --fl: #c77dd8;
+  --field1: #e6cd5c; --field2: #cfae4c; --out-land: #d6c874;
+}
+[data-sky^="winter"] {
+  --lf1: #c9d8e6; --lf2: #f3f7fb; --lfb: #bfd0e0; --lfb2: #eef3f8; --lfp: #6f9f86; --fl: transparent;
+  --field1: #eef3f8; --field2: #e0e9f1; --walk: #e6ebf0; --sand: #f3efe4; --out-land: #f4f8fc; --out-sky: #f0f5f8;
+}
+/* 땅·산 색 (낮) */
+[data-sky~="spring-day"] { --grass-far: #a8dc86; --grass-near: #62bd58; --hill-near: #86c878; }
+[data-sky~="autumn-day"] { --grass-far: #d6c874; --grass-near: #a3a94c; --hill-far: #cbbf9f; --hill-near: #cf9550; }
+[data-sky~="winter-day"] { --grass-far: #f1f6fb; --grass-near: #d3e0ec; --hill-far: #c3d5e6; --hill-near: #e4ecf4; --haze: #eaf1f7; }
+/* 밤·비 오는 겨울·가을 (테마의 .night .wet 보다 뒤에 와서 이긴다) */
+.night[data-sky~="winter-night"] { --grass-far: #2b3544; --grass-near: #1c2531; --hill-far: #232e40; --hill-near: #2d3949; }
+.wet[data-sky~="winter-wet"] { --grass-far: #d6dee6; --grass-near: #bcc7d2; --hill-near: #cdd6de; }
+.wet[data-sky~="autumn-wet"] { --grass-far: #aaa66a; --grass-near: #7d8548; --hill-near: #a98556; }

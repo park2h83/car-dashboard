@@ -40,15 +40,23 @@
       options: [[true, '켬'], [false, '끔']] },
     { tab: 'drive', key: 'parkingMission', label: '도착하면 주차 미션', def: true,
       options: [[true, '켬'], [false, '끔 (그냥 도착)']] },
+    { tab: 'drive', key: 'policeOn', label: '경찰차 (과속하면)', def: true,
+      options: [[true, '켬'], [false, '끔']] },
 
     // ---- 화면 ----
     { tab: 'screen', key: 'roadView', label: '위 도로 화면',
       options: [['game', '운전 게임 (뒤에서 본 내 차)'], ['first', '앞유리 (운전석, 핸들)'], ['off', '계기판만']],
       get: function () { return Dash.windshield.getMode(); },
       set: function (v) { Dash.windshield.setMode(v); } },
+    // 기본은 늘 낮 (사용자 요청 "주행은 저녁보다 낮이 좋아"). 밤은 터널 안과 부모님이 여기서 골랐을 때만
     { tab: 'screen', key: 'lightMode', label: '낮 / 밤',
-      options: [['auto', '시계대로'], ['day', '늘 낮'], ['night', '늘 밤']],
-      get: function () { return state.lightMode; }, set: function (v) { state.lightMode = v; } }
+      options: [['day', '늘 낮 (기본)'], ['auto', '시계대로 (저녁엔 밤)'], ['night', '늘 밤']],
+      get: function () { return state.lightMode; }, set: function (v) { state.lightMode = v; } },
+    // 계절·하늘 (js/core/weather.js, css/scene.css): 저절로 바뀌는 하늘은 밝은 낮 하늘뿐, 노을은 여기서 골랐을 때만
+    { tab: 'screen', key: 'season', label: '계절 (나무·땅 색)', def: 'auto',
+      options: [['auto', '바뀌어요 (긴 터널을 지나면)'], ['spring', '🌸 봄'], ['summer', '🌳 여름'], ['autumn', '🍁 가을'], ['winter', '⛄ 겨울']] },
+    { tab: 'screen', key: 'skyLook', label: '하늘', def: 'auto',
+      options: [['auto', '밝은 낮 하늘 여러 가지'], ['clear', '늘 맑음'], ['sunset', '🌇 노을']] }
   ];
 
   var TABS = [
@@ -88,6 +96,12 @@
     state.pedalSoft = get('pedalFeel') !== 'normal';
     state.scoreOn = get('scoreOn');
     state.parkingMission = get('parkingMission');
+    var season = get('season'), sky = get('skyLook');
+    if (state.seasonMode !== season || state.skyMode !== sky) {
+      state.seasonMode = season;
+      state.skyMode = sky;
+      if (Dash.weather.applySky) Dash.weather.applySky(state);
+    }
     if (Dash.sound.setVolume) Dash.sound.setVolume(get('volume'), get('engineVol'));
     if (Dash.sound.setVoice) Dash.sound.setVoice(get('voice'));
   }

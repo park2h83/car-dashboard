@@ -56,9 +56,6 @@
   height: 900px;
   background: linear-gradient(var(--grass-far), var(--grass-near) 45%);
 }
-.pg-hills { position: absolute; left: -1200px; top: 120px; }
-.pg-hills .far { fill: var(--hill-far); }
-.pg-hills .near { fill: var(--hill-near); }
 .pg-stars { position: absolute; left: -400px; top: -360px; display: none; }
 .pg-stars circle { fill: #fff; opacity: 0.8; }
 .pg-sun {
@@ -148,7 +145,7 @@
   --road: #2f2b25;
 }
 .pg.tunnel .pg-sun, .pg.tunnel .pg-moon, .pg.tunnel .pg-cloud,
-.pg.tunnel .pg-hills, .pg.tunnel .pg-stars { display: none; }
+.pg.tunnel .pg-stars { display: none; }
 .pg.tunnel .pg-dark { display: none; }
 
 /* ---- 도로 (scene.js 가 그리는 것들) ---- */
@@ -501,5 +498,3 @@
 
 @keyframes pg-blink { 50% { opacity: 0.25; } }
 
-/* 길가 나무 (scene.js opts.scenery): 밤에는 어둡게 */
-.theme-play .pg.night .scn { opacity: 0.35; }

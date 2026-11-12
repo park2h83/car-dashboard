@@ -99,13 +99,6 @@
     return out + '</svg>';
   }
 
-  // 지평선 위 먼 산 (가만히 있는 그림)
-  function hillsSvg() {
-    return '<svg class="pg-hills" viewBox="0 0 2400 120" width="4000" height="120" preserveAspectRatio="none">' +
-      '<path class="far" d="M0 120V70Q160 20 340 60T700 40T1080 66T1460 30T1840 62T2200 36T2400 58V120Z"/>' +
-      '<path class="near" d="M0 120V96Q220 64 460 92T920 84T1380 96T1860 80T2400 94V120Z"/></svg>';
-  }
-
   function cloud(cls) {
     return '<div class="pg-cloud ' + cls + '"><i></i><i></i><i></i></div>';
   }
@@ -200,7 +193,6 @@
           '      <div class="pg-sky"></div>' + starsSvg() +
           '      <div class="pg-sun"></div><div class="pg-moon"></div>' +
           '      ' + cloud('c1') + cloud('c2') + cloud('c3') +
-          '      ' + hillsSvg() +
           '      <div class="pg-ground"></div>' +
           '      <svg class="pg-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' +
           '        <defs>' +
@@ -212,10 +204,13 @@
           '            <stop offset="0" class="pg-haze-stop" stop-opacity="0.55"/><stop offset="1" class="pg-haze-stop" stop-opacity="0"/>' +
           '          </linearGradient>' +
           '        </defs>' +
+          // 먼 배경(산·도시·강 건너·바다 …)은 scene.js 가 길 종류에 맞춰 준다
+          '        <g class="pg-backdrop"></g>' +
+          // 지평선 안개는 먼 배경만 살짝 가린다 (길·길가 건물·터널 입구는 그 위에 또렷하게)
+          '        <rect class="pg-haze" x="-800" y="' + (HORIZON - 8) + '" width="3200" height="34" fill="url(#pg-haze)"/>' +
           '        <g class="pg-road"></g>' +
           '        <rect class="pg-dark" x="-800" y="' + (HORIZON - 4) + '" width="3200" height="' + (1100 - HORIZON) + '" fill="url(#pg-night)"/>' +
           '        <g class="pg-beam"></g><g class="pg-cars"></g>' +
-          '        <rect x="-800" y="' + (HORIZON - 4) + '" width="3200" height="34" fill="url(#pg-haze)"/>' +
           '        <g class="pg-glass"></g>' +
           '      </svg>' +
           '    </div>' +
@@ -252,6 +247,7 @@
 
         var q = function (sel) { return root.querySelector(sel); };
         el.pg = q('.pg');
+        el.backdrop = q('.pg-backdrop');
         el.road = q('.pg-road');
         el.beam = q('.pg-beam');
         el.cars = q('.pg-cars');
@@ -306,6 +302,8 @@
         setCls('night', pg, 'night', s.night);
         setCls('wet', pg, 'wet', s.rainLevel > 0.2);
         if (last.mode !== s.driveMode) { last.mode = s.driveMode; pg.setAttribute('data-mode', s.driveMode); }
+        var sky = Dash.scene.skyClass(s); // 계절·하늘 (css/scene.css)
+        if (last.sky !== sky) { last.sky = sky; pg.setAttribute('data-sky', sky); }
 
         // ---- 도로 그림 (js/core/scene.js) ----
         var nowMs = performance.now();
@@ -317,6 +315,7 @@
           var t0 = performance.now();
           var view = scene.render(s, sceneDt);
           sceneDt = 0;
+          setHtml('backdrop', el.backdrop, view.backdrop);
           setHtml('road', el.road, view.road);
           setHtml('beam', el.beam, view.beam);
           setHtml('cars', el.cars, view.sprites);

@@ -6,68 +6,148 @@
   var U = Dash.util;
 
   // 구간: name, limit(km/h), km(길이), lanes(차선 수), turn(구간 끝에서: left|right|straight|arrive),
-  //       school(어린이 보호구역), camera(구간 시작부터 단속 카메라까지 km)
+  //       school(어린이 보호구역), camera(구간 시작부터 단속 카메라까지 km), tunnel(터널·지하차도)
+  //       scene(길가 풍경 종류, 안 주면 제한속도로 정한다 — sceneOf), side('L'|'R' 강·바다가 있는 쪽),
+  //       far(먼 배경에 더 보이는 것: 'ferris' 대관람차), gate(도착하는 곳에 서 있는 문의 그림: scenery.js GATE_ART)
   function seg(name, limit, km, lanes, turn, extra) {
     var o = { name: name, limit: limit, km: km, lanes: lanes, turn: turn };
     for (var k in extra) o[k] = extra[k];
+    o.scene = sceneOf(o);
     return o;
   }
+
+  // 길가 풍경 종류 (js/core/scenery.js 가 종류마다 건물·나무·강·바다를 그린다)
+  //   village 동네(집·가게) · school 어린이 보호구역 · city 시내(건물·가게) · apt 아파트 단지 · river 강변도로(한쪽이 강)
+  //   bridge 다리(양쪽이 물) · highway 고속도로(산·가드레일·안내판) · country 국도(논밭·시골집) · forest 숲길
+  //   sea 바닷가 · airport 공항 · amuse 놀이공원 · zoo 동물원 · park 공원 · lot 주차장 · tunnel 터널
+  function sceneOf(g) {
+    if (g.tunnel) return 'tunnel';
+    if (g.scene) return g.scene;
+    if (g.school) return 'school';
+    if (g.station) return 'city';
+    if (g.limit <= 20) return 'lot';
+    if (g.limit <= 40) return 'village';
+    if (g.limit <= 60) return 'city';
+    return 'highway';
+  }
+
+  // 풍경 종류마다 길이 얼마나 오르내리고(언덕) 얼마나 구불거리는지 [언덕, 굽이] 0~1
+  var SHAPE = {
+    village: [0.3, 0.3], school: [0, 0.2], city: [0.35, 0.3], apt: [0.35, 0.3], river: [0, 0.7], bridge: [0, 0],
+    highway: [0.85, 0.7], country: [1, 1], forest: [1, 1], sea: [0, 1], airport: [0, 0.2], amuse: [0.25, 0.4],
+    zoo: [0.6, 0.7], park: [0, 0.4], lot: [0, 0], tunnel: [0, 0.3]
+  };
 
   // 어린이집 이름은 처음 열 때 입력받는다 (js/config.js, js/setup.js)
   var DAYCARE = (Dash.config && Dash.config.daycare) || '어린이집';
 
-  // 목적지 없이 달릴 때 도는 길
+  // 터널·지하차도: 들어갈 때도 나올 때도 곧게 (멀리서 입구가 다가오고, 안에서는 밝은 출구가 보인다)
+  function tunnel(name, limit, km, lanes) { return seg(name, limit, km, lanes, 'straight', { tunnel: true }); }
+
+  // 목적지 없이 달릴 때 도는 길: 동네 → 시내 → 강변 → 한강 다리 → 터널 → 숲길 → 시내
   var FREE = [
     seg('우리 동네 골목', 30, 0.4, 2, 'right'),
     seg(DAYCARE + ' 앞 (어린이 보호구역)', 30, 0.5, 2, 'straight', { school: true, camera: 0.3 }),
-    seg('시내 도로', 50, 1.5, 3, 'left', { camera: 1.0 }),
-    seg('큰길', 60, 2.0, 4, 'right'),
-    seg('강변북로', 80, 5.0, 4, 'straight', { camera: 2.5 }),
-    seg('강변북로', 80, 3.0, 4, 'right'),
-    seg('남산 터널', 80, 1.5, 3, 'straight', { tunnel: true }),
-    seg('시내 도로', 50, 2.0, 3, 'right', { camera: 1.2 })
+    seg('시내 도로', 50, 0.9, 3, 'straight', { camera: 0.5 }),
+    tunnel('시내 지하차도', 50, 0.3, 3),
+    seg('시내 도로', 50, 0.5, 3, 'left'),
+    seg('큰길', 60, 1.5, 4, 'right', { scene: 'apt' }),
+    seg('강변북로', 80, 3.0, 4, 'straight', { scene: 'river', side: 'R', camera: 2.0 }),
+    seg('한강 다리', 80, 1.2, 4, 'straight', { scene: 'bridge' }),
+    tunnel('남산 터널', 80, 1.2, 4),
+    seg('숲길', 60, 1.5, 2, 'right', { scene: 'forest' }),
+    seg('시내 도로', 50, 1.2, 3, 'right', { camera: 0.8 })
   ];
 
-  // 목적지별 경로
+  // 목적지별 경로 (모든 길이 터널을 한 번은 지난다)
   var DESTINATIONS = [
     { id: 'daycare', name: DAYCARE, route: [
       seg('동네 길', 40, 0.6, 2, 'right'),
-      seg('시내 도로', 50, 1.0, 3, 'right', { camera: 0.5 }),
-      seg(DAYCARE + ' 앞 (어린이 보호구역)', 30, 0.5, 2, 'arrive', { school: true, camera: 0.25 })
+      seg('시내 도로', 50, 0.6, 3, 'straight', { camera: 0.4 }),
+      tunnel('시내 지하차도', 50, 0.3, 3),
+      seg('시내 도로', 50, 0.4, 3, 'right', { scene: 'apt' }),
+      seg(DAYCARE + ' 앞 (어린이 보호구역)', 30, 0.5, 2, 'arrive', { school: true, camera: 0.25, gate: 'school' })
     ] },
     { id: 'yeouido', name: '여의도 한강공원', route: [
       seg('시내 도로', 50, 1.2, 3, 'right'),
-      seg('큰길', 60, 2.0, 4, 'left'),
-      seg('올림픽대로', 80, 7.0, 4, 'straight', { camera: 3.0 }),
-      seg('올림픽대로', 80, 5.0, 4, 'right', { camera: 2.0 }),
-      seg('여의도 진입로', 50, 1.0, 2, 'left'),
-      seg('여의도 한강공원 주차장', 20, 0.3, 1, 'arrive')
+      seg('큰길', 60, 1.0, 4, 'straight', { scene: 'apt' }),
+      tunnel('큰길 지하차도', 60, 0.4, 4),
+      seg('큰길', 60, 0.6, 4, 'left', { scene: 'apt' }),
+      seg('강변북로', 80, 5.0, 4, 'straight', { scene: 'river', side: 'L', camera: 3.0 }),
+      seg('마포대교', 60, 1.4, 4, 'straight', { scene: 'bridge' }),
+      seg('여의도 진입로', 50, 1.0, 2, 'left', { scene: 'park', side: 'R' }),
+      seg('여의도 한강공원 주차장', 20, 0.3, 1, 'arrive', { scene: 'park', side: 'R', parked: true, gate: 'tree' })
     ] },
     { id: 'guri', name: '구리 한강공원', route: [
       seg('시내 도로', 50, 1.2, 3, 'right'),
-      seg('큰길', 60, 2.0, 4, 'left'),
-      seg('강변북로', 80, 6.0, 4, 'straight', { camera: 2.5 }),
-      seg('강변북로', 80, 4.0, 4, 'right', { camera: 1.5 }),
-      seg('구리암사대교 북단', 60, 1.0, 3, 'left'),
-      seg('구리 한강공원 주차장', 20, 0.3, 1, 'arrive')
+      seg('큰길', 60, 2.0, 4, 'left', { scene: 'apt' }),
+      seg('강변북로', 80, 4.0, 4, 'straight', { scene: 'river', side: 'R', camera: 2.5 }),
+      tunnel('아차산 터널', 80, 1.0, 4),
+      seg('강변북로', 80, 3.0, 4, 'right', { scene: 'river', side: 'R', camera: 1.5 }),
+      seg('구리암사대교 북단', 60, 1.0, 3, 'left', { scene: 'river', side: 'R' }),
+      seg('구리 한강공원 주차장', 20, 0.3, 1, 'arrive', { scene: 'park', side: 'R', parked: true, gate: 'bridge' })
     ] },
     { id: 'home', name: '우리 집', route: [
-      seg('시내 도로', 50, 1.0, 3, 'right'),
+      seg('시내 도로', 50, 0.7, 3, 'straight'),
+      tunnel('시내 지하차도', 50, 0.3, 3),
+      seg('시내 도로', 50, 0.4, 3, 'right', { scene: 'apt' }),
       seg('우리 동네 골목', 30, 0.5, 2, 'left'),
-      seg('우리 아파트 주차장', 20, 0.2, 1, 'arrive')
+      seg('우리 아파트 주차장', 20, 0.2, 1, 'arrive', { scene: 'apt', parked: true, gate: 'house' })
     ] },
     { id: 'mart', name: '마트', route: [
-      seg('시내 도로', 50, 1.5, 3, 'left'),
-      seg('큰길', 60, 2.5, 4, 'right', { camera: 1.2 }),
-      seg('마트 주차장', 20, 0.2, 1, 'arrive')
+      seg('시내 도로', 50, 1.0, 3, 'left'),
+      seg('큰길', 60, 1.2, 4, 'straight', { scene: 'apt' }),
+      tunnel('큰길 지하차도', 60, 0.4, 4),
+      seg('큰길', 60, 0.9, 4, 'right', { camera: 0.5 }),
+      seg('마트 주차장', 20, 0.2, 1, 'arrive', { scene: 'city', parked: true, gate: 'cart' })
     ] },
     { id: 'grandma', name: '할머니 댁', route: [
       seg('시내 도로', 50, 1.2, 3, 'right'),
-      seg('큰길', 60, 2.0, 4, 'right'),
-      seg('고속도로', 100, 10.0, 4, 'straight', { camera: 4.0 }),
-      seg('고속도로', 110, 8.0, 4, 'right', { camera: 3.0 }),
-      seg('국도', 70, 4.0, 3, 'left', { camera: 2.0 }),
-      seg('할머니 댁 동네', 30, 0.6, 2, 'arrive')
+      seg('큰길', 60, 2.0, 4, 'right', { scene: 'apt' }),
+      seg('고속도로', 100, 6.0, 4, 'straight', { camera: 4.0 }),
+      tunnel('고속도로 터널', 100, 1.5, 4),
+      seg('고속도로', 110, 5.0, 4, 'straight', { camera: 3.0 }),
+      tunnel('고속도로 터널', 100, 1.0, 4),
+      seg('고속도로', 110, 2.5, 4, 'right'),
+      seg('국도', 70, 4.0, 3, 'left', { scene: 'country', camera: 2.0 }),
+      seg('할머니 댁 동네', 30, 0.6, 2, 'arrive', { scene: 'country', gate: 'grandma' })
+    ] },
+    { id: 'sea', name: '바다', route: [
+      seg('시내 도로', 50, 1.0, 3, 'right'),
+      seg('큰길', 60, 1.5, 4, 'left', { scene: 'apt' }),
+      seg('고속도로', 100, 5.0, 4, 'straight', { camera: 3.0 }),
+      tunnel('대관령 터널', 100, 1.5, 4),
+      seg('고속도로', 100, 3.0, 4, 'right'),
+      seg('숲길', 60, 1.5, 2, 'straight', { scene: 'forest' }),
+      seg('바닷가 길', 60, 3.0, 2, 'left', { scene: 'sea', side: 'R' }),
+      seg('해수욕장 주차장', 20, 0.3, 1, 'arrive', { scene: 'sea', side: 'R', parked: true, gate: 'beach' })
+    ] },
+    { id: 'zoo', name: '동물원', route: [
+      seg('시내 도로', 50, 1.0, 3, 'right'),
+      seg('큰길', 60, 1.5, 4, 'straight', { scene: 'apt' }),
+      tunnel('우면산 터널', 70, 1.2, 4),
+      seg('숲길', 60, 2.0, 2, 'left', { scene: 'forest' }),
+      seg('동물원 가는 길', 40, 0.9, 2, 'straight', { scene: 'zoo' }),
+      seg('동물원 주차장', 20, 0.3, 1, 'arrive', { scene: 'zoo', parked: true, gate: 'lion' })
+    ] },
+    { id: 'amuse', name: '놀이공원', route: [
+      seg('시내 도로', 50, 1.2, 3, 'left'),
+      seg('큰길', 60, 1.5, 4, 'straight', { scene: 'apt' }),
+      seg('잠실대교', 60, 1.2, 4, 'straight', { scene: 'bridge', far: 'ferris' }),
+      tunnel('큰길 지하차도', 60, 0.4, 4),
+      seg('큰길', 60, 0.8, 4, 'right', { far: 'ferris' }),
+      seg('놀이공원 가는 길', 40, 0.9, 2, 'straight', { scene: 'amuse' }),
+      seg('놀이공원 주차장', 20, 0.3, 1, 'arrive', { scene: 'amuse', parked: true, gate: 'ferris' })
+    ] },
+    { id: 'airport', name: '공항', route: [
+      seg('시내 도로', 50, 1.0, 3, 'right'),
+      seg('큰길', 60, 1.5, 4, 'left', { scene: 'apt' }),
+      seg('공항 고속도로', 100, 4.0, 4, 'straight', { camera: 2.5 }),
+      tunnel('공항 고속도로 터널', 100, 1.0, 4),
+      seg('공항 고속도로', 100, 2.0, 4, 'straight'),
+      seg('영종대교', 100, 3.0, 4, 'straight', { scene: 'bridge', camera: 1.5 }),
+      seg('공항 도로', 60, 2.0, 3, 'right', { scene: 'airport', side: 'L' }),
+      seg('공항 주차장', 20, 0.3, 1, 'arrive', { scene: 'airport', side: 'L', parked: true, gate: 'plane' })
     ] }
   ];
 
@@ -217,6 +297,26 @@
     s.roadName = g.name;
     s.lanes = g.lanes;
     s.inTunnel = !!g.tunnel;
+    s.scene = g.scene || 'city';
+  }
+
+  // 길의 모양: 달린 거리에 따라 오르막·내리막(hill)과 완만한 굽이(sway)가 부드럽게 바뀐다 (그리기용, js/core/scene.js).
+  // 구간 처음과 끝(갈림길·터널 입구)에서는 평평하고 곧게.
+  function sstep(a, b, x) { var t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+  function updateShape(s) {
+    var r = s.road, shape = SHAPE[r.cur.scene] || SHAPE.city;
+    var x = s.roadDist;
+    var edge = Math.min(1, r.pos * 1000 / 100, Math.max(0, (r.cur.km - r.pos) * 1000 - 30) / 120);
+    var v = Math.sin(x / 173 + 1.3) * Math.sin(x / 431 + 0.4) + 0.3 * Math.sin(x / 97);
+    s.hill = (v < 0 ? -1 : 1) * sstep(0.25, 0.7, Math.abs(v)) * shape[0] * edge;
+    s.sway = Math.sin(x / 211 + 2.1) * Math.sin(x / 587 + 0.7) * shape[1] * edge;
+  }
+
+  // 지금 구간이 곧게 이어지면 그다음 구간 (멀리 터널 입구·다리가 미리 보이게). 갈림길·도착이면 null
+  function nextStraight(s) {
+    var r = s.road;
+    if (r.cur.turn !== 'straight') return null;
+    return r.queue.length ? r.queue[0] : s.nav.on ? null : FREE[(r.freeIdx + 1) % FREE.length];
   }
 
   Dash.road = {
@@ -243,7 +343,7 @@
         var done = r.cur;
         if (done.turn === 'arrive') {
           // 도착한 곳(주차장 등)에 조금 더 머물렀다가 동네 길로 나간다
-          r.cur = Object.assign({}, done, { km: 0.3, turn: 'right', school: false, station: false, camera: null });
+          r.cur = Object.assign({}, done, { km: 0.3, turn: 'right', school: false, station: false, camera: null, gate: null });
         } else if (r.queue.length) {
           r.cur = r.queue.shift();
         } else {
@@ -271,7 +371,11 @@
         }
         announceTurn(s);
       }
+      updateShape(s);
     },
+
+    sceneOf: sceneOf,
+    nextStraight: nextStraight,
 
     nextTurn: nextTurn,
 

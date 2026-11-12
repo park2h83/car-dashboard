@@ -120,6 +120,11 @@
         emit(s, 'click');
       }
     }
+    // 경찰관이 면허증을 보는 동안은 차를 세워 둔다 (js/police.js)
+    if (s.police && s.police.hold) {
+      s.throttle = 0;
+      s.brake = 1;
+    }
     // 쉬는 시간: 엑셀이 안 듣고 천천히 멈춘다
     if (s.restDue) {
       s.throttle = 0;

@@ -188,6 +188,7 @@
           '      </defs>' +
           '      <g transform="translate(0 ' + ROAD_Y + ')">' + stars() +
           '      <g mask="url(#dg-mask-' + id + ')">' +
+          '        <g class="dg-backdrop"></g>' +
           '        <g class="dg-road"></g>' +
           '        <rect class="dg-dark" x="0" y="0" width="' + W + '" height="680" fill="url(#dg-night-' + id + ')"/>' +
           '        <g class="dg-beam"></g><g class="dg-cars"></g>' +
@@ -223,6 +224,7 @@
 
         var q = function (sel) { return root.querySelector(sel); };
         el.dg = q('.dg');
+        el.backdrop = q('.dg-backdrop');
         el.road = q('.dg-road');
         el.beam = q('.dg-beam');
         el.cars = q('.dg-cars');
@@ -230,7 +232,8 @@
         el.nextSign = q('.dg-nextsign');
         el.light = q('.dg-light');
         el.flash = q('.dg-flash');
-        scene = Dash.scene.create({ egoColor: EGO_COLOR });
+        // 길가 풍경은 그리지 않고(도로만 보는 화면), 먼 배경의 윤곽과 터널 입구·출구만 (js/core/scene.js)
+        scene = Dash.scene.create({ egoColor: EGO_COLOR, scenery: 'far' });
         lastFrame = 0;
         sceneDt = 0;
         workMs = 0;
@@ -284,6 +287,7 @@
           var t0 = performance.now();
           var view = scene.render(s, sceneDt);
           sceneDt = 0;
+          setHtml('backdrop', el.backdrop, view.backdrop);
           setHtml('road', el.road, view.road);
           setHtml('beam', el.beam, view.beam);
           setHtml('cars', el.cars, view.sprites);

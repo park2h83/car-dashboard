@@ -38,6 +38,12 @@
           state[k] = Math.min(RANGES[k][1], Math.max(RANGES[k][0], v));
         }
       });
+      // 낮/밤 기본값이 '시계대로'에서 '늘 낮'으로 바뀌었다 (사용자 요청 "주행은 저녁보다 낮이 좋아").
+      // 예전에 저절로 저장된 'auto' 는 한 번만 'day' 로 옮긴다. 그 뒤에 부모님이 고른 '시계대로'·'늘 밤'은 그대로 둔다.
+      if (!localStorage.getItem('dash.lightDay')) {
+        localStorage.setItem('dash.lightDay', '1');
+        if (state.lightMode === 'auto') state.lightMode = 'day';
+      }
     } catch (e) { /* 저장된 것이 없거나 읽을 수 없으면 새 차로 시작 */ }
   })();
   function saveCar() {
@@ -139,6 +145,7 @@
   Dash.windshield.init(state);
   Dash.prefs.init(state);
   Dash.coach.init(state);
+  if (Dash.police) Dash.police.init(state);
   Dash.parkview.init(state);
   Dash.scorecard.init(state);
   if (Dash.progress) Dash.progress.init(state);
@@ -232,6 +239,7 @@
     safely(function () { Dash.rest.update(dt); });
     safely(function () { Dash.wheel.update(dt, state.parking.on || state.driveView || Dash.coach.wantsWheel()); });
     safely(function () { Dash.vehicle.step(state, input, dt); });
+    if (Dash.police) safely(function () { Dash.police.update(state, dt); }); // 과속하면 오는 경찰차 (소리·화면보다 먼저)
     safely(function () { current.update(state); });
     safely(function () { Dash.controls.sync(state); });
     safely(function () { Dash.sound.update(state); });

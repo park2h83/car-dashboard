@@ -22,13 +22,24 @@
   var BUMP_SAFE_SPEED = 35;
   var BLOCK_HALF_WIDTH = 2.3;       // 내 차 가운데에서 이만큼 안에 있으면 막힌 것
 
-  // 도로 종류별로 나올 수 있는 것
+  // 도로 종류별로 나올 수 있는 것 (종류는 road.js 구간의 scene — 길가 풍경과 같은 이름)
+  var CITY = ['light', 'light', 'light', 'crosswalk', 'bump', 'work'];
   var POOLS = {
-    alley: ['bump', 'bump', 'crosswalk', 'crosswalk'],
+    village: ['bump', 'bump', 'crosswalk', 'crosswalk'],
     school: ['crosswalk', 'bump', 'light'],
-    city: ['light', 'light', 'light', 'crosswalk', 'bump', 'work'],
-    highway: ['animal', 'animal', 'work', 'rock', 'curve', 'curve'],
-    park: ['ducks', 'ducks', 'bump'],
+    city: CITY,
+    apt: CITY,
+    river: ['work', 'curve', 'curve', 'curve'],          // 강변도로: 강을 따라 굽은 길
+    bridge: [],                                          // 다리 위에는 아무것도 없다
+    highway: ['animal', 'work', 'rock', 'curve', 'curve', 'curve'],
+    country: ['animal', 'animal', 'curve', 'curve', 'work', 'rock'],
+    forest: ['animal', 'animal', 'curve', 'curve', 'rock'],
+    sea: ['curve', 'curve', 'curve', 'crosswalk'],
+    airport: ['light', 'work'],
+    amuse: ['crosswalk', 'crosswalk', 'bump', 'light'],
+    zoo: ['crosswalk', 'bump', 'ducks'],
+    park: ['ducks', 'ducks', 'bump', 'crosswalk'],
+    lot: ['ducks', 'ducks', 'bump'],
     station: [],
     tunnel: []
   };
@@ -44,12 +55,8 @@
 
   function kindOf(seg) {
     if (seg.station) return 'station';
-    if (seg.tunnel) return 'tunnel';
-    if (seg.school) return 'school';
-    if (seg.limit <= 20) return 'park';
-    if (seg.limit <= 40) return 'alley';
-    if (seg.limit <= 60) return 'city';
-    return 'highway';
+    if (seg.limit <= 20 && !seg.school) return 'lot'; // 주차장: 풍경이 무엇이든 천천히, 오리 가족
+    return seg.scene || 'city';
   }
 
   // d m 앞이 어느 구간인지

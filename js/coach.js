@@ -360,11 +360,13 @@
   //  - 'strip' 위 도로 화면(운전 게임)이 있으면 도로 바로 아래, 계기판 위쪽에 얇은 띠
   //  - 'top'   둘 다 없으면 예전처럼 화면 위쪽
   var placed = '', placeT = 0;
-  function place() {
+  function place() { placed = placeEl(root, placed); }
+  // 다른 카드(경찰차 카드, js/police.js)도 같은 자리에 놓는다: el 을 놓고 자리 열쇠를 돌려준다 (prev 와 같으면 그대로 둔다)
+  function placeEl(el, prev) {
     var app = document.getElementById('app');
     var slot = document.querySelector('#cluster [data-coach-slot]');
     var ws = document.getElementById('windshield');
-    var mode = 'top', st = root.style, r, a = app.getBoundingClientRect(), key;
+    var mode = 'top', st = el.style, r, a = app.getBoundingClientRect(), key;
     if (slot && slot.offsetParent) {
       r = slot.getBoundingClientRect();
       if (r.width > 120 && r.height > 100) mode = 'slot';
@@ -374,10 +376,9 @@
       mode = 'strip';
     }
     key = mode + (r ? [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)].join(',') : '');
-    if (key === placed) return;
-    placed = key;
-    root.classList.toggle('in-slot', mode === 'slot');
-    root.classList.toggle('strip', mode === 'strip');
+    if (key === prev) return key;
+    el.classList.toggle('in-slot', mode === 'slot');
+    el.classList.toggle('strip', mode === 'strip');
     if (mode === 'slot') {
       st.left = (r.left - a.left) + 'px';
       st.top = (r.top - a.top) + 'px';
@@ -390,6 +391,7 @@
     } else {
       st.left = st.top = st.width = st.height = '';
     }
+    return key;
   }
 
   function close() {
@@ -426,6 +428,7 @@
 
   function blocked(s) {
     return !enabled() || s.parking.on || s.follow.on || !!s.game || s.autopilot.on || s.restDue ||
+      (s.police && s.police.on) || // 경찰차가 와 있는 동안은 그 카드만 (js/police.js)
       (Dash.rest && Dash.rest.isOpen()) || ['license', 'theme-picker', 'setup', 'scorecard', 'sheet'].some(function (id) {
         var el = document.getElementById(id); return el && !el.hidden;
       });
@@ -457,8 +460,11 @@
       U.popup(state, '운전 코치', enabled() ? '켬' : '끔');
     },
     isOpen: function () { return !!card; },
+    placeEl: placeEl,
     // 카드가 화면 맨 위에 떠 있는지 (그럴 때만 노란 알림을 카드 아래로 내린다)
-    atTop: function () { return !!card && !root.classList.contains('in-slot') && !root.classList.contains('strip'); },
+    atTop: function () {
+      return (!!card && !root.classList.contains('in-slot') && !root.classList.contains('strip')) || !!(Dash.police && Dash.police.atTop());
+    },
     // 지금 할 일을 보여 주는 카드의 상황 id (칭찬이 겹치지 않게 다른 곳에서 본다)
     currentId: function () { return card && !card.finished ? card.sit.id : null; },
     isFinished: function () { return !!(card && card.finished); },

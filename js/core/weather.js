@@ -91,6 +91,45 @@
 
   function rand(a, b) { return a + Math.random() * (b - a); }
 
+  // ---- 계절·하늘: 열 때마다 다음 계절부터, 긴 터널을 지나 나오면 다음 계절 (어두운 터널 안에서 바뀌어 티가 안 난다).
+  //      하늘은 늘 밝은 낮 하늘 중에서만 고른다 (사용자 요청 "주행은 낮이 좋아"). 노을은 부모님 설정에서 골랐을 때만.
+  var SEASONS = ['spring', 'summer', 'autumn', 'winter'];
+  var SEASON_KEY = 'dash.season';
+  var LONG_TUNNEL_KM = 0.8;       // 이보다 긴 터널(산 터널)을 지나면 계절이 바뀐다. 짧은 지하차도는 하늘만
+  var prevTunnel = false;
+  var skyInited = false;
+
+  function pickSky(s) {
+    if (s.skyMode === 'clear' || s.skyMode === 'sunset') return s.skyMode;
+    var pool = s.season === 'winter' ? ['clear', 'fair', 'snow', 'snow'] : ['clear', 'clear', 'fair', 'cloudy'];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function initSky(s) {
+    skyInited = true;
+    var i = Math.floor(Math.random() * 4);
+    try {
+      var v = parseInt(localStorage.getItem(SEASON_KEY), 10);
+      if (v >= 0 && v < 4) i = (v + 1) % 4;
+      localStorage.setItem(SEASON_KEY, String(i));
+    } catch (e) { /* 저장 못 하는 환경은 아무 계절이나 */ }
+    s.season = SEASONS.indexOf(s.seasonMode) >= 0 ? s.seasonMode : SEASONS[i];
+    s.sky = s.skyMode === 'sunset' ? 'sunset' : 'clear'; // 처음엔 맑게
+  }
+
+  function updateSky(s) {
+    if (!skyInited) initSky(s);
+    if (s.inTunnel && !prevTunnel && s.engineOn) {
+      var i = SEASONS.indexOf(s.season);
+      if (s.seasonMode === 'auto' && s.road && s.road.cur.km >= LONG_TUNNEL_KM) {
+        s.season = SEASONS[(i + 1) % 4];
+        try { localStorage.setItem(SEASON_KEY, String((i + 1) % 4)); } catch (e) { /* 무시 */ }
+      }
+      s.sky = pickSky(s);
+    }
+    prevTunnel = s.inTunnel;
+  }
+
   function set(s, weather) {
     s.weather = weather;
     U.popup(s, '날씨', NAMES[weather]);
@@ -150,7 +189,16 @@
       return s.rainLevel < 0.4 ? (s.easy ? 'low' : 'int') : s.rainLevel < 0.75 ? 'low' : 'high';
     },
 
+    // 부모님 설정에서 계절·하늘을 바꿨을 때 바로 반영 (js/prefs.js)
+    SEASONS: SEASONS,
+    applySky: function (s) {
+      if (!skyInited) return;
+      if (SEASONS.indexOf(s.seasonMode) >= 0) s.season = s.seasonMode;
+      s.sky = pickSky(s);
+    },
+
     update: function (s, dt) {
+      updateSky(s);
       updateLight(s, dt);
       updateWiperAsk(s, dt);
       s.rainLevel = U.moveToward(s.rainLevel, LEVELS[s.weather], RAMP_PER_SEC * dt);

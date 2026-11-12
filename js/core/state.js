@@ -75,15 +75,24 @@
       nextSign: null,     // 다가오는 표지판 { type, name, dist } 또는 null
       nextLight: null,    // 다가오는 신호등 { phase: 'green'|'yellow'|'red', dist } 또는 null
       curve: 0,           // 길이 휜 정도 (그리기용, −1 왼쪽 ~ 1 오른쪽)
+      scene: 'village',   // 지금 구간의 길가 풍경 종류 (road.js sceneOf, 그리기는 js/core/scenery.js)
+      hill: 0,            // 앞길의 오르막(+)·내리막(−) −1~1 (그리기용, road.js updateShape)
+      sway: 0,            // 완만한 굽이 −1~1 (그리기용, 표지판 없는 부드러운 굽은 길)
       shake: 0,           // 과속방지턱 등으로 화면이 흔들리는 남은 시간 (초)
 
       // ---- 설정 ----
       eventRate: 'few',   // 길 위 이벤트가 나오는 빈도: 'few' 가끔 | 'normal' 보통 | 'many' 자주
-      lightMode: 'auto',  // 'day' 낮 | 'night' 밤 | 'auto' 실제 시계 (저녁 7시 ~ 아침 6시는 밤)
+      lightMode: 'day',   // 'day' 낮(기본, 사용자 요청 "주행은 낮이 좋아") | 'night' 밤 | 'auto' 실제 시계 (저녁 7시 ~ 아침 6시는 밤)
+      seasonMode: 'auto', // 계절: 'auto' 긴 터널을 지나면 다음 계절 | 'spring' | 'summer' | 'autumn' | 'winter' (부모님 설정)
+      skyMode: 'auto',    // 하늘: 'auto' 밝은 낮 하늘 여러 가지 | 'clear' 늘 맑음 | 'sunset' 노을 (부모님 설정)
 
       // ---- 낮·밤 (weather.js) ----
       night: false,
       lightsOn: false,    // 전조등이 실제로 켜져 있는지 (AUTO 는 어둡거나 터널·폭우일 때 켜진다)
+
+      // ---- 계절·하늘 (weather.js, 그리기는 scenery.js·css/scene.css) ----
+      season: 'summer',   // 'spring' 벚꽃 | 'summer' | 'autumn' 단풍 | 'winter' 눈 쌓인 길
+      sky: 'clear',       // 'clear' 맑음 | 'fair' 구름 조금 | 'cloudy' 밝은 흐림 | 'snow' 눈 (겨울만) | 'sunset' 노을 (부모님이 골랐을 때만)
 
       // ---- 날씨 (weather.js) ----
       weather: 'clear',   // 'clear' 맑음 | 'rain' 비 | 'storm' 폭우

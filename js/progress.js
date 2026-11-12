@@ -20,7 +20,8 @@
   ];
 
   // 목적지 그림 (js/easy.js 내비 카드와 같은 그림)
-  var DEST_EMOJI = { daycare: '🏫', yeouido: '🌳', guri: '🌉', home: '🏠', mart: '🛒', grandma: '👵', station: '⛽' };
+  var DEST_EMOJI = { daycare: '🏫', yeouido: '🌳', guri: '🌉', home: '🏠', mart: '🛒', grandma: '👵',
+    sea: '🏖️', zoo: '🦁', amuse: '🎡', airport: '✈️', station: '⛽' };
 
   var state = null;
   var data = null; // { stars: 숫자, stamps: { 목적지 id: 간 횟수 } }

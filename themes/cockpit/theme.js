@@ -189,13 +189,12 @@
       '<circle cx="' + sx + '" cy="' + sy + '" r="30" fill="#ffe066"/></g>' +
       '<g class="ck-moon"><circle cx="' + sx + '" cy="' + (sy - 4) + '" r="28" fill="#fff3c4"/><circle cx="' + (sx - 11) + '" cy="' + (sy - 12) + '" r="25" class="ck-moon-cut"/></g>' +
       cloud(p.x + 250, p.y + 64, 0.66, 'c1') + cloud(p.x + 560, p.y + 104, 0.52, 'c2') +
-      ridge('ck-hill-far', [[0, 36], [0.24, 50], [0.42, 30], [0.6, 46], [0.8, 26], [1, 40]]) +
-      ridge('ck-hill-near', [[0, 12], [0.3, 22], [0.55, 12], [0.78, 18], [1, 12]]) +
       '<rect class="ck-groundrect" x="' + x0 + '" y="' + (hz - 2) + '" width="' + w + '" height="' + (p.y + p.h - hz + 12) + '" fill="url(#ck-grass)"/>' +
+      '<g class="ck-backdrop"></g>' +
+      '<rect x="' + x0 + '" y="' + (hz - 8) + '" width="' + w + '" height="36" fill="url(#ck-haze)"/>' +
       '<g class="ck-road"></g>' +
       '<rect class="ck-dark" x="' + x0 + '" y="' + (hz - 4) + '" width="' + w + '" height="' + (p.y + p.h - hz + 14) + '" fill="url(#ck-night)"/>' +
       '<g class="ck-beam"></g><g class="ck-cars"></g>' +
-      '<rect x="' + x0 + '" y="' + (hz - 4) + '" width="' + w + '" height="36" fill="url(#ck-haze)"/>' +
       '</g>' +
       '<g class="ck-glass"></g>' +
       '<rect class="ck-flash" x="' + x0 + '" y="' + p.y + '" width="' + w + '" height="' + p.h + '"/>' +
@@ -854,6 +853,7 @@
         var q = function (sel) { return root.querySelector(sel); };
         svg = q('.ck-svg');
         el.ck = q('.ck');
+        el.backdrop = q('.ck-backdrop');
         el.road = q('.ck-road');
         el.beam = q('.ck-beam');
         el.cars = q('.ck-cars');
@@ -954,6 +954,7 @@
         setCls('tunnel', ck, 'tunnel', s.inTunnel);
         setCls('night', ck, 'night', s.night);
         setCls('wet', ck, 'wet', s.rainLevel > 0.2);
+        setAttr('sky', ck, 'data-sky', Dash.scene.skyClass(s));
         setCls('hz', ck, 'hazard', s.hazard);
         setAttr('mode', ck, 'data-mode', s.driveMode);
 
@@ -968,6 +969,7 @@
           var t0 = performance.now();
           var view = scene.render(s, sceneDt);
           sceneDt = 0;
+          setHtml('backdrop', el.backdrop, view.backdrop);
           setHtml('road', el.road, view.road);
           setHtml('beam', el.beam, view.beam);
           setHtml('cars', el.cars, view.sprites);

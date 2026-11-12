@@ -374,6 +374,32 @@
     // 주차 센서: "삐—" (켰다 껐다 하는 빠르기로 거리를 알려 준다)
     loops.sensor = gainNode(0);
     osc('sine', 1320, loops.sensor);
+
+    // 사이렌 (경찰차·구급차·소방차): 둥근 소리로 "삐—뽀—". 엔진음처럼 부드럽게 — 세모파 + 사인파를 낮게 걸러서 작게
+    loops.siren = gainNode(0);
+    var sirenFilter = filterNode('lowpass', 1500, 0.7, loops.siren);
+    loops.sirenOscs = [osc('triangle', 660, gainNode(0.6, sirenFilter)), osc('sine', 660, gainNode(0.5, sirenFilter))];
+  }
+
+  // 사이렌: state.cars 에서 siren 이 켜진 차 중 가장 가까운 것 → { type, level 0~1 } 또는 null.
+  // 매 프레임 상태를 보고 정하므로, 그 차가 사라지거나 siren 을 끄면 소리도 바로 멈춘다.
+  var SIREN_VOL = 0.07;
+  var SIRENS = {
+    police: function (t) { return (t % 0.9) < 0.45 ? 880 : 660; },                 // 삐뽀삐뽀 (빠르게)
+    ambulance: function (t) { return (t % 1.3) < 0.65 ? 740 : 555; },              // 삐— 뽀— (천천히)
+    fire: function (t) { return 640 + 190 * Math.sin(t * Math.PI * 2 / 2.6); }     // 위이잉 (오르내림)
+  };
+  function sirenOf(s) {
+    if (!s.cars || s.parking.on || s.follow.on) return null;
+    if (Dash.controls && Dash.controls.overlayOpen && Dash.controls.overlayOpen()) return null; // 덮개 창 아래에서는 조용히
+    var best = null;
+    for (var i = 0; i < s.cars.length; i++) {
+      var c = s.cars[i];
+      if (!c.siren || !SIRENS[c.siren]) continue;
+      var level = Math.max(0, Math.min(1, 1 - (Math.abs(c.gap) - 15) / 95)) * (c.sirenVol == null ? 1 : c.sirenVol); // 110m 밖은 안 들린다
+      if (level > 0 && (!best || level > best.level)) best = { type: c.siren, level: level };
+    }
+    return best;
   }
 
   // 주차 센서: 가까울수록 빨리, 아주 가까우면 계속 (null 이면 조용)
@@ -415,6 +441,22 @@
     src.connect(fl);
     src.start(t);
     src.stop(t + duration + 0.05);
+  }
+
+  // 음이 미끄러지며 올라가는(내려가는) 짧은 소리
+  function chirp(from, to, duration, volume, delay) {
+    var t = now() + (delay || 0);
+    var g = gainNode(0);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(volume, t + 0.03);
+    g.gain.linearRampToValueAtTime(0, t + duration);
+    var o = ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(from, t);
+    o.frequency.exponentialRampToValueAtTime(to, t + duration * 0.8);
+    o.connect(g);
+    o.start(t);
+    o.stop(t + duration + 0.05);
   }
 
   // 시동 모터가 "드르륵" 도는 소리
@@ -511,6 +553,8 @@
     'arrive': function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, 0.4, 0.2, 'triangle', i * 0.13); }); },
     'speak': function (e) { speak(e.text, e.queue); },
     'coach': function () { [659, 784, 1046].forEach(function (f, i) { tone(f, 0.25, 0.16, 'triangle', i * 0.09); }); },
+    // 경찰차가 인사할 때 짧게 "위웅 위웅" (js/police.js)
+    'whoop': function () { [0, 0.28].forEach(function (d) { chirp(520, 940, 0.22, 0.1, d); }); },
     // 주행 모드 바꿀 때: 스포츠는 부릉부릉 힘차게, 에코는 부드럽게
     'mode': function (e) {
       if (e.mode === 'sport') {
@@ -608,6 +652,15 @@
     loops.rain.gain.setTargetAtTime(s.rainLevel * (s.inTunnel ? 0.02 : 0.14), t, 0.4);
     loops.sensor.gain.setTargetAtTime(sensorGain(s, t), t, 0.005);
 
+    // 사이렌 (말로 안내하는 동안은 작게 줄여서 말이 들리게)
+    var siren = sirenOf(s);
+    if (siren) {
+      var sf = SIRENS[siren.type](t);
+      loops.sirenOscs.forEach(function (o) { o.frequency.setTargetAtTime(sf, t, 0.025); });
+      if (window.speechSynthesis && window.speechSynthesis.speaking) siren.level *= 0.4;
+    }
+    loops.siren.gain.setTargetAtTime(siren ? SIREN_VOL * siren.level : 0, t, 0.12);
+
     // 공조 바람
     var c = s.climate;
     var fanOn = c.on && s.engineOn;
@@ -697,7 +750,8 @@
     },
     _debug: function () {
       return { swaps: swaps, engine: engine && engine.profile, horn: loops.horn && loops.horn.profile,
-        engineNodes: engine ? engine.nodes.length : 0, preview: !!preview };
+        engineNodes: engine ? engine.nodes.length : 0, preview: !!preview,
+        siren: Dash.state ? sirenOf(Dash.state) : null, sirenGain: loops.siren ? loops.siren.gain.value : null };
     },
 
     update: function (s) {

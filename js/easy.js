@@ -9,7 +9,8 @@
 
   var state, hooks, sheet, honk, lastTitle = '';
 
-  var DEST_EMOJI = { daycare: '🏫', yeouido: '🌳', guri: '🌉', home: '🏠', mart: '🛒', grandma: '👵', station: '⛽' };
+  var DEST_EMOJI = { daycare: '🏫', yeouido: '🌳', guri: '🌉', home: '🏠', mart: '🛒', grandma: '👵',
+    sea: '🏖️', zoo: '🦁', amuse: '🎡', airport: '✈️', station: '⛽' };
 
   // 큰 카드들이 있는 창 (목적지 고르기·더보기 공용)
   function openSheet(title, items) {

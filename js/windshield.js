@@ -41,7 +41,6 @@
   function build() {
     var FP = Dash.scene.FP;
     var hz = mode === 'game' ? GAME_CAMERA.horizon : FP.H0; // 지평선: 하늘·언덕·땅을 여기에 맞춘다
-    var hd = hz - FP.H0;
     // 운전 게임 보기는 아래(내 차)를 기준으로 자르고, 앞유리 보기는 가운데 기준
     root.innerHTML =
       '<svg class="ws-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="' + (mode === 'game' ? 'xMidYMax' : 'xMidYMid') + ' slice">' +
@@ -51,14 +50,18 @@
       '      <stop offset="0.3" stop-color="#02040a" stop-opacity="0.8"/><stop offset="1" stop-color="#02040a" stop-opacity="0.35"/>' +
       '    </linearGradient>' +
       '    <linearGradient id="ws-haze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="haze-stop"/><stop offset="1" class="haze-stop" stop-opacity="0"/></linearGradient>' +
+      '    <linearGradient id="ws-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="grass-far"/><stop offset="0.45" class="grass-near"/></linearGradient>' +
       '  </defs>' +
-      '  <rect width="' + W + '" height="' + hz + '" fill="url(#ws-sky)"/>' + stars() +
-      '  <path class="ws-hills" transform="translate(0 ' + hd + ')" d="M0 ' + FP.H0 + ' L0 118 Q200 80 380 112 T760 104 T1120 96 T1600 110 L1600 ' + FP.H0 + 'Z"/>' +
-      '  <rect class="ws-ground" y="' + hz + '" width="' + W + '" height="' + (H - hz) + '"/>' +
+      '  <rect width="' + W + '" height="' + (hz + 2) + '" fill="url(#ws-sky)"/>' + stars() +
+      // 해 (구름 많은 날·밤·터널에는 숨는다), 땅, 먼 배경(산·도시·바다 …: scene.js backdrop), 도로
+      '  <g class="ws-sun"><circle cx="1180" cy="' + (hz - 96) + '" r="40" fill="rgba(255,224,102,0.3)"/><circle cx="1180" cy="' + (hz - 96) + '" r="26" fill="#ffe066"/></g>' +
+      '  <rect class="ws-ground" y="' + hz + '" width="' + W + '" height="' + (H - hz) + '" fill="url(#ws-grass)"/>' +
+      '  <g class="ws-backdrop"></g>' +
+      // 지평선 안개는 먼 배경만 살짝 가린다 (길·길가 건물·터널 입구는 그 위에 또렷하게)
+      '  <rect class="ws-haze" y="' + (hz - 8) + '" width="' + W + '" height="34" fill="url(#ws-haze)"/>' +
       '  <g class="ws-road"></g>' +
       '  <rect class="ws-dark" width="' + W + '" height="' + H + '" fill="url(#ws-night)"/>' +
       '  <g class="ws-beam"></g><g class="ws-cars"></g>' +
-      '  <rect y="' + (hz - 6) + '" width="' + W + '" height="40" fill="url(#ws-haze)"/>' +
       // 내 차 흰 보닛, 앞유리 기둥, 지붕, 룸미러
       '  <path class="ws-hood" d="M-20 ' + H + ' L-20 382 Q240 356 800 354 Q1360 356 1620 382 L1620 ' + H + 'Z"/>' +
       '  <path class="ws-hood-line" d="M600 ' + H + ' Q650 366 800 362 Q950 366 1000 ' + H + '"/>' +
@@ -72,6 +75,7 @@
       '<div class="ws-wheel" aria-label="핸들"></div>';
     el = {
       svg: root.querySelector('.ws-svg'),
+      backdrop: root.querySelector('.ws-backdrop'),
       road: root.querySelector('.ws-road'),
       beam: root.querySelector('.ws-beam'),
       cars: root.querySelector('.ws-cars'),
@@ -81,6 +85,7 @@
       hud: root.querySelector('.ws-hud')
     };
     Dash.wheel.bind(root.querySelector('.ws-wheel'));
+    if (!root.classList.contains('ws')) root.classList.add('ws');
     last = {};
   }
 
@@ -155,6 +160,7 @@
         var t0 = performance.now();
         var view = scene.render(s, sceneDt);
         sceneDt = 0;
+        setHtml('backdrop', el.backdrop, view.backdrop);
         setHtml('road', el.road, view.road);
         setHtml('beam', el.beam, s.lightsOn ? view.beam : '');
         setHtml('cars', el.cars, view.sprites);
@@ -166,6 +172,8 @@
       var cls = 'ws' + (mode === 'game' ? ' game' : '') + (s.night ? ' night' : '') + (s.inTunnel ? ' tunnel' : '') + (s.rainLevel > 0.2 ? ' wet' : '') +
         (!s.engineOn ? ' off' : '') + (s.overspeed ? ' over' : '');
       if (last.cls !== cls) { last.cls = cls; root.className = cls; }
+      var sky = Dash.scene.skyClass(s); // 계절·하늘 (css/scene.css)
+      if (last.sky !== sky) { last.sky = sky; root.setAttribute('data-sky', sky); }
       setText('speed', el.speed, String(Math.round(s.speed)));
       setText('limit', el.limit, String(s.speedLimit));
     }

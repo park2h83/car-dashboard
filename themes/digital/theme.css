@@ -475,3 +475,15 @@
 /* 내용이 적은 쪽은 카드 가운데로 (넘치면 위에서부터) */
 .dg-card > :first-child { margin-top: auto; }
 .dg-card > :last-child { margin-bottom: auto; }
+
+/* 먼 배경(산·도시·다리 윤곽)과 터널 입구·출구: 이 화면에서는 한 가지 색의 희미한 윤곽으로만 (js/core/scenery.js) */
+.dg .sc-bd * { fill: var(--mark); stroke: none; opacity: 0.1; }
+.dg .sc-bd .bd-mid, .dg .sc-bd .bd-snowcap, .dg .sc-bd .bd-cloud, .dg .sc-bd .bd-ship, .dg .sc-bd .bd-plane { display: none; }
+.dg .sc-bd .bd-bridge, .dg .sc-bd .bd-ferris * { fill: none; stroke: var(--mark); opacity: 0.2; }
+.dg.night .sc-bd .bd-city, .dg.night .sc-bd .bd-city2 { fill: var(--mark); }
+.dg .tn-hill, .dg .tn-bank { fill: #16202a; }
+.dg .tn-face { fill: #3b4652; }
+.dg .tn-out { fill: #a9cbe6; }
+.dg .tn-outland { fill: #26323d; }
+.dg.light .tn-hill, .dg.light .tn-bank { fill: #c9d2db; }
+.dg.light .tn-face { fill: #8f99a5; }

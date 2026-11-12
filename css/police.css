@@ -1,0 +1,77 @@
+/* 과속하면 오는 경찰차 (js/police.js): 그림 카드 + 화면 가장자리 경광등 빛.
+   카드 자리는 코치 카드와 같다 (js/coach.js placeEl): 테마가 내준 칸(.in-slot) → 도로 바로 아래 띠(.strip) → 화면 위쪽 */
+#police-card {
+  position: absolute;
+  left: 50%;
+  top: max(8px, env(safe-area-inset-top));
+  z-index: 22;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 20px;
+  border-radius: 22px;
+  background: #fffaf0;
+  color: #1d2430;
+  border: 5px solid #2f6fe0;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  pointer-events: none; /* 아래 계기판·버튼을 가리지 않게 */
+  animation: police-in 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+#police-card[hidden] { display: none; }
+#police-card.urgent { animation: police-in 0.35s cubic-bezier(0.3, 1.5, 0.5, 1), police-border 1.04s linear infinite; }
+#police-card.done { border-color: #22c55e; }
+@keyframes police-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes police-border { 0%, 100% { border-color: #e2332b; } 50% { border-color: #2f6fe0; } }
+
+.pc-row { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.pc-car { width: 124px; height: 95px; flex: 0 0 auto; }
+.pc-sign { width: 88px; height: 88px; flex: 0 0 auto; }
+.pc-emoji { font-size: 60px; line-height: 1.1; }
+.pc-text { font-size: 20px; font-weight: 800; white-space: nowrap; }
+/* 브레이크 페달 그림 (아래 조작부의 브레이크와 같은 모양: 넓적한 페달 + 빨간 띠) */
+.pc-pedal {
+  flex: 0 0 auto;
+  width: 84px;
+  height: 66px;
+  border-radius: 12px;
+  border: 3px solid #ff5a4f;
+  background: repeating-linear-gradient(0deg, transparent 0 8px, rgba(0, 0, 0, 0.35) 8px 11px), linear-gradient(#5a636e, #2a3038);
+  box-shadow: inset 0 -9px 0 rgba(255, 90, 79, 0.85);
+  animation: police-press 0.9s ease-in-out infinite;
+}
+@keyframes police-press { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(4px) scale(0.96); } }
+
+/* 쉬운 모드: 글씨 대신 그림 (말로 읽어 준다) */
+#police-card.few-words .pc-text { display: none; }
+
+/* 카드 속 경찰차 (도로 위의 경찰차와 같은 그림, js/core/carshapes.js) */
+#police-card .shadow { fill: rgba(0, 0, 0, 0.22); }
+#police-card .car-wheel { fill: #111; }
+#police-card .car-glass { fill: #1d2732; }
+#police-card .car-bodyfill, #police-card .car-cabin { stroke: rgba(0, 0, 0, 0.4); stroke-width: 0.035; }
+#police-card .car-bumper { fill: rgba(0, 0, 0, 0.25); }
+#police-card .car-tail { fill: #c21d1d; }
+#police-card .car-blink { fill: #c98a1a; }
+#police-card .car-plate { fill: #e9edf2; }
+
+/* 테마가 내준 칸을 그대로 덮는다 */
+#police-card.in-slot {
+  transform: none;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  overflow: hidden;
+}
+#police-card.in-slot .pc-row { gap: 10px; flex-wrap: wrap; }
+/* 위 도로 화면 바로 아래 얇은 띠 */
+#police-card.strip { transform: translateX(-50%) scale(0.78); transform-origin: 50% 0; }
+
+/* 화면 가장자리에 빨강·파랑 빛이 번갈아 (은은하게, 1초에 한 번씩 — 눈이 아프지 않게 투명도만 바꾼다) */
+#police-flash { position: absolute; inset: 0; z-index: 18; pointer-events: none; }
+#police-flash[hidden] { display: none; }
+#police-flash::before, #police-flash::after { content: ''; position: absolute; inset: 0; }
+#police-flash::before { box-shadow: inset 0 0 70px 8px rgba(255, 50, 40, 0.6); animation: police-flash 1.04s ease-in-out infinite; }
+#police-flash::after { box-shadow: inset 0 0 70px 8px rgba(50, 120, 255, 0.65); animation: police-flash 1.04s ease-in-out -0.52s infinite; }
+@keyframes police-flash { 0%, 100% { opacity: 0.9; } 50% { opacity: 0; } }

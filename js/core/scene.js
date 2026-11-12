@@ -3,8 +3,12 @@
 // 1600x680 좌표 기준으로 그린다. 테마가 create() 로 하나 만들어 매 프레임 render() 한다.
 //
 //   var scene = Dash.scene.create({ egoColor: '#f5f7fa' });
-//   var out = scene.render(state, dt);  // { road, beam, sprites, glass } 각각 <g> 안에 넣는다
+//   var out = scene.render(state, dt);  // { road, beam, sprites, glass, backdrop } 각각 <g> 안에 넣는다
 //   (밤에는 road 위에 어둠을 덮고 그 위에 beam(전조등 불빛)을 그린다)
+//   opts.scenery 를 주면 길 종류마다 다른 풍경을 그린다 (js/core/scenery.js): 길가의 집·건물·나무, 강·바다·모래밭 같은 땅 띠,
+//   가드레일·방음벽·다리 난간, 다리 주탑, 터널 입구·출구, 도착 문. backdrop 은 먼 배경(산·스카이라인·섬 …)으로
+//   땅 그림 다음, road 앞에 넣는다 (종류가 바뀔 때만 달라지는 문자열). 하늘·계절 색은 뿌리에 data-sky = Dash.scene.skyClass(s).
+//   언덕: state.hill(오르막 +, 내리막 −)만큼 앞길이 위아래로 휜다 (rise). 굽은 길 bend 처럼 투영에서 처리해서 차·물건이 다 따라간다.
 //   Dash.scene.create({ firstPerson: true }) 는 운전석에서 본 앞유리 화면 (1600x560, 내 차는 그리지 않는다)
 (function (Dash) {
   'use strict';
@@ -22,17 +26,11 @@
   var DASH_LEN = 6;        // 차선 점선 길이·간격
   var DASH_GAP = 10;
   var POST_EVERY = 30;     // 갓길 반사봉 간격
-  var TREE_EVERY = 16;     // 길가 나무 간격 (opts.scenery)
-  // 길가 나무 모양 (단위 m, 원점 = 땅에 닿는 가운데)
-  var SCENERY = [
-    '<g class="scn"><rect x="-0.18" y="-1.6" width="0.36" height="1.6" fill="#7a5532"/><circle cy="-2.6" r="1.4" fill="#3f9b47"/>' +
-      '<circle cx="-0.7" cy="-2.1" r="0.9" fill="#4fae55"/><circle cx="0.7" cy="-2.2" r="1" fill="#36893f"/></g>',
-    '<g class="scn"><rect x="-0.15" y="-0.8" width="0.3" height="0.8" fill="#6d4a2c"/><path d="M0 -4.2L-1.3 -0.8H1.3Z" fill="#2f7d45"/>' +
-      '<path d="M0 -4.7L-1 -2.2H1Z" fill="#3a9152"/></g>',
-    '<g class="scn"><ellipse cy="-0.55" rx="1.1" ry="0.65" fill="#4a9e4f"/><ellipse cx="0.5" cy="-0.75" rx="0.6" ry="0.45" fill="#5cb35e"/></g>',
-    '<g class="scn"><rect x="-0.16" y="-1.3" width="0.32" height="1.3" fill="#7a5532"/><circle cy="-2.2" r="1.15" fill="#f2a7c3"/>' +
-      '<circle cx="-0.5" cy="-1.9" r="0.7" fill="#f7c2d6"/></g>'
-  ];
+  var SCENERY_FAR = 210;   // 길가 풍경을 여기까지 그린다 (opts.scenery)
+  var BEND_MAX = 330;      // 이보다 먼 곳은 더 휘지 않는다 (강·바다 띠가 지평선까지 가도 엉뚱하게 돌지 않게)
+  var HILL_LEN = 45;       // 언덕: 내 차 앞 이만큼에 걸쳐 기울기가 바뀌고 그 뒤로는 같은 기울기
+  var HILL_MAX = 0.1;      // 가장 가파른 기울기 (10%)
+  var WALL_CUTS = [26, 80]; // 담은 가까운 것·중간·먼 것 세 토막으로 나눠 그린다 (뒤의 건물을 가리는 순서)
   var TUNNEL_LIGHT_EVERY = 12;
   var STREETLIGHT_EVERY = 40; // 시내 길 가로등 간격
   var SIGN_BEFORE = { light: 80, crosswalk: 0 }; // 표지판이 물건보다 얼마나 앞에 서 있는지 (기본 50m)
@@ -45,9 +43,9 @@
 
   var SHIRTS = ['#e74c3c', '#3a6ea5', '#2fbf71', '#ffb020', '#9b59b6', '#ff7ab6'];
 
-  function zSamples(near) {
+  function zSamples(near, ratio) {
     var out = [];
-    for (var z = near; z < Z_FAR; z *= 1.15) out.push(z);
+    for (var z = near; z < Z_FAR; z *= (ratio || 1.15)) out.push(z);
     out.push(Z_FAR);
     return out;
   }
@@ -180,18 +178,33 @@
     if (opts.glass) GLASS = opts.glass;
     if (opts.wipers) WIPERS = opts.wipers;
     var Z_SAMPLES = zSamples(Z_NEAR);
+    var Z_COARSE = zSamples(Z_NEAR, 1.34); // 땅 띠·담처럼 넓은 것은 듬성듬성
+    var TUN_H = Math.max(6.5, CAM_H + 2.5); // 터널 천장 높이 (카메라보다 높게)
+    // 내리막은 길이 언덕 너머로 숨지 않을 만큼만 (카메라가 낮을수록 완만하게)
+    var HILL_DOWN = Math.min(HILL_MAX, 0.9 * CAM_H / (HILL_LEN / 2 + Z_EGO));
+    var BD_K = F / F0 * (opts.backdropScale || 1);
+    // opts.scenery: true = 길가 풍경 모두, 'far' = 먼 배경과 터널 입구·출구만 (디지털 테마처럼 도로만 그리는 화면)
+    var FULL = opts.scenery === true, ANY = !!opts.scenery;
     var camX = 0;
     var curve = 0;
+    var hillK = 0;       // 이번 프레임 앞길의 기울기 (+ 오르막)
     var time = 0;
+    var bdKey = null, bdSvg = '';
     var drops = [];
     var dropDebt = 0;
     var prevAngle = 0;
 
     // 길이 휘어 보이게: 내 차 위치에서 0, 멀수록 옆으로
-    function bend(z) { var d = z - Z_EGO; return curve * d * d; }
+    function bend(z) { var d = Math.min(z - Z_EGO, BEND_MAX); return curve * d * d; }
+    // 언덕: 내 차 위치에서 0, 앞으로 HILL_LEN 까지 기울기가 바뀌고 그 뒤로는 곧은 비탈 (m)
+    function rise(z) {
+      if (!hillK) return 0;
+      var d = z - Z_EGO;
+      return d < HILL_LEN ? hillK * d * d / (2 * HILL_LEN) : hillK * (d - HILL_LEN / 2);
+    }
 
     function proj(x, z, h) {
-      return [CX + F * (x - camX + bend(z)) / z, H0 + F * (CAM_H - (h || 0)) / z];
+      return [CX + F * (x - camX + bend(z)) / z, H0 + F * (CAM_H - (h || 0) - rise(z)) / z];
     }
 
     function pathOf(points) {
@@ -207,9 +220,9 @@
       return pathOf(left.concat(right));
     }
 
-    // x 위치에 세운 벽 (높이 0~h)
-    function wall(x, zs, h) {
-      var bottom = zs.map(function (z) { return proj(x, z, 0); });
+    // x 위치에 세운 벽 (높이 h0~h, h0 를 주면 땅에서 떠 있는 가로대)
+    function wall(x, zs, h, h0) {
+      var bottom = zs.map(function (z) { return proj(x, z, h0 || 0); });
       var top = zs.map(function (z) { return proj(x, z, h); }).reverse();
       return pathOf(bottom.concat(top));
     }
@@ -234,10 +247,10 @@
     }
 
     // 물건을 (x, z) 땅 위에 m 단위 모양 그대로 세운다
-    function place(x, z, inner, flip) {
-      var p = proj(x, z, 0);
+    function place(x, z, inner, flip, cls, h, grow) {
+      var p = proj(x, z, h || 0);
       var k = F / z;
-      return '<g transform="translate(' + f1(p[0]) + ' ' + f1(p[1]) + ') scale(' + f1(flip ? -k : k) + ' ' + f1(k) + ')">' + inner + '</g>';
+      return '<g' + (cls ? ' class="' + cls + '"' : '') + ' transform="translate(' + f1(p[0]) + ' ' + f1(p[1]) + ') scale(' + f1(flip ? -k : k) + ' ' + f1h(grow != null ? k * grow : k) + ')">' + inner + '</g>';
     }
 
     function zOf(s, d) { return FRONT + d; }
@@ -293,6 +306,282 @@
       return '<path d="' + groundPath(pts) + '" fill="rgba(255,176,0,' + (on ? 0.92 : 0.4) + ')"/>';
     }
 
+    // ---------- 길가 풍경 (opts.scenery, 모양과 표는 js/core/scenery.js) ----------
+    var SC = Dash.scenery;
+    // 이번 프레임에 보이는 구간들: cur 지금 구간, nxt 곧게 이어지는 다음 구간(없으면 null),
+    // zEnd 지금 구간 끝까지(m, 카메라 기준), zB 풍경이 바뀌는 곳(nxt 가 없으면 아주 멀리), parts [[구간, z0, z1]]
+    var view = { cur: null, nxt: null, zEnd: 1e9, zB: 1e9, width: 0, jside: -1, jz: -1e9, parts: [], portal: false, night: false, cls: 'scn' };
+
+    function prepare(s) {
+      var r = s.road, cur = r ? r.cur : null;
+      var v = view;
+      v.cur = cur;
+      v.width = s.lanes * LANE_W;
+      v.zEnd = cur ? (cur.km - r.pos) * 1000 : 1e9;
+      v.nxt = cur && Dash.road.nextStraight ? Dash.road.nextStraight(s) : null;
+      v.zB = v.nxt ? v.zEnd : 1e9;
+      v.jside = cur && cur.turn === 'left' ? 0 : cur && cur.turn === 'right' ? 1 : -1;
+      v.jz = cur ? FRONT + v.zEnd : -1e9;
+      // 밤에는 길가 것들을 어두운 색으로 그린다 (scenery.js nightOf, 클래스도 scd 로 — 테마의 '.night .scn 흐리게' 규칙을 피한다)
+      v.night = !!s.night && !s.inTunnel;
+      v.cls = v.night ? 'scd' : 'scn';
+      v.portal = !!(ANY && v.nxt && v.nxt.tunnel && !s.inTunnel && v.zB < 420);
+      v.parts = [];
+      if (!FULL || !cur || !SC || cur.tunnel) return;
+      if (v.zB > Z_NEAR + 0.5) v.parts.push([cur, Z_NEAR, v.zB]);
+      if (v.nxt && !v.nxt.tunnel && v.zB < Z_FAR) v.parts.push([v.nxt, Math.max(Z_NEAR, v.zB), 1e9]);
+    }
+
+    function coarse(z0, z1) {
+      var out = [z0];
+      for (var i = 0; i < Z_COARSE.length; i++) if (Z_COARSE[i] > z0 + 0.5 && Z_COARSE[i] < z1 - 0.5) out.push(Z_COARSE[i]);
+      out.push(z1);
+      return out;
+    }
+
+    // 땅 띠: 인도·강물·모래밭·활주로 … (같은 색끼리 도형 하나로 모은다)
+    function bandsSvg() {
+      var w = view.width, ds = {}, order = [];
+      view.parts.forEach(function (pt) {
+        for (var side = 0; side < 2; side++) {
+          var bands = SC.sideOf(pt[0], side).bands;
+          if (!bands) continue;
+          for (var i = 0; i < bands.length; i++) {
+            var b = bands[i];
+            var z1 = Math.min(pt[2], b[1] >= 300 ? 2000 : Z_FAR);
+            if (z1 <= pt[1] + 0.5) continue;
+            var d = strip(side ? w + 0.6 + b[0] : -0.6 - b[1], side ? w + 0.6 + b[1] : -0.6 - b[0], coarse(pt[1], z1));
+            if (ds[b[2]] == null) { ds[b[2]] = ''; order.push(b[2]); }
+            ds[b[2]] += d;
+          }
+        }
+      });
+      return order.map(function (c) { return '<path class="' + c + '" d="' + ds[c] + '"/>'; }).join('');
+    }
+
+    // 이어진 담: 가드레일·방음벽·다리 난간·울타리. 뒤의 건물은 가리고 길 위의 차는 안 가리게 세 토막으로 나눠 순서에 끼운다
+    function addWalls(list) {
+      var w = view.width;
+      view.parts.forEach(function (pt) {
+        for (var side = 0; side < 2; side++) {
+          var walls = SC.sideOf(pt[0], side).walls;
+          if (!walls) continue;
+          var z0 = pt[1], z1 = Math.min(pt[2], Z_FAR);
+          var ranges = [[z0, z1]];
+          // 갈림길 옆길 자리는 비운다
+          if (side === view.jside && view.jz < z1 && view.jz + SIDE_W > z0) ranges = [[z0, view.jz - 1], [view.jz + SIDE_W + 1, z1]];
+          for (var i = 0; i < walls.length; i++) {
+            var x = side ? w + 0.6 + walls[i][0] : -0.6 - walls[i][0];
+            for (var j = 0; j < ranges.length; j++) {
+              var a = ranges[j][0], end = ranges[j][1];
+              for (var c = 0; c <= WALL_CUTS.length && a < end - 0.5; c++) {
+                var b = c < WALL_CUTS.length ? Math.min(end, WALL_CUTS[c]) : end;
+                if (b <= a + 0.5) continue;
+                list.push({ z: a, svg: '<path class="' + view.cls + ' ' + walls[i][2] + '" d="' + wall(x, coarse(a, b), walls[i][1], walls[i][3]) + '"/>' });
+                a = b;
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 길 옆에 줄지어 선 것들. 같은 자리(달린 거리 기준 격자)에는 늘 같은 것이 선다
+    function addRow(list, row, ri, side, z0, z1, dist) {
+      var e = row.e, w = view.width;
+      var far = Math.min(z1, row.z || SCENERY_FAR);
+      var keep = row.o > 6 ? 8 : 4; // 갈림길 옆길 자리에는 세우지 않는다
+      for (var tz = Math.ceil((dist + Math.max(z0, Z_NEAR)) / e) * e - dist; tz < far; tz += e) {
+        var h = Math.imul(Math.round((dist + tz) / e) * 2 + side + ri * 7919 + 7, 2654435761) >>> 0;
+        if (row.skip && h % row.skip === 0) continue;
+        if (side === view.jside && tz > view.jz - keep && tz < view.jz + SIDE_W + keep) continue;
+        var off = row.o + (row.j ? (h >>> 4) % 97 / 97 * row.j : 0);
+        // 멀리서 불쑥 나타나지 않게 끝 30m 에서는 땅에서 쑥 자라난다 (흐리게 하는 것보다 그리기가 싸다)
+        var art = row.it[(h >>> 11) % row.it.length];
+        list.push({ z: tz + 0.02, svg: place(side ? w + 0.6 + off : -0.6 - off, tz, view.night ? SC.nightOf(art) : art, false, view.cls, 0,
+          tz > far - 30 ? (far - tz) / 30 : 1) });
+      }
+    }
+
+    function eachGrid(every, phase, z0, z1, dist, fn) {
+      for (var tz = Math.ceil((dist + z0 - phase) / every) * every + phase - dist; tz < z1; tz += every) fn(tz, Math.round((dist + tz - phase) / every));
+    }
+    function pt2(p) { return f1(p[0]) + ' ' + f1(p[1]); }
+
+    // 다리 주탑과 케이블
+    function towerSvg(z, w) {
+      var k = F / z, d = '', c = '';
+      [-2.4, w + 2.4].forEach(function (x) {
+        d += 'M' + pt2(proj(x, z, 0)) + 'L' + pt2(proj(x, z, 46));
+        for (var n = 1; n <= 3; n++) {
+          var top = pt2(proj(x, z, 30 + n * 5));
+          [-1, 1].forEach(function (dir) {
+            var zz = z + dir * n * 24;
+            if (zz > 1.5) c += 'M' + top + 'L' + pt2(proj(x, zz, 1.1));
+          });
+        }
+      });
+      d += 'M' + pt2(proj(-2.4, z, 44)) + 'L' + pt2(proj(w + 2.4, z, 44)) + 'M' + pt2(proj(-2.4, z, 31)) + 'L' + pt2(proj(w + 2.4, z, 31));
+      return '<path class="' + view.cls + ' br-cable" d="' + c + '" stroke-width="' + f1(Math.max(0.7, 0.16 * k)) + '"/>' +
+        '<path class="' + view.cls + ' br-tower" d="' + d + '" stroke-width="' + f1(Math.max(2, 1.5 * k)) + '"/>';
+    }
+
+    // 강변도로 위를 가로지르는 한강 다리 (그 밑으로 지나간다)
+    function overbridgeSvg(z, w, water) {
+      var k = F / z;
+      var yTop = proj(0, z, 10.6)[1], yBot = proj(0, z, 8.8)[1];
+      var piers = '';
+      (water ? [-5.5, w + 7, w + 70, w + 140, w + 210] : [w + 5.5, -7, -70, -140, -210]).forEach(function (x) {
+        var g = proj(x, z, 0);
+        piers += 'M' + f1(g[0] - 0.9 * k) + ' ' + f1(g[1]) + 'V' + f1(yBot) + 'h' + f1(1.8 * k) + 'V' + f1(g[1]) + 'Z';
+      });
+      return '<path class="' + view.cls + ' ob-pier" d="' + piers + '"/>' +
+        '<rect class="' + view.cls + ' ob-deck" x="' + (CX - 2400) + '" y="' + f1(yTop) + '" width="4800" height="' + f1(yBot - yTop) + '"/>' +
+        '<rect class="' + view.cls + ' ob-rail" x="' + (CX - 2400) + '" y="' + f1(yTop - 0.9 * k) + '" width="4800" height="' + f1(Math.max(1, 0.25 * k)) + '"/>';
+    }
+
+    // 고속도로 위 초록 안내판: 화살표와 큰 숫자
+    var GANTRY_NUMS = [[1, 50], [15, 100], [35, 60]];
+    function gantrySvg(z, w, n) {
+      var k = F / z;
+      var frame = 'M' + pt2(proj(-4.2, z, 0)) + 'L' + pt2(proj(-4.2, z, 7.6)) + 'L' + pt2(proj(w + 4.2, z, 7.6)) + 'L' + pt2(proj(w + 4.2, z, 0));
+      var nums = GANTRY_NUMS[Math.abs(n) % GANTRY_NUMS.length];
+      var boards = '', arrows = '', texts = '';
+      [0.26, 0.74].forEach(function (u, i) {
+        var c = proj(w * u, z, 8.6);
+        boards += 'M' + f1(c[0] - 2.9 * k) + ' ' + f1(c[1] - 1.5 * k) + 'h' + f1(5.8 * k) + 'v' + f1(3 * k) + 'h' + f1(-5.8 * k) + 'Z';
+        var ax = c[0] - 1.6 * k;
+        arrows += 'M' + f1(ax) + ' ' + f1(c[1] + 0.95 * k) + 'V' + f1(c[1] - 0.8 * k) + 'M' + f1(ax - 0.65 * k) + ' ' + f1(c[1] - 0.15 * k) +
+          'L' + f1(ax) + ' ' + f1(c[1] - 0.9 * k) + 'L' + f1(ax + 0.65 * k) + ' ' + f1(c[1] - 0.15 * k);
+        texts += SC.digitsD(nums[i], (c[0] + 0.9 * k), c[1], 1.6 * k);
+      });
+      return '<g class="' + view.cls + '"><path class="gn-frame" d="' + frame + '" stroke-width="' + f1(Math.max(1.5, 0.35 * k)) + '"/><path class="gn-board" d="' + boards + '" stroke-width="' + f1(Math.max(0.6, 0.14 * k)) + '"/>' +
+        '<path class="gn-arrow" d="' + arrows + texts + '" stroke-width="' + f1(Math.max(0.8, 0.3 * k)) + '"/></g>';
+    }
+
+    // 대관람차: 천천히 돈다
+    function ferrisSvg(z, w, side) {
+      return place(side ? w + 34 : -34, z,
+        '<path d="M0 -22L-9 0M0 -22L9 0" stroke="#9aa4b2" stroke-width="0.8" fill="none"/>' +
+        '<g transform="translate(0 -22) rotate(' + f1(time * 12 % 360) + ')"><circle r="19" fill="none" stroke="#ff5a8a" stroke-width="0.8"/>' +
+        '<path d="M-19 0H19M0 -19V19M-13.4 -13.4L13.4 13.4M-13.4 13.4L13.4 -13.4" stroke="#fff" stroke-width="0.3"/>' +
+        '<circle class="fw-cab" r="19"/></g>', false, 'scn'); // 밤에도 불 켜진 듯 밝게
+    }
+
+    // 종류마다 하나씩 있는 큰 것들: 다리 주탑, 가로지르는 다리, 안내판, 대관람차, 날아오르는 비행기
+    function addFeatures(list, s) {
+      var dist = s.roadDist, w = view.width;
+      view.parts.forEach(function (pt) {
+        var seg = pt[0], kind = seg.scene;
+        var z0 = Math.max(pt[1], Z_NEAR + 0.5), z1 = Math.min(pt[2], 300);
+        var water = seg.side === 'L' ? 0 : 1;
+        if (kind === 'bridge') {
+          eachGrid(170, 70, z0, z1, dist, function (z) { list.push({ z: z, svg: towerSvg(z, w) }); });
+        } else if (kind === 'river') {
+          eachGrid(760, 330, z0, z1, dist, function (z) { list.push({ z: z, svg: overbridgeSvg(z, w, water) }); });
+        } else if (kind === 'highway') {
+          eachGrid(680, 240, z0, z1, dist, function (z, n) { list.push({ z: z, svg: gantrySvg(z, w, n) }); });
+        } else if (kind === 'amuse') {
+          eachGrid(240, 100, z0, Math.min(pt[2], 260), dist, function (z, n) { list.push({ z: z, svg: ferrisSvg(z, w, n % 2 ? 0 : 1) }); });
+        } else if (kind === 'airport') {
+          // 활주로를 달려 날아오르는 비행기: 옆에서 나타나 앞으로 멀어지며 떠오른다
+          var pz = 50 + time % 15 / 15 * 560;
+          if (pz > z0 && pz < pt[2]) {
+            list.push({ z: pz, svg: place(water ? w + 0.6 + 56 : -56.6, pz, view.night ? SC.nightOf(SC.PLANE_REAR) : SC.PLANE_REAR, false, view.cls, Math.max(0, pz - 230) * 0.24) });
+          }
+        }
+      });
+    }
+
+    // 도착하는 곳의 문: 목적지 그림이 붙어 있어 '저기까지 가면 도착'을 안다
+    function addGate(list) {
+      var cur = view.cur;
+      if (!cur || !cur.gate || cur.turn !== 'arrive') return;
+      var z = FRONT + view.zEnd, w = view.width;
+      if (z < Z_NEAR + 1 || z > 280) return;
+      var k = F / z, c = proj(w / 2, z, 5.9);
+      list.push({ z: z, svg: '<path class="gt-frame" d="M' + pt2(proj(-1.7, z, 0)) + 'L' + pt2(proj(-1.7, z, 5.8)) + 'L' + pt2(proj(w + 1.7, z, 5.8)) + 'L' + pt2(proj(w + 1.7, z, 0)) +
+        '" stroke-width="' + f1(Math.max(2, 0.7 * k)) + '"/>' +
+        '<g transform="translate(' + f1(c[0]) + ' ' + f1(c[1]) + ') scale(' + f1h(k) + ')"><rect class="gt-board" x="-2.4" y="-4.4" width="4.8" height="4.6" rx="0.7"/>' +
+        (SC.GATE_ART[cur.gate] || '') + '</g>' });
+    }
+
+    // z 에 선 둥근 문 모양 (터널 입구·출구)
+    function archD(z, x0, x1, h, rad) {
+      var a = proj(x0, z, 0), b = proj(x1, z, 0), k = F / z;
+      var top = a[1] - h * k, r = rad * k;
+      return 'M' + f1(a[0]) + ' ' + f1(a[1]) + 'V' + f1(top + r) + 'Q' + f1(a[0]) + ' ' + f1(top) + ' ' + f1(a[0] + r) + ' ' + f1(top) +
+        'H' + f1(b[0] - r) + 'Q' + f1(b[0]) + ' ' + f1(top) + ' ' + f1(b[0]) + ' ' + f1(top + r) + 'V' + f1(b[1]) + 'Z';
+    }
+
+    // 터널 입구: 멀리서부터 산(둔덕)에 뚫린 어두운 구멍이 다가온다. 그 뒤의 길은 가린다
+    function portalSvg() {
+      // 코앞(카메라가 막 들어가는 순간)에는 화면 가득 어두운 굴
+      if (view.zB < 1.5) return '<rect class="tn-bore" x="' + (CX - 2400) + '" y="' + (H0 - 1400) + '" width="4800" height="2800"/>';
+      var z = view.zB, w = view.width, k = F / z;
+      var c = proj(w / 2, z, 0);
+      var lights = '', hill;
+      for (var i = 0; i < 4; i++) lights += strip(w / 2 - 0.8, w / 2 + 0.8, [z + 7 + i * 12, z + 9.5 + i * 12], TUN_H - 0.3);
+      if (view.nxt.km >= 0.8) {
+        // 산 터널: 높은 산
+        hill = '<path class="tn-hill" d="M' + f1(c[0] - 120 * k) + ' ' + f1(c[1]) + 'C' + f1(c[0] - 72 * k) + ' ' + f1(c[1] - 30 * k) + ' ' + f1(c[0] + 72 * k) + ' ' + f1(c[1] - 30 * k) +
+          ' ' + f1(c[0] + 120 * k) + ' ' + f1(c[1]) + 'Z"/>';
+      } else {
+        // 지하차도: 위로 다른 길이 지나가는 낮은 둑
+        var top = c[1] - (TUN_H + 3) * k;
+        hill = '<path class="tn-bank" d="M' + f1(c[0] - 90 * k) + ' ' + f1(c[1]) + 'L' + f1(c[0] - 64 * k) + ' ' + f1(top) + 'H' + f1(c[0] + 64 * k) + 'L' + f1(c[0] + 90 * k) + ' ' + f1(c[1]) + 'Z"/>' +
+          '<rect class="tn-face" x="' + f1(c[0] - 66 * k) + '" y="' + f1(top - 0.9 * k) + '" width="' + f1(132 * k) + '" height="' + f1(1.1 * k) + '"/>';
+      }
+      return hill +
+        '<path class="tn-face" d="' + archD(z, -3.2, w + 3.2, TUN_H + 2.2, 3.8) + '"/>' +
+        '<path class="tn-bore" d="' + archD(z, -1.2, w + 1.2, TUN_H, 2.6) + '"/>' +
+        '<path class="tn-inroad" d="' + strip(-0.6, w + 0.6, [z, z + 80]) + '"/><path class="rd-tunnel-light" d="' + lights + '"/>';
+    }
+
+    // 터널 출구: 안에서 보면 앞에 밝은 구멍 (하늘과 땅)
+    function exitSvg() {
+      var z = view.zB, w = view.width;
+      if (z > Z_FAR) return '';
+      // 코앞(카메라가 막 나가는 순간)에는 화면 가득 밝은 바깥
+      if (z < 1.5) {
+        return '<rect class="tn-out" x="' + (CX - 2400) + '" y="' + (H0 - 1400) + '" width="4800" height="1400"/>' +
+          '<rect class="tn-outland" x="' + (CX - 2400) + '" y="' + H0 + '" width="4800" height="1400"/>';
+      }
+      var a = proj(-1.2, z, 0), b = proj(w + 1.2, z, 0);
+      return '<path class="tn-out" d="' + archD(z, -1.2, w + 1.2, TUN_H, 2.6) + '"/>' +
+        (a[1] > H0 ? '<path class="tn-outland" d="M' + f1(a[0]) + ' ' + f1(a[1]) + 'H' + f1(b[0]) + 'V' + H0 + 'H' + f1(a[0]) + 'Z"/>' : '');
+    }
+
+    // 먼 배경: 풍경 종류·하늘이 바뀔 때만 달라지는 문자열 (테마는 값이 같으면 DOM 을 건드리지 않는다)
+    function backdropSvg(s) {
+      var g = view.cur;
+      if (!ANY || !g || !SC || s.inTunnel) return '';
+      var sky = !FULL || s.night || s.rainLevel > 0.2 ? '' : s.sky;
+      var key = g.scene + '|' + (g.side || '') + '|' + (g.far || '') + '|' + sky;
+      if (key !== bdKey) {
+        bdKey = key;
+        var inner = SC.backdrop(g.scene, g.side, g.far, sky);
+        bdSvg = inner ? '<g class="sc-bd" transform="translate(' + CX + ' ' + H0 + ') scale(' + f1h(BD_K) + ')">' + inner + '</g>' : '';
+      }
+      return bdSvg;
+    }
+
+    // 눈·꽃잎·낙엽: 천천히 떨어진다 (점 여러 개를 도형 하나로)
+    var FLAKES = { snow: [44, 5.5], petal: [12, 6], leaf: [10, 7] };
+    function flakesSvg(s) {
+      if (!FULL || s.inTunnel || s.night || s.rainLevel > 0.2) return '';
+      var kind = s.season === 'winter' ? (s.sky === 'snow' ? 'snow' : '') : s.season === 'spring' ? 'petal' : s.season === 'autumn' ? 'leaf' : '';
+      if (!kind) return '';
+      var n = FLAKES[kind][0], x0 = GLASS.x0, gw = GLASS.x1 - GLASS.x0, y0 = Math.min(GLASS.y0, H0 - 150), gh = GLASS.y1 - y0, d = '';
+      for (var i = 0; i < n; i++) {
+        var fall = 38 + i % 5 * 14;
+        var y = y0 + (i * 89.7 + time * fall) % gh;
+        var x = x0 + (i * 197.3 + Math.sin(time * 0.9 + i) * 26 + time * (kind === 'snow' ? 8 : 22) + gw * 4) % gw;
+        d += 'M' + f1(x) + ' ' + f1(y) + 'h0';
+      }
+      return '<path class="sc-flake ' + kind + '" d="' + d + '" stroke-width="' + f1(FLAKES[kind][1] * BD_K) + '"/>';
+    }
+
     // ---- 바닥: 도로, 차선, 횡단보도, 방지턱, 터널 벽 ----
     function roadSvg(s) {
       var width = s.lanes * LANE_W;
@@ -300,8 +589,19 @@
       var out = '';
       var school = s.road && s.road.cur.school;
 
+      // 가까운 것이 먼 것을 가리게: 터널 입구가 있으면 그 뒤로는 그리지 않는다
+      var zLimit = view.portal ? view.zB : 1e9;
       if (s.inTunnel) {
-        out += '<path class="rd-tunnel-wall" d="' + wall(-1.2, Z_SAMPLES, 6) + wall(width + 1.2, Z_SAMPLES, 6) + '"/>';
+        var tEnd = ANY ? Math.min(view.zB, Z_FAR) : Z_FAR;
+        var tzs = samples(Z_NEAR, Math.max(Z_NEAR + 0.2, tEnd));
+        tzs.unshift(Math.max(0.8, Z_NEAR * 0.4)); // 화면 옆 끝까지 벽이 닿게
+        out += '<path class="rd-tunnel-wall" d="' + wall(-1.2, tzs, TUN_H) + wall(width + 1.2, tzs, TUN_H) + '"/>';
+        if (ANY && view.nxt) out += exitSvg();
+        zLimit = tEnd;
+      } else if (FULL) {
+        // 오르막: 지평선 위로 솟은 땅 (먼 배경을 가린다)
+        if (hillK > 0) out += '<rect class="rd-land" x="' + (CX - 2400) + '" y="' + f1(H0 - F * hillK - 1) + '" width="4800" height="' + f1(F * hillK + 3) + '"/>';
+        out += bandsSvg();
       }
       out += '<path class="rd-surface' + (school ? ' school' : '') + '" d="' + strip(-0.6, width + 0.6, Z_SAMPLES) + '"/>';
       out += '<path class="rd-center" d="' + strip(-0.32, -0.18, Z_SAMPLES) + strip(-0.12, 0.02, Z_SAMPLES) + '"/>';
@@ -334,6 +634,7 @@
       out += '<path class="rd-closed" d="' + closed + '"/>';
       out += '<path class="rd-zebra" d="' + zebra + stop + '"/>';
       out += '<path class="rd-bump-y" d="' + bumpY + '"/><path class="rd-bump-w" d="' + bumpW + '"/>';
+      if (view.portal) out += portalSvg();
 
       // 자율주행 중: 내 차선 양옆을 파랗게, 앞으로 갈 길을 파란 띠로
       if (s.autopilot.on) {
@@ -353,10 +654,10 @@
       // 갓길 반사봉 / 터널 천장 조명
       var posts = '';
       var every = s.inTunnel ? TUNNEL_LIGHT_EVERY : POST_EVERY;
-      for (var z = Z_NEAR - dist % every; z < 200; z += every) {
+      for (var z = Z_NEAR - dist % every; z < Math.min(200, zLimit - 2); z += every) {
         if (z < Z_NEAR) continue;
         if (s.inTunnel) {
-          posts += strip(width / 2 - 0.8, width / 2 + 0.8, [z, z + 2.5], 5.8);
+          posts += strip(width / 2 - 0.8, width / 2 + 0.8, [z, z + 2.5], TUN_H - 0.2);
         } else {
           var w2 = Math.max(0.6, F * 0.06 / z);
           var b0 = proj(width + 1.2, z, 0);
@@ -369,7 +670,7 @@
       // 시내 길 가로등 (밤에는 불빛이 바닥을 비춘다)
       if (!s.inTunnel && s.speedLimit <= 60) {
         var poles = '', heads = '', pools = '';
-        for (var lz = Z_NEAR - dist % STREETLIGHT_EVERY + 20; lz < 220; lz += STREETLIGHT_EVERY) {
+        for (var lz = Z_NEAR - dist % STREETLIGHT_EVERY + 20; lz < Math.min(220, zLimit - 2); lz += STREETLIGHT_EVERY) {
           if (lz < Z_NEAR + 1) continue;
           var px = width + 1.6;
           var p0 = proj(px, lz, 0), p1 = proj(px, lz, 7), p2 = proj(px - 2.2, lz, 7);
@@ -419,7 +720,12 @@
         var cls = '';
         if (c.id === leadId) cls = s.fcw || s.aeb ? 'danger' : s.autopilot.on ? 'lead' : '';
         if (Math.abs(c.lane - s.lane) === 1 && c.gap > -14 && c.gap < 6) cls = 'beside';
-        list.push({ z: z, svg: place((c.lane + 0.5) * LANE_W, z, carSvg(c.color, { cls: cls, brake: c.speed < c.cruise - 3 })) });
+        var braking = c.speed < c.cruise - 3;
+        // 차 모양: js/core/carshapes.js 가 있으면 버스·트럭·경찰차 … 를 그려 준다 (없으면 기본 승용차)
+        var inner = Dash.carShapes && Dash.carShapes.svg
+          ? Dash.carShapes.svg(c, { cls: cls, brake: braking, blink: s.blinkOn, time: time })
+          : carSvg(c.color, { cls: cls, brake: braking });
+        list.push({ z: z, svg: place((c.lane + 0.5) * LANE_W, z, inner) });
       });
 
       s.objects.forEach(function (o) {
@@ -499,23 +805,22 @@
           extra: exhaustSvg()
         })) + '</g>' });
 
-      // 길가 나무: 달리면 휙휙 지나간다 (opts.scenery, 운전 게임·앞유리 화면). 같은 나무는 같은 모양으로
-      if (opts.scenery && !s.inTunnel) {
+      // 길가 풍경: 달리면 휙휙 지나간다 (opts.scenery, 운전 게임·앞유리·계기판+도로). 길 종류마다 다르다
+      if (view.parts.length) {
         var dist = s.roadDist;
-        // 갈림길 옆길 자리에는 나무를 심지 않는다
-        var jr = s.road && s.road.cur, jside = jr && jr.turn === 'left' ? 0 : jr && jr.turn === 'right' ? 1 : -1;
-        var jz = jr ? FRONT + (jr.km - s.road.pos) * 1000 : -1e9;
-        for (var tz = Z_NEAR - dist % TREE_EVERY; tz < 230; tz += TREE_EVERY) {
-          if (tz < Z_NEAR) continue;
-          var k = Math.round((dist + tz) / TREE_EVERY);
-          [0, 1].forEach(function (side) {
-            var h = (Math.imul(k * 2 + side + 7, 2654435761) >>> 0);
-            if (h % 5 === 0) return; // 군데군데 비워 둔다
-            if (side === jside && tz > jz - 4 && tz < jz + SIDE_W + 4) return;
-            var x = side ? width + 2.6 + (h >> 4) % 3 : -2.6 - (h >> 6) % 3;
-            list.push({ z: tz + 0.02, svg: place(x, tz, SCENERY[(h >> 9) % SCENERY.length]) });
-          });
-        }
+        view.parts.forEach(function (pt) {
+          var seg = pt[0];
+          for (var side = 0; side < 2; side++) {
+            var rows = SC.sideOf(seg, side).rows || [];
+            // 주차장 구간: 큰 것(첫 줄)만 두고 길 양옆에 주차된 차들
+            for (var ri = 0; ri < (seg.parked ? Math.min(1, rows.length) : rows.length); ri++) addRow(list, rows[ri], ri, side, pt[1], pt[2], dist);
+            if (seg.parked) addRow(list, SC.PARKED_ROW, 8, side, pt[1], pt[2], dist);
+            if (side && seg.scene === 'highway') addRow(list, SC.REST_ROW, 9, side, pt[1], pt[2], dist);
+          }
+        });
+        addWalls(list);
+        addFeatures(list, s);
+        addGate(list);
       }
 
       list.sort(function (a, b) { return b.z - a.z; });
@@ -577,7 +882,7 @@
             '<line class="wiper-blade" x1="' + f1(bx) + '" y1="' + f1(by) + '" x2="' + f1(tx) + '" y2="' + f1(ty) + '"/>';
         }).join('');
       }
-      return out;
+      return out + flakesSvg(s);
     }
 
     // 배기 연기: 엑셀을 밟으면 뽀글뽀글 (내 차 뒤에서 카메라 쪽으로 커지며 흐려진다)
@@ -616,11 +921,19 @@
         // 카메라는 내 차를 따라가되 도로 가운데 쪽으로 조금 당겨서 모든 차선이 보이게 한다
         // 운전석 시점: 내 차선 가운데에서 운전석(왼쪽) 쪽으로 조금
         camX = fp ? (s.laneX + 0.5) * LANE_W - 0.35 : (s.laneX + 0.5) * LANE_W * FOLLOW + s.lanes * LANE_W / 2 * (1 - FOLLOW);
-        curve = 0.00022 * Math.sin(s.odometer * 0.9) + s.curve * 0.0012 + turnSwing(s) * (fp ? 0.004 : 0.005);
-        return { road: roadSvg(s), beam: beamSvg(s), sprites: spritesSvg(s), glass: glassSvg(s, dt) };
+        curve = (s.sway || 0) * 0.00055 + s.curve * 0.0012 + turnSwing(s) * (fp ? 0.004 : 0.005);
+        var hill = s.inTunnel ? 0 : s.hill || 0;
+        hillK = hill > 0 ? hill * HILL_MAX : hill * HILL_DOWN;
+        prepare(s);
+        return { road: roadSvg(s), beam: beamSvg(s), sprites: spritesSvg(s), glass: glassSvg(s, dt), backdrop: backdropSvg(s) };
       }
     };
   }
 
-  Dash.scene = { create: create, GLASS: GLASS0, FP: FP };
+  Dash.scene = {
+    create: create, GLASS: GLASS0, FP: FP,
+    carSvg: carSvg, // 기본 승용차 모양 (js/core/carshapes.js 가 다시 쓴다)
+    // 테마 뿌리의 data-sky 에 넣을 낱말들: 계절·하늘 (css/scene.css 가 색을 바꾼다)
+    skyClass: function (s) { return Dash.scenery ? Dash.scenery.skyClass(s) : ''; }
+  };
 })(window.Dash = window.Dash || {});
