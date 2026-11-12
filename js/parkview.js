@@ -266,11 +266,11 @@
     set('txtRc', el.txtR, 'class', 'pv-num rear lv' + lit(dR));
 
     var goal = done ? '🎉 주차 성공!'
-      : p.mode === 'mission' ? (p.phase === 'inSlot' ? (s.easy ? '👍 딱 맞아요! 그대로 멈춰요' : '👍 딱 맞아요! P 를 눌러요') : '🅿️ 초록 칸에 세워 봐요')
+      : p.mode === 'mission' || p.mode === 'free' ? (p.phase === 'inSlot' ? (s.easy ? '👍 딱 맞아요! 그대로 멈춰요' : '👍 딱 맞아요! P 를 눌러요') : '🅿️ 초록 칸에 세워 봐요')
       : p.mode === 'ai' ? '🤖 AI 가 주차하는 중'
       : '🔊 삐삐 소리가 빨라지면 멈춰요';
     set('goal', el.goal, 'text', goal);
-    set('done', el.done, 'text', done ? (p.mode === 'mission' && p.stars ? '⭐'.repeat(p.stars) : '🎉') : '');
+    set('done', el.done, 'text', done ? (p.stars ? '⭐'.repeat(p.stars) : '🎉') : '');
     set('donec', el.done, 'class', 'pv-done' + (done ? ' show' : ''));
   }
 
@@ -279,9 +279,10 @@
   function steerHtml(mode) {
     return '<div class="st-wheel"></div>' +
       '<div class="st-side">' +
-      '  <div class="st-hint">' + (mode === 'free' ? 'R: 뒤로 가요<br>핸들을 돌려 봐요' : mode === 'ai' ? '🤖 AI 가<br>핸들을 돌려요' : '핸들을 돌리고<br>엑셀을 살살') + '</div>' +
-      (mode === 'mission' ? '  <button type="button" class="st-btn ai" data-st="ai">🤖 AI 주차</button>' +
-        '  <button type="button" class="st-btn" data-st="quit">여기 세우기</button>' : '') +
+      '  <div class="st-hint">' + (mode === 'free' ? '🔙 R 뒤로 · D 앞으로<br>핸들을 돌려 봐요' : mode === 'ai' ? '🤖 AI 가<br>핸들을 돌려요' : '핸들을 돌리고<br>엑셀을 살살') + '</div>' +
+      (mode === 'mission' || mode === 'free' ? '  <button type="button" class="st-btn ai" data-st="ai">🤖 AI 주차</button>' +
+        '  <button type="button" class="st-btn" data-st="quit">🅿️ 여기 세우기</button>' : '') +
+      (mode === 'free' ? '  <button type="button" class="st-btn go" data-st="leave">🛣️ 다시 출발</button>' : '') +
       '</div>';
   }
 
@@ -314,7 +315,9 @@
         var b = e.target.closest('[data-st]');
         if (!b) return;
         e.preventDefault();
-        if (b.getAttribute('data-st') === 'ai') Dash.parking.aiHelp(state);
+        var act = b.getAttribute('data-st');
+        if (act === 'ai') Dash.parking.aiHelp(state);
+        else if (act === 'leave') Dash.parking.leave(state);
         else Dash.parking.quit(state);
       });
       // 화면 크기·방향이 바뀌면 다시 잰다

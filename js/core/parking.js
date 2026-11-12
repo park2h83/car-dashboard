@@ -2,7 +2,9 @@
 //  - 'mission': 목적지 주차장에 도착하면 시작. 무작위로 고른 초록 칸에 세우고 P 를 누르면 성공 (별 1~3개)
 //               (쉬운 모드는 칸 안에 1초 멈추면 성공)
 //  - 'ai'     : 자율주행으로 도착했거나 'AI 주차'를 누르면 AI 가 정해진 길로 주차한다
-//  - 'free'   : 아무 때나 R 을 넣으면 뒤를 볼 수 있다 (뒤 벽과 주차 센서만, 미션 없음)
+//  - 'free'   : 길에서 R 을 넣으면 '후진 주차' 놀이 (사용자 요청): 차 뒤쪽에 초록 칸이 있고, 뒤로 넣으면 성공.
+//               D 로 앞으로 가며 다시 맞춰도 주차 화면은 그대로 (전에는 D 를 넣으면 화면이 닫혔다).
+//               끝내기: 성공, 🛣️ 다시 출발(길로 돌아가 D), 🅿️ 여기 세우기, 🤖 AI 주차(뒤로 넣는 걸 보여 준다)
 // 장애물은 적게: 벽(센서가 느끼는 것)과 목표 칸 옆 차 한 대뿐. 주차 칸은 한 줄.
 // 주차장은 넓게: 처음 자리에서 앞뒤로 몇 초는 마음껏 가도 벽이 멀다 (센서는 가까워질 때만 운다).
 // 차는 주차장에서 천천히 기어가고, 벽에 가까워지면 저절로 살살 멈춘다 (주차 보조). 그래도 닿으면 '쿵' 한 번 하고 멈춘다.
@@ -28,7 +30,6 @@
   var ASSIST_STOP = 0.18;         // 벽·차가 이만큼(m) 남으면 저절로 멈춘다
   var ASSIST_GAIN = 6;            // 남은 거리 1m 당 낼 수 있는 속도 (km/h)
   var ASSIST_STEP = 0.05, ASSIST_LOOK = 1.6; // 앞길을 이만큼씩, 이만큼까지 미리 가 본다 (m)
-  var FREE_GAP = [6, 8];          // 'free' 시작: 뒤 범퍼에서 뒤 벽까지 (m)
   var AI_SPEED = 1.5;             // m/s
   var CAR_COLORS = ['#e8453c', '#3a7bd5', '#f2b632', '#2fa36b', '#7b4fd6'];
   var TURN_R = WHEELBASE / Math.tan(MAX_STEER * 0.9); // AI 가 칸으로 돌아 들어가는 반지름
@@ -83,8 +84,9 @@
       // 목표 칸 조금 앞 통로에서 시작한다 (화면에 차와 초록 칸이 같이 보이게)
       at = { x: slots[target].x - TURN_R - 2.2, y: AISLE_Y, h: 0 };
     } else {
-      // 후진 둘러보기: 뒤쪽 벽에서 6~8m 떨어진 곳 (몇 초 뒤로 가야 센서가 울기 시작한다)
-      at = { x: CAR_L / 2 + rand(FREE_GAP[0], FREE_GAP[1]), y: AISLE_Y, h: 0 };
+      // 후진 주차: 초록 칸을 조금 지나친 통로에서 시작 (뒤로 핸들을 꺾으면 칸으로 들어간다)
+      target = 1 + Math.floor(rand(0, SLOTS - 2));
+      at = { x: slots[target].x + TURN_R + rand(0.6, 1.4), y: AISLE_Y, h: 0 };
     }
 
     var obstacles = [
@@ -132,6 +134,22 @@
     return path;
   }
 
+  // 후진 주차 AI 길: 통로에서 뒤로 가다 핸들을 꺾어 칸 안으로 뒤로 넣는다 (차 앞은 통로 쪽)
+  function aiBackPath(lot) {
+    var sl = lot.slots[lot.target], R = TURN_R, steer = MAX_STEER * 0.9;
+    var START = lot.start, path = [], x;
+    var xa = sl.x + R;
+    for (x = START.x; x > xa; x -= 0.1) path.push({ x: x, y: AISLE_Y, h: 0, steer: 0 });
+    var cx = xa, cy = AISLE_Y - R;
+    for (var t = 0; t <= 1.0001; t += 0.1 / (R * Math.PI / 2)) {
+      var phi = Math.PI / 2 + t * Math.PI / 2;
+      path.push({ x: cx + R * Math.cos(phi), y: cy + R * Math.sin(phi), h: phi - Math.PI / 2, steer: -steer });
+    }
+    for (var y = cy; y > sl.y; y -= 0.1) path.push({ x: sl.x, y: y, h: Math.PI / 2, steer: 0 });
+    path.push({ x: sl.x, y: sl.y, h: Math.PI / 2, steer: 0 });
+    return path;
+  }
+
   // ---------- 상태 ----------
 
   function start(s, mode) {
@@ -148,6 +166,7 @@
     p.timer = 0;
     p.dir = 1;
     p.ai = mode === 'ai' ? { path: aiPath(p.lot), i: 0 } : null;
+    p.fromFree = mode === 'free';
     p.bumpT = 0;
     p.touching = false;
     p.cap = CREEP;
@@ -161,6 +180,8 @@
     s.speed = Math.min(s.speed, CREEP); // 들어올 때는 살살
     if (mode === 'mission') {
       U.announce(s, '🅿️ 초록 칸에 주차해 봐요! 핸들을 돌려요', '주차 미션! 초록색 칸에 주차해 보세요');
+    } else if (mode === 'free') {
+      U.announce(s, '🅿️ 뒤로 주차해 봐요! 초록 칸으로 🔙', '후진 주차! 뒤에 있는 초록 칸으로 넣어 보세요');
     } else if (mode === 'ai') {
       s.gear = 'D';
       s.parkingBrake = false;
@@ -177,7 +198,9 @@
     p.ai = null;
     p.phase = '';
     p.sensor = emptySensor();
-    if (mode === 'mission' || mode === 'ai') Dash.score.finish(s, 'park');
+    var fromFree = p.fromFree;
+    p.fromFree = false;
+    if ((mode === 'mission' || mode === 'ai') && !fromFree) Dash.score.finish(s, 'park'); // 후진 주차 놀이는 운전이 끝난 게 아니다
   }
 
   function slotFit(car, sl) {
@@ -363,14 +386,24 @@
     // 'AI 주차' 버튼: 처음 자리에서 AI 가 대신 주차
     aiHelp: function (s) {
       var p = s.parking;
-      if (!p.on || p.mode !== 'mission' || p.phase === 'done') return;
-      var lot = p.lot;
+      if (!p.on || (p.mode !== 'mission' && p.mode !== 'free') || p.phase === 'done') return;
+      var lot = p.lot, back = p.mode === 'free';
       p.mode = 'ai';
       p.car = { x: lot.start.x, y: lot.start.y, h: lot.start.h, steer: 0 };
-      p.ai = { path: aiPath(lot), i: 0 };
-      s.gear = 'D';
+      p.ai = { path: back ? aiBackPath(lot) : aiPath(lot), i: 0 };
+      s.gear = back ? 'R' : 'D';
       s.parkingBrake = false;
       U.announce(s, '🤖 AI 가 처음 자리에서 주차해 볼게요', '제가 주차해 볼게요. 잘 봐요');
+    },
+
+    // '🛣️ 다시 출발' 버튼: 주차를 그만두고 길로 돌아가 D 로 달린다
+    leave: function (s) {
+      if (!s.parking.on) return;
+      stop(s);
+      s.gear = 'D';
+      s.parkingBrake = false;
+      s.speed = 0;
+      U.say(s, '🛣️ 다시 출발!');
     },
 
     // '그만하기' 버튼
@@ -401,7 +434,6 @@
         else if (s.gear === 'R' && s.engineOn) start(s, 'free');
         return;
       }
-      if (p.mode === 'free' && s.gear !== 'R') return stop(s);
       p.bumpT -= dt;
       if (p.phase === 'done') {
         if ((p.timer -= dt) <= 0) stop(s);
@@ -410,7 +442,7 @@
       if (p.mode === 'ai') aiDrive(s, dt);
       else { updateCap(s, dt); drive(s, input, dt); }
       updateSensors(p);
-      if (p.mode === 'mission') mission(s, dt);
+      if (p.mode === 'mission' || p.mode === 'free') mission(s, dt);
     }
   };
 })(window.Dash = window.Dash || {});

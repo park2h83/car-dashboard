@@ -18,13 +18,18 @@
   // 느린 기기: 그리는 데 오래 걸리면 두 프레임에 한 번만 그린다 (켜는 기준과 끄는 기준을 다르게)
   var workMs = 0, halfRate = false, skip = false, sceneDt = 0;
 
+  // 예전 버전은 처음 열 때 'dash.windshield' 에 'cluster'(끔)를 저절로 저장해 두어서, 그걸 '계기판만'으로 읽으면
+  // 테마를 바꿔도 주행 화면이 안 나왔다 (사용자 신고). 그래서 새 열쇠 'dash.roadView' 에 따로 저장하고,
+  // 옛 열쇠는 앞유리('drive')를 직접 켰던 경우만 이어받는다.
+  var KEY2 = 'dash.roadView';
   function load() {
-    var v = null;
-    try { v = localStorage.getItem(KEY); } catch (e) { /* 무시 */ }
-    return v === 'drive' ? 'first' : v === 'cluster' ? 'off' : MODE_NAMES[v] ? v : 'game'; // 처음엔 운전 게임
+    var v = null, old = null;
+    try { v = localStorage.getItem(KEY2); old = localStorage.getItem(KEY); } catch (e) { /* 무시 */ }
+    if (MODE_NAMES[v]) return v;
+    return old === 'drive' ? 'first' : 'game'; // 처음엔 운전 게임
   }
   function save() {
-    try { localStorage.setItem(KEY, mode === 'first' ? 'drive' : mode === 'off' ? 'cluster' : 'game'); } catch (e) { /* 무시 */ }
+    try { localStorage.setItem(KEY2, mode); } catch (e) { /* 무시 */ }
   }
 
   function stars() {
