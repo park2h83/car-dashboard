@@ -1,3 +1,3 @@
 // 공개 사이트에 올릴 때 tools/publish.js 가 만든 파일
 window.Dash = window.Dash || {};
-window.Dash.version = "2026.11.12 · f97cc6b";
+window.Dash.version = "2026.11.12 · 0c736b7";

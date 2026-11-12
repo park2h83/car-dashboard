@@ -1,8 +1,8 @@
 /* 계기판 + 도로 테마. 이 테마 전용 루트 클래스 .ck 아래에만 규칙을 둔다.
    .ck-stage 안의 좌표는 1600x940 기준이고, JS 가 화면 크기에 맞게 통째로 확대·축소한다.
    가운데 위 큰 도로 화면 x 346~1254, y 10~556, 지평선 y = 180.
-   양쪽 끝: 깜빡이·경고등(y 10~134), 바늘 계기(왼쪽 RPM 중심 170,318 / 오른쪽 속도 1430,318, 반지름 146),
-   작은 계기 4개(y ≈ 540~670), 기어·연료 칸(y 690~776), 별·바깥 온도(y 792~928).
+   양쪽: 깜빡이·경고등(y 8~126), 큰 바늘 계기(왼쪽 RPM 중심 224,356 / 오른쪽 속도 1376,356, 반지름 204 + 테두리 14 —
+   도로 화면 가장자리를 100쯤 덮는다), 작은 계기 4개(y ≈ 584~704), 기어·연료 칸(y 714~798), 별·바깥 온도(y 808~932).
    가운데 아래 정보 콘솔 x 340~1260, y 566~934: 내비/시계 · 정보창 · 주행 모드/점수 + 큰 버튼 🧭 📄 🎨 ⚙.
    작은 글씨는 두지 않는다 (아이는 숫자·그림·색만 읽는다). */
 .ck {
@@ -23,6 +23,10 @@
   --center: #f2c230;
   --panel: rgba(12, 18, 28, 0.78);
   --muted: #9aa5b2;
+  /* 깜빡이 화살표 빛 (계기 모양마다 바꾼다) */
+  --turn: #2ee86a;
+  --turn-ring: rgba(46, 232, 106, 0.45);
+  --turn-glow: rgba(46, 232, 106, 0.55);
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -49,45 +53,53 @@
 /* ---------- 바늘 계기 ---------- */
 .ck .ck-face0 { stop-color: var(--face0); }
 .ck .ck-face1 { stop-color: var(--face1); }
-.ck .ck-ring { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0.9; }
-.ck[data-mode="eco"] .ck-ring, .ck[data-mode="sport"] .ck-ring, .ck.ap .ck-ring { stroke-width: 6; }
-.ck .tick-major { stroke: #f2f4f7; stroke-width: 4; }
-.ck .tick-minor { stroke: #9aa4b0; stroke-width: 2; }
+.ck .ck-ring { fill: none; stroke: var(--accent); stroke-width: 4; opacity: 0.9; }
+.ck[data-mode="eco"] .ck-ring, .ck[data-mode="sport"] .ck-ring, .ck.ap .ck-ring { stroke-width: 8; }
+.ck .tick-major { stroke: #f2f4f7; stroke-width: 5.5; }
+.ck .tick-minor { stroke: #9aa4b0; stroke-width: 2.8; }
 .ck .tick-major.hot, .ck .tick-minor.hot { stroke: #ff3b30; }
-.ck .tick-label { fill: #f4f6f9; font-size: 29px; font-weight: 800; }
+.ck .tick-label { fill: #f4f6f9; font-size: 40px; font-weight: 800; }
 .ck .tick-label.hot { fill: #ff4a40; }
 .ck[data-mode="sport"] .tick-label { fill: #ffe0dc; font-style: italic; }
 .ck .ck-zone-red { fill: none; stroke: #c0141a; opacity: 0.9; }
-.ck .ck-dial-mode { font-size: 34px; }
-.ck .ck-digital { fill: #fff; font-size: 76px; font-weight: 900; letter-spacing: -2px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 5px; paint-order: stroke; }
+.ck .ck-dial-mode { font-size: 48px; }
+.ck .ck-digital { fill: #fff; font-size: 106px; font-weight: 900; letter-spacing: -3px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 7px; paint-order: stroke; }
 .ck[data-mode="sport"] .ck-digital { font-style: italic; }
 .ck .ck-digital.over { fill: #ff4a40; stroke: #ff3b30; stroke-opacity: 0.5; animation: ck-blink 0.6s steps(1) infinite; }
 /* RPM 계기 가운데의 큰 기어 글자 */
-.ck .ck-dial-gear { fill: #fff; font-size: 76px; font-weight: 900; letter-spacing: -2px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 5px; paint-order: stroke; }
+.ck .ck-dial-gear { fill: #fff; font-size: 106px; font-weight: 900; letter-spacing: -3px; stroke: var(--accent); stroke-opacity: 0.35; stroke-width: 7px; paint-order: stroke; }
 .ck .ck-dial-gear.g-D { fill: var(--accent); stroke: #fff; stroke-opacity: 0.18; }
 .ck .ck-dial-gear.g-P { fill: #ff5a4f; stroke: #ff3b30; }
 .ck .ck-dial-gear.g-R { fill: #ffb020; stroke: #ffb020; }
 .ck .ck-dial-gear.g-N { fill: #e8ecf1; }
 .ck[data-mode="sport"] .ck-dial-gear { font-style: italic; }
 /* 계기 바깥 빛나는 테두리, 계기 안쪽 은은한 빛 */
-.ck .ck-bezel-glow { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0.55; }
+.ck .ck-bezel-glow { fill: none; stroke: var(--accent); stroke-width: 4; opacity: 0.55; }
 .ck .ck-halo0 { stop-color: var(--accent); }
 /* 바늘을 따라 차오르는 빛 띠 */
-.ck .ck-trail-wide { fill: none; stroke: var(--accent); stroke-width: 16; opacity: 0.22; }
-.ck .ck-trail { fill: none; stroke: var(--accent); stroke-width: 6; opacity: 0.95; }
+.ck .ck-trail-wide { fill: none; stroke: var(--accent); stroke-width: 22; opacity: 0.22; }
+.ck .ck-trail { fill: none; stroke: var(--accent); stroke-width: 8; opacity: 0.95; }
 .ck.redline #ck-trail-left, .ck.redline #ck-trailw-left { stroke: #ff3b30; }
 .ck.redline .ck-zone-red { animation: ck-blink 0.25s steps(1) infinite; }
 /* 빛나는 느낌은 반투명 테두리로 (흐림 필터는 바늘이 움직일 때마다 다시 그려서 느리다) */
-.ck .ck-needle path { fill: #ff4a1c; stroke: rgba(255, 90, 40, 0.35); stroke-width: 6; stroke-linejoin: round; paint-order: stroke; }
+.ck .ck-needle path { fill: #ff4a1c; stroke: rgba(255, 90, 40, 0.35); stroke-width: 8; stroke-linejoin: round; paint-order: stroke; }
 .ck .ck-limit-mark { fill: #ffb020; }
 .ck .ck-ap-mark { fill: #3d8bff; }
+.ck .ck-hub-dot { fill: #0b0d10; }
+.ck .ck-mode-bg { fill: rgba(11, 11, 13, 0.85); }
+.ck .ck-track { fill: none; }
+/* 밝은 계기판(스포츠·클래식)은 시동을 끄면 눈금을 지우는 대신 판을 어둡게 덮는다 */
+.ck .ck-face-dim { fill: #000; opacity: 0; transition: opacity 0.6s; }
+.ck.off .ck-face-dim { opacity: 0.62; }
+.ck .ck-lit { transition: opacity 0.6s; }
+.ck.off .ck-lit { opacity: 0.12; }
 /* 작은 바늘 계기 (냉각수·연료·오일) */
 .ck .ck-mini-arc { fill: none; stroke: #4a535e; stroke-width: 2; }
-.ck .ck-mini-zone { fill: none; stroke: #d0161c; stroke-width: 9; }
+.ck .ck-mini-zone { fill: none; stroke: #d0161c; stroke-width: 8; }
 .ck .ck-mini-tick { stroke: #c9d0d8; stroke-width: 2.5; }
 .ck .ck-mini-tick.major { stroke: #f2f4f7; stroke-width: 4; }
 .ck .ck-mini-tick.hot { stroke: #ff3b30; }
-.ck .ck-mini-label { fill: #e8ecf1; font-size: 20px; font-weight: 800; }
+.ck .ck-mini-label { fill: #e8ecf1; font-size: 19px; font-weight: 800; }
 .ck .ck-mneedle path { fill: #ff6a2c; stroke: rgba(255, 90, 40, 0.3); stroke-width: 4; stroke-linejoin: round; paint-order: stroke; }
 .ck .ck-mini-hub { fill: #2a3038; stroke: #000; stroke-width: 2; }
 .ck .ck-oil-face { fill: #0b0e12; stroke: #59616c; stroke-width: 3; }
@@ -137,7 +149,7 @@
 .ck.night .ck-sun, .ck.night .ck-cloud { display: none; }
 .ck.night .scn { opacity: 0.35; }
 /* 밤엔 계기 조명이 더 또렷하게 */
-.ck.night .ck-needle path { stroke: rgba(255, 90, 40, 0.5); stroke-width: 8; }
+.ck.night .ck-needle path { stroke: rgba(255, 90, 40, 0.5); stroke-width: 11; }
 .ck.night .tick-label { fill: #fff; }
 
 /* 비 */
@@ -242,13 +254,13 @@
 .ck-turn.right { right: 22px; }
 .ck-turn svg { display: block; width: 100%; height: 100%; fill: rgba(255, 255, 255, 0.13); }
 .ck-turn.armed svg { fill: rgba(34, 197, 94, 0.3); }
-.ck-turn.on { background: rgba(10, 40, 20, 0.7); box-shadow: 0 0 0 9px rgba(46, 232, 106, 0.45), 0 0 46px 12px rgba(46, 232, 106, 0.55); }
-.ck-turn.on svg { fill: #2ee86a; filter: drop-shadow(0 0 10px #2ee86a); }
+.ck-turn.on { background: rgba(10, 40, 20, 0.7); box-shadow: 0 0 0 9px var(--turn-ring), 0 0 46px 12px var(--turn-glow); }
+.ck-turn.on svg { fill: var(--turn); filter: drop-shadow(0 0 10px var(--turn)); }
 .ck.hazard .ck-turn.on { box-shadow: 0 0 0 7px rgba(255, 59, 48, 0.55); }
 
 .ck-warns {
   position: absolute;
-  top: 14px;
+  top: 8px;
   width: 200px;
   display: flex;
   flex-wrap: wrap;
@@ -322,7 +334,7 @@
 }
 .ck-camera {
   position: absolute;
-  left: 1180px;
+  left: 1146px; /* 오른쪽 큰 계기 테두리에 닿지 않게 조금 안쪽 */
   top: 144px;
   transform: translateX(-50%);
   padding: 2px 12px;
@@ -390,7 +402,7 @@
   background: var(--panel);
   border: 2px solid #232a33;
 }
-.ck-gears { left: 14px; top: 690px; height: 86px; gap: 8px; }
+.ck-gears { left: 14px; top: 714px; height: 84px; gap: 8px; }
 .ck-gears span {
   width: 52px;
   text-align: center;
@@ -405,7 +417,7 @@
 .ck-gears span[data-g="D"].on { color: var(--accent); }
 .ck-gears b { width: 32px; margin-left: -10px; align-self: flex-end; padding-bottom: 10px; font-size: 32px; font-weight: 800; color: var(--accent); }
 
-.ck-fuel { left: 1276px; top: 690px; height: 86px; gap: 10px; padding: 0 12px; }
+.ck-fuel { left: 1276px; top: 714px; height: 84px; gap: 10px; padding: 0 12px; }
 .ck-fuel-icon { font-size: 32px; line-height: 1; }
 .ck-fuel-l { min-width: 56px; font-size: 44px; font-weight: 900; line-height: 1; text-align: right; }
 /* 연료 막대 게이지: 칸이 줄어드는 게 보이게 (2칸 이하면 주황). 칸이 오른쪽으로 갈수록 높아진다 */
@@ -426,12 +438,12 @@
 .ck-fuel.low .ck-fuel-l { color: #ffb020; }
 
 /* 별(모은 별 수 + 면허 등급 그림), 바깥 온도(날씨 그림 + 숫자) */
-.ck-side-tile { top: 792px; height: 136px; gap: 18px; border-radius: 26px; }
+.ck-side-tile { top: 808px; height: 124px; gap: 18px; border-radius: 26px; }
 .ck-star-tile { left: 14px; }
 .ck-star-tile.hide { visibility: hidden; }
 .ck-temp-tile { left: 1276px; }
-.ck-side-tile span { font-size: 64px; line-height: 1; }
-.ck-side-tile b { font-size: 70px; font-weight: 900; line-height: 1; letter-spacing: -2px; }
+.ck-side-tile span { font-size: 60px; line-height: 1; }
+.ck-side-tile b { font-size: 66px; font-weight: 900; line-height: 1; letter-spacing: -2px; }
 .ck-star-tile b::before { content: '⭐'; font-size: 0.7em; margin-right: 6px; vertical-align: 0.12em; letter-spacing: 0; }
 
 /* ---------- 가운데 아래: 정보 콘솔 ---------- */
@@ -718,3 +730,234 @@
 .ck .info-title.icon ~ .info-big + .info-tiles .info-tile b { font-size: 44px; }
 .ck .ck-info[data-page="score"] .info-title.icon ~ .info-big { font-size: 84px; }
 .ck-info[data-page="car"] .info-car { height: 236px; }
+
+/* ====================================================================================
+   계기 모양들 (themes/cockpit/theme.js VARIANTS). 배치는 같고 큰 계기 두 개의 모양·부품·색만 다르다.
+   루트에 .v-<모양> 이 붙는다. 주행 모드 색(위의 [data-mode])보다 아래에 둬서 모양의 색이 이긴다.
+   ==================================================================================== */
+
+/* ---------- 스포츠: 노란 계기판 · 굵은 검은 눈금 · 빨간 바늘 · 변속등 ---------- */
+.ck.v-sport { --accent: #ffd21f; --bg-tint: #2a1c05; --face0: #2c1112; }
+.ck.v-sport .ck-bezel-glow { stroke: #ff3b30; opacity: 0.7; }
+.ck.v-sport .ck-sp-stripe { fill: none; stroke: #e0201b; stroke-width: 5; }
+.ck.v-sport .ck-sp-inner { fill: none; stroke: rgba(0, 0, 0, 0.5); stroke-width: 6; }
+.ck.v-sport .tick-major { stroke: #111; stroke-width: 9; }
+.ck.v-sport .tick-minor { stroke: #3d3200; stroke-width: 3.4; }
+.ck.v-sport .tick-major.hot, .ck.v-sport .tick-minor.hot { stroke: #c0141a; }
+.ck.v-sport .tick-label { fill: #111; font-size: 44px; font-weight: 900; font-style: italic; }
+.ck.v-sport .tick-label.hot { fill: #c0141a; }
+.ck.v-sport .ck-zone-red { stroke: #d0161c; opacity: 1; }
+.ck.v-sport .ck-trail-wide { stroke: #ff3b30; stroke-width: 20; opacity: 0.3; }
+.ck.v-sport .ck-trail { stroke: #e0201b; stroke-width: 9; }
+.ck.v-sport .ck-needle path { fill: #e0201b; stroke: #111; stroke-width: 5; }
+.ck.v-sport .ck-hub-dot { fill: #e0201b; }
+.ck.v-sport .ck-digital, .ck.v-sport .ck-dial-gear { fill: #111; stroke: #fff; stroke-opacity: 0.55; font-style: italic; }
+.ck.v-sport .ck-digital.over { fill: #c0141a; stroke: #fff; stroke-opacity: 0.7; }
+.ck.v-sport .ck-dial-gear.g-P { fill: #c0141a; }
+.ck.v-sport .ck-dial-gear.g-R { fill: #a84a00; }
+.ck.v-sport .ck-dial-gear.g-N { fill: #3a3a3a; }
+.ck.v-sport .ck-shift-box { fill: none; stroke: #0b0b0d; stroke-width: 36; stroke-linecap: round; }
+.ck.v-sport .ck-shift { fill: #30353c; stroke: #000; stroke-width: 2; }
+.ck.v-sport .ck-shift.on.g { fill: #39ff6a; stroke: rgba(57, 255, 106, 0.45); stroke-width: 5; }
+.ck.v-sport .ck-shift.on.y { fill: #ffe14a; stroke: rgba(255, 225, 74, 0.45); stroke-width: 5; }
+.ck.v-sport .ck-shift.on.r { fill: #ff3b30; stroke: rgba(255, 59, 48, 0.5); stroke-width: 5; }
+.ck.v-sport.redline .ck-shift.on { animation: ck-blink 0.2s steps(1) infinite; }
+.ck.v-sport.night .tick-label { fill: #111; }
+.ck.v-sport .ck-frame-out { stroke: #ffd21f; }
+/* 작은 계기도 노랗게 */
+.ck.v-sport .ck-oil-face { fill: #f5bd00; stroke: #0b0b0d; stroke-width: 6; transition: fill 0.6s; }
+.ck.v-sport .ck-mini-arc { stroke: #111; }
+.ck.v-sport .ck-mini-tick, .ck.v-sport .ck-mini-tick.major { stroke: #111; }
+.ck.v-sport .ck-mini-tick.hot { stroke: #c0141a; }
+.ck.v-sport .ck-mini-label { fill: #111; }
+.ck.v-sport .ck-mneedle path { fill: #e0201b; stroke: #111; stroke-width: 2.5; }
+.ck.v-sport .ck-mini-hub { fill: #0b0b0d; }
+.ck.v-sport .ck-corner-icon { color: #111; }
+.ck.v-sport .ck-corner-icon.hot, .ck.v-sport .ck-corner-icon.low { color: #c0141a; }
+.ck.v-sport.off .ck-oil-face { fill: #5a4500; }
+
+/* ---------- 클래식: 크림색 계기판 · 크롬 테두리 · 가는 검은 바늘 · 숫자 통 ---------- */
+.ck.v-classic { --accent: #e7dcc0; --bg-tint: #1c1811; --turn: #46d47a; }
+.ck.v-classic .ck-bezel-glow { stroke: #ffd9a0; opacity: 0.35; }
+.ck.v-classic .ck-cl-line { fill: none; stroke: rgba(255, 255, 255, 0.65); stroke-width: 1.6; }
+.ck.v-classic .ck-cl-inner { fill: none; stroke: rgba(70, 52, 20, 0.4); stroke-width: 2; }
+.ck.v-classic .tick-major { stroke: #1b1814; stroke-width: 4; }
+.ck.v-classic .tick-minor { stroke: #4a4130; stroke-width: 1.8; }
+.ck.v-classic .tick-major.hot, .ck.v-classic .tick-minor.hot { stroke: #b3261e; }
+.ck.v-classic .tick-label { fill: #1b1814; font-size: 38px; font-weight: 700; font-family: Futura, "Trebuchet MS", "Avenir Next", sans-serif; }
+.ck.v-classic .tick-label.hot { fill: #b3261e; }
+.ck.v-classic.night .tick-label { fill: #1b1814; }
+.ck.v-classic .ck-zone-red { stroke: #c0141a; opacity: 1; }
+.ck.v-classic .ck-trail-wide { stroke: #ff9a1f; stroke-width: 18; opacity: 0.22; }
+.ck.v-classic .ck-trail { stroke: #ff7a00; stroke-width: 5; opacity: 0.75; }
+.ck.v-classic .ck-needle path { fill: #151210; stroke: rgba(0, 0, 0, 0.18); stroke-width: 4; }
+.ck.v-classic.night .ck-needle path { stroke: rgba(0, 0, 0, 0.18); stroke-width: 4; }
+.ck.v-classic .ck-cw { fill: #151210; }
+.ck.v-classic .ck-drum-box { fill: #0b0b0c; stroke: #9aa1aa; stroke-width: 4; }
+.ck.v-classic .ck-drum-line { stroke: #34363a; stroke-width: 2; }
+.ck.v-classic .ck-drum { fill: #f6f2e4; font-size: 70px; font-weight: 800; transition: opacity 0.6s; }
+.ck.v-classic.overspeed #ck-drum-0, .ck.v-classic.overspeed #ck-drum-1, .ck.v-classic.overspeed #ck-drum-2 { fill: #ff4a40; animation: ck-blink 0.6s steps(1) infinite; }
+.ck.v-classic[data-gear="P"] #ck-gdrum-0 { fill: #ff5a4f; }
+.ck.v-classic[data-gear="R"] #ck-gdrum-0 { fill: #ffb020; }
+.ck.v-classic #ck-gdrum-1 { fill: #9fd8ff; }
+.ck.v-classic.off .ck-drum { opacity: 0.15; }
+.ck.v-classic .ck-frame-out { stroke: #c9ced6; opacity: 0.75; }
+.ck.v-classic .ck-oil-face { fill: #efe4c4; stroke: #b9bec6; stroke-width: 6; transition: fill 0.6s; }
+.ck.v-classic .ck-mini-arc { stroke: #1b1814; }
+.ck.v-classic .ck-mini-tick, .ck.v-classic .ck-mini-tick.major { stroke: #1b1814; }
+.ck.v-classic .ck-mini-tick.hot { stroke: #b3261e; }
+.ck.v-classic .ck-mini-label { fill: #1b1814; }
+.ck.v-classic .ck-mneedle path { fill: #151210; stroke: rgba(0, 0, 0, 0.2); stroke-width: 2; }
+.ck.v-classic .ck-mini-hub { fill: #c9ced6; }
+.ck.v-classic .ck-corner-icon { color: #1b1814; }
+.ck.v-classic .ck-corner-icon.hot, .ck.v-classic .ck-corner-icon.low { color: #b3261e; }
+.ck.v-classic.off .ck-oil-face { fill: #5e5846; }
+/* 밝은 계기판 둘: 시동을 꺼도 검은 눈금은 남긴다 (판이 어두워진다) */
+.ck.v-sport.off [class^="tick"], .ck.v-classic.off [class^="tick"], .ck.v-sport.off .ck-zone-red, .ck.v-classic.off .ck-zone-red,
+.ck.v-sport.off .ck-mini-tick, .ck.v-classic.off .ck-mini-tick, .ck.v-sport.off .ck-mini-label, .ck.v-classic.off .ck-mini-label,
+.ck.v-sport.off .ck-corner-icon, .ck.v-classic.off .ck-corner-icon { opacity: 0.6; }
+.ck.v-sport.off .ck-dial-gear, .ck.v-sport.off .ck-digital { opacity: 0.45; }
+
+/* ---------- 네온: 굵은 빛 띠 + 한가운데 큰 숫자 (왼쪽 분홍, 오른쪽 하늘색) ---------- */
+.ck.v-neon { --accent: #ff2fd6; --bg-tint: #1c0a33; --turn: #5dffb0; --turn-ring: rgba(93, 255, 176, 0.45); --turn-glow: rgba(25, 232, 255, 0.5); }
+.ck.v-neon .ck-dial.left { --nc: #ff2fd6; }
+.ck.v-neon .ck-dial.right { --nc: #19e8ff; }
+.ck.v-neon .ck-ne-ring { fill: none; stroke: var(--nc); stroke-width: 4; }
+.ck.v-neon .ck-ne-ring2 { fill: none; stroke: var(--nc); stroke-width: 3; opacity: 0.35; }
+.ck.v-neon .ck-halo0 { stop-color: #7a3cff; }
+.ck.v-neon .ck-track { stroke: #1f1440; stroke-width: 30; }
+.ck.v-neon .ck-trail-wide { stroke: var(--nc); stroke-width: 44; opacity: 0.24; }
+.ck.v-neon .ck-trail { stroke: var(--nc); stroke-width: 24; opacity: 1; }
+.ck.v-neon .ck-zone-red { stroke: #ff3b30; opacity: 1; }
+.ck.v-neon .tick-major { stroke: var(--nc); stroke-width: 4; }
+.ck.v-neon .tick-major.hot { stroke: #ff3b30; }
+.ck.v-neon .tick-label { fill: #f0e8ff; font-size: 30px; }
+.ck.v-neon .tick-label.hot { fill: #ff6a60; }
+.ck.v-neon .ck-head { fill: #fff; }
+.ck.v-neon .ck-head-glow { fill: var(--nc); opacity: 0.45; }
+.ck.v-neon .ck-digital { font-size: 108px; stroke: #19e8ff; stroke-opacity: 0.5; stroke-width: 9px; }
+.ck.v-neon .ck-dial-gear { font-size: 112px; fill: #fff; stroke: #ff2fd6; stroke-opacity: 0.55; stroke-width: 9px; }
+.ck.v-neon .ck-dial-gear.g-P { fill: #ff8a80; stroke: #ff3b30; }
+.ck.v-neon .ck-dial-gear.g-R { fill: #ffd27a; stroke: #ffb020; }
+.ck.v-neon .ck-dial-mode { font-size: 44px; }
+.ck.v-neon.overspeed #ck-trail-right, .ck.v-neon.overspeed #ck-trailw-right { stroke: #ff3b30; }
+.ck.v-neon .ck-frame-out { stroke: #19e8ff; }
+.ck.v-neon .ck-oil-face { fill: #0b0616; stroke: #19e8ff; stroke-width: 3; }
+.ck.v-neon .ck-mneedle path { fill: #ff2fd6; stroke: rgba(255, 47, 214, 0.35); }
+.ck.v-neon .ck-mini-arc { stroke: #5a3fb0; }
+
+/* ---------- LED 막대: 조각난 LED 고리 + 7조각 숫자 ---------- */
+.ck.v-led { --accent: #39ff6a; --bg-tint: #07160b; --turn: #39ff6a; }
+.ck.v-led .ck-ld-bezel { fill: #14181d; stroke: #343c46; stroke-width: 3; }
+.ck.v-led .ck-halo0 { stop-color: #1f8a3c; }
+.ck.v-led .ck-seg { fill: none; stroke-width: 36; opacity: 0.14; }
+.ck.v-led .ck-seg.c-g { stroke: #39ff6a; }
+.ck.v-led .ck-seg.c-y { stroke: #ffd21f; }
+.ck.v-led .ck-seg.c-r { stroke: #ff3b30; }
+.ck.v-led .ck-seg.on { opacity: 1; }
+.ck.v-led.overspeed .ck-seg[data-seg="right"].on { stroke: #ff3b30; }
+.ck.v-led.redline .ck-seg[data-seg="left"].c-r.on { animation: ck-blink 0.25s steps(1) infinite; }
+.ck.v-led .tick-label { fill: #d5ffe0; font-size: 28px; }
+.ck.v-led .tick-label.hot { fill: #ff6a60; }
+.ck.v-led .ck-s7 { fill: #39ff6a; opacity: 0.09; }
+.ck.v-led .ck-s7.on { opacity: 1; }
+.ck.v-led.overspeed .ck-s7.on { fill: #ff4a40; }
+.ck.v-led.off .ck-s7.on { opacity: 0.2; }
+.ck.v-led .ck-dial-gear { font-size: 104px; fill: #39ff6a; stroke: #39ff6a; stroke-opacity: 0.25; stroke-width: 9px; font-family: Menlo, "Courier New", monospace; letter-spacing: -6px; }
+.ck.v-led .ck-dial-gear.g-P { fill: #ff5a4f; stroke: #ff3b30; }
+.ck.v-led .ck-dial-gear.g-R { fill: #ffb020; stroke: #ffb020; }
+.ck.v-led .ck-dial-gear.g-N { fill: #e8ecf1; stroke: #e8ecf1; }
+.ck.v-led .ck-dial-mode { font-size: 44px; }
+.ck.v-led .ck-oil-face { fill: #06080a; stroke: #343c46; stroke-width: 3; }
+.ck.v-led .ck-mneedle path { fill: #39ff6a; stroke: rgba(57, 255, 106, 0.3); }
+.ck.v-led .ck-mini-tick.major { stroke: #39ff6a; }
+.ck.v-led .ck-turn, .ck.v-race .ck-turn, .ck.v-space .ck-turn { border-radius: 26px; }
+
+/* ---------- 레이싱: 카본 · 돌린 RPM(빨간 구역이 맨 위) · 가운데 화면 · 짧은 노란 바늘 ---------- */
+.ck.v-race { --accent: #ff3b30; --bg-tint: #220a08; }
+.ck.v-race .ck-rc-stripe { fill: none; stroke: #e0201b; stroke-width: 4; }
+.ck.v-race .tick-major { stroke: #fff; stroke-width: 7; }
+.ck.v-race .tick-minor { stroke: #c9d0d8; stroke-width: 3; }
+.ck.v-race .tick-major.hot, .ck.v-race .tick-minor.hot { stroke: #ff3b30; }
+.ck.v-race .tick-label { fill: #fff; font-size: 40px; font-weight: 900; font-style: italic; }
+.ck.v-race .tick-label.hot { fill: #ff4a40; }
+.ck.v-race .ck-zone-red { stroke: #e0201b; opacity: 1; }
+.ck.v-race .ck-trail-wide { stroke: #ff8a1f; stroke-width: 20; opacity: 0.25; }
+.ck.v-race .ck-trail { stroke: #ffb020; stroke-width: 8; }
+.ck.v-race .ck-needle path { fill: #ffd21f; stroke: rgba(255, 210, 31, 0.4); stroke-width: 7; }
+.ck.v-race .ck-rc-core { fill: #050607; stroke: #e0201b; stroke-width: 4; }
+.ck.v-race .ck-rc-core-in { fill: none; stroke: #2c333c; stroke-width: 2; }
+.ck.v-race .ck-digital { font-size: 100px; font-style: italic; stroke: #ff3b30; }
+.ck.v-race .ck-dial-gear { font-size: 116px; font-style: italic; }
+.ck.v-race .ck-dial-gear.g-D { fill: #fff; stroke: #ff3b30; stroke-opacity: 0.45; }
+.ck.v-race .ck-dial-mode { font-size: 44px; }
+.ck.v-race .ck-oil-face { fill: #101215; stroke: #e0201b; stroke-width: 3; }
+.ck.v-race .ck-mneedle path { fill: #ffd21f; stroke: rgba(255, 210, 31, 0.3); }
+
+/* ---------- 고급: 짙은 초록 · 나무 테두리 · 금색 가는 눈금 · 바늘 시계 ---------- */
+.ck.v-luxury { --accent: #d8b45a; --bg-tint: #0f1c13; --turn: #46d47a; --turn-ring: rgba(216, 180, 90, 0.6); }
+.ck.v-luxury .ck-lx-gold { fill: none; stroke: #e2c57a; stroke-width: 2.5; }
+.ck.v-luxury .ck-lx-grain { fill: none; stroke: rgba(30, 12, 2, 0.4); stroke-width: 1.5; }
+.ck.v-luxury .ck-bezel-glow { stroke: #d8b45a; opacity: 0.4; stroke-width: 3; }
+.ck.v-luxury .ck-halo0 { stop-color: #2f8a5a; }
+.ck.v-luxury .tick-major { stroke: #ecd591; stroke-width: 3; }
+.ck.v-luxury .tick-minor { stroke: #a8905a; stroke-width: 1.3; }
+.ck.v-luxury .tick-major.hot, .ck.v-luxury .tick-minor.hot { stroke: #d04a52; }
+.ck.v-luxury .tick-label { fill: #f3e6c0; font-size: 37px; font-weight: 700; font-style: italic; font-family: Baskerville, "Times New Roman", Times, serif; }
+.ck.v-luxury .tick-label.hot { fill: #e0606a; }
+.ck.v-luxury .ck-zone-red { stroke: #a8242c; opacity: 1; }
+.ck.v-luxury .ck-trail-wide { stroke: #d8b45a; stroke-width: 16; opacity: 0.18; }
+.ck.v-luxury .ck-trail { stroke: #f0d48a; stroke-width: 3.5; opacity: 0.9; }
+.ck.v-luxury .ck-needle path { fill: #f6ebc8; stroke: rgba(216, 180, 90, 0.45); stroke-width: 4; }
+.ck.v-luxury .ck-cw { fill: none; stroke: #f6ebc8; stroke-width: 4; }
+.ck.v-luxury .ck-digital, .ck.v-luxury .ck-dial-gear { fill: #f6ebc8; font-size: 98px; font-weight: 700; letter-spacing: -1px; stroke: #d8b45a; stroke-opacity: 0.3;
+  font-family: Baskerville, "Times New Roman", Times, serif; }
+.ck.v-luxury .ck-digital.over { fill: #ff5a50; stroke: #ff3b30; }
+.ck.v-luxury .ck-dial-gear.g-D { fill: #f0d48a; stroke: #d8b45a; stroke-opacity: 0.3; }
+.ck.v-luxury .ck-dial-gear.g-P { fill: #e0606a; stroke: #a8242c; }
+.ck.v-luxury .ck-dial-gear.g-R { fill: #ffb020; }
+.ck.v-luxury .ck-clock-face { fill: #06140e; stroke: #d8b45a; stroke-width: 2.5; }
+.ck.v-luxury .ck-clock-tick { stroke: #e2c57a; stroke-width: 2; }
+.ck.v-luxury .ck-clock-hand { stroke: #f6ebc8; stroke-linecap: round; }
+.ck.v-luxury .ck-clock-hand.h { stroke-width: 5; }
+.ck.v-luxury .ck-clock-hand.m { stroke-width: 3.2; }
+.ck.v-luxury .ck-clock-hub { fill: #d8b45a; }
+.ck.v-luxury .ck-frame-out { stroke: #d8b45a; }
+.ck.v-luxury .ck-oil-face { fill: #0a2217; stroke: #d8b45a; stroke-width: 3; }
+.ck.v-luxury .ck-mini-tick, .ck.v-luxury .ck-mini-tick.major { stroke: #ecd591; }
+.ck.v-luxury .ck-mini-tick.hot { stroke: #d04a52; }
+.ck.v-luxury .ck-mini-label { fill: #f3e6c0; }
+.ck.v-luxury .ck-mneedle path { fill: #f6ebc8; stroke: rgba(216, 180, 90, 0.4); stroke-width: 2.5; }
+.ck.v-luxury .ck-mini-hub { fill: #d8b45a; }
+.ck.v-luxury .ck-corner-icon { color: #ecd591; }
+
+/* ---------- 우주선: 육각형 틀 · 조각난 빛 고리 · 도는 점선 고리 (왼쪽 보라, 오른쪽 하늘색) ---------- */
+.ck.v-space { --accent: #2af5ff; --bg-tint: #0a1036; --turn: #2af5ff; --turn-ring: rgba(42, 245, 255, 0.45); --turn-glow: rgba(163, 107, 255, 0.6); }
+.ck.v-space .ck-dial.left { --nc: #a36bff; --nc2: #2af5ff; }
+.ck.v-space .ck-dial.right { --nc: #2af5ff; --nc2: #a36bff; }
+.ck.v-space .ck-sx-hex { fill: #040816; stroke: var(--nc); stroke-width: 5; stroke-linejoin: round; }
+.ck.v-space .ck-sx-hex2 { fill: none; stroke: var(--nc2); stroke-width: 2; opacity: 0.6; stroke-linejoin: round; }
+.ck.v-space .ck-halo0 { stop-color: #3d5bff; }
+.ck.v-space .ck-sx-spin { fill: none; stroke: var(--nc2); stroke-width: 4; stroke-dasharray: 3 16; opacity: 0.7;
+  transform-box: fill-box; transform-origin: center; animation: ck-spin 60s linear infinite; }
+.ck.v-space.off .ck-sx-spin { animation-play-state: paused; opacity: 0.2; }
+@keyframes ck-spin { to { transform: rotate(360deg); } }
+.ck.v-space .ck-track { stroke: #101a40; stroke-width: 26; }
+.ck.v-space .ck-trail-wide { stroke: var(--nc); stroke-width: 40; opacity: 0.22; }
+.ck.v-space .ck-trail { stroke: var(--nc); stroke-width: 24; opacity: 1; }
+.ck.v-space .ck-sx-sep { stroke: #050a1e; stroke-width: 3.5; }
+.ck.v-space .ck-sx-in { fill: none; stroke: var(--nc2); stroke-width: 2; stroke-dasharray: 78 30.4; opacity: 0.7; }
+.ck.v-space .ck-sx-ptr { fill: #fff; }
+.ck.v-space .tick-label { fill: #d6ecff; font-size: 26px; }
+.ck.v-space .tick-label.hot { fill: #ff6a60; }
+.ck.v-space .ck-digital { font-size: 92px; stroke: #2af5ff; stroke-opacity: 0.45; stroke-width: 8px; }
+.ck.v-space .ck-dial-gear { font-size: 100px; fill: #fff; stroke: #a36bff; stroke-opacity: 0.6; stroke-width: 8px; }
+.ck.v-space .ck-dial-gear.g-P { fill: #ff8a80; stroke: #ff3b30; }
+.ck.v-space .ck-dial-gear.g-R { fill: #ffd27a; stroke: #ffb020; }
+.ck.v-space .ck-dial-mode { font-size: 42px; }
+.ck.v-space.overspeed #ck-trail-right, .ck.v-space.overspeed #ck-trailw-right { stroke: #ff3b30; }
+.ck.v-space .ck-frame-out { stroke: #2af5ff; }
+.ck.v-space .ck-oil-face { fill: #040816; stroke: #a36bff; stroke-width: 3; stroke-linejoin: round; }
+.ck.v-space .ck-mneedle path { fill: #2af5ff; stroke: rgba(42, 245, 255, 0.3); }
+.ck.v-space .ck-mini-tick.major { stroke: #a36bff; }
+.ck.v-space .ck-mini-arc { stroke: #2a3a80; }
